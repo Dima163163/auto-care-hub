@@ -2,6 +2,7 @@ import type { AuditLogAction, KnownAuditLogAction } from '../api/adminApi'
 import type { TranslationKey } from '@/shared/lib/i18n'
 
 type KnownAuditTargetType =
+    | 'audit_logs'
     | 'account_deletion_request'
     | 'cabinet'
     | 'autocare_appeal'
@@ -27,6 +28,7 @@ type KnownAuditTargetType =
     | 'user_sessions'
 
 const auditTargetTypeTranslationKeys: Record<KnownAuditTargetType, TranslationKey> = {
+    audit_logs: 'adminAuditLogs.targetTypes.audit_logs',
     account_deletion_request: 'adminAuditLogs.targetTypes.account_deletion_request',
     cabinet: 'adminAuditLogs.targetTypes.cabinet',
     autocare_appeal: 'adminAuditLogs.targetTypes.autocare_appeal',
@@ -77,6 +79,9 @@ const auditLogActionTranslationKeys: Record<KnownAuditLogAction, TranslationKey>
     login_failed: 'adminAuditLogs.actions.login_failed',
     account_locked: 'adminAuditLogs.actions.account_locked',
     refresh_token_reuse: 'adminAuditLogs.actions.refresh_token_reuse',
+    mfa_step_up_succeeded: 'adminAuditLogs.actions.mfa_step_up_succeeded',
+    mfa_factor_reset: 'adminAuditLogs.actions.mfa_factor_reset',
+    audit_logs_exported: 'adminAuditLogs.actions.audit_logs_exported',
     outbox_retried: 'adminAuditLogs.actions.outbox_retried',
     outbox_dead_lettered: 'adminAuditLogs.actions.outbox_dead_lettered',
     oauth_identity_linked: 'adminAuditLogs.actions.oauth_identity_linked',

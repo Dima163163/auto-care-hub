@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { AppError } from '../../shared/errors/app-error.js'
 import { parseBearerToken } from './bearer-token.js'
-import { assertAccessSessionActive, requireVerifiedEmail } from './require-auth.js'
+import { assertAccessSessionActive, requireAuth, requireVerifiedEmail } from './require-auth.js'
 
 const sessionMocks = vi.hoisted(() => ({
     findUserSession: vi.fn(),
@@ -68,6 +68,47 @@ describe('assertAccessSessionActive', () => {
 
         await expect(assertAccessSessionActive('user-id', 'session-id')).resolves.toBeUndefined()
         await expect(assertAccessSessionActive('user-id', undefined)).resolves.toBeUndefined()
+    })
+})
+
+describe('privileged access sessions', () => {
+    it.each(['admin', 'super_admin'])('rejects sessionless access for a current %s', async (role) => {
+        authMocks.getUserById.mockResolvedValue({ id: accessTokenPayload.userId, role })
+
+        await expect(requireAuth(requestWithToken)).rejects.toMatchObject({
+            statusCode: 401,
+            code: 'UNAUTHORIZED',
+        })
+        expect(sessionMocks.findUserSession).not.toHaveBeenCalled()
+    })
+
+    it('uses the current database role even when a token carries an old client role', async () => {
+        authMocks.getUserById.mockResolvedValue({ id: accessTokenPayload.userId, role: 'admin' })
+
+        await expect(requireAuth(requestWithToken)).rejects.toMatchObject({ statusCode: 401 })
+    })
+
+    it('accepts privileged access only with an active persisted session', async () => {
+        authMocks.getUserById.mockResolvedValue({ id: accessTokenPayload.userId, role: 'admin' })
+        authMocks.verifyAccessToken.mockReturnValue({ ...accessTokenPayload, sessionId: 'session-id' })
+        sessionMocks.findUserSession.mockResolvedValue({
+            expiresAt: new Date(Date.now() + 60_000),
+            mfaVerifiedAt: new Date(),
+        })
+
+        await expect(requireAuth(requestWithToken)).resolves.toMatchObject({ role: 'admin' })
+        expect(sessionMocks.findUserSession).toHaveBeenCalledWith('session-id', accessTokenPayload.userId)
+    })
+
+    it('rejects a privileged session created before the second factor was verified', async () => {
+        authMocks.getUserById.mockResolvedValue({ id: accessTokenPayload.userId, role: 'admin' })
+        authMocks.verifyAccessToken.mockReturnValue({ ...accessTokenPayload, sessionId: 'session-id' })
+        sessionMocks.findUserSession.mockResolvedValue({
+            expiresAt: new Date(Date.now() + 60_000),
+            mfaVerifiedAt: null,
+        })
+
+        await expect(requireAuth(requestWithToken)).rejects.toMatchObject({ statusCode: 401 })
     })
 })
 

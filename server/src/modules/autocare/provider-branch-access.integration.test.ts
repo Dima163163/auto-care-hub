@@ -35,6 +35,7 @@ import {
 } from '../../entities/index.js'
 import { UserEntity, UserRole, UserStatus } from '../../entities/user/user.entity.js'
 import { createAuthTokens } from '../auth/auth.service.js'
+import { createTestAccessToken } from '../../test-support/auth-session.js'
 import {
     createAutoCareAttachmentObjectKey,
     removeAutoCareAttachmentObject,
@@ -564,7 +565,7 @@ describe('AutoCare branch-scoped HTTP authorization', () => {
 
         const decision = await request(app.server)
             .patch(`/admin/autocare-provider-change-requests/${pending.body.id}/decision`)
-            .set('Authorization', `Bearer ${token(admin)}`)
+            .set('Authorization', `Bearer ${await createTestAccessToken(admin)}`)
             .send({ status: 'approved', reason: 'The updated profile content is accurate.' })
 
         expect(decision.status).toBe(200)

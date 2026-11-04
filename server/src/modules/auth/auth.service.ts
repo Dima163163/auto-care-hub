@@ -58,6 +58,8 @@ import {
 import { recordSystemIncidentSafely } from '../admin/system-incidents.service.js'
 import { normalizeAuthEmail } from './email-policy.js'
 import { normalizeAuthUserName } from './user-input-policy.js'
+import { isAdminRole } from '../../shared/auth/roles.js'
+import { isPrivilegedMfaProvisioned, verifyPrivilegedMfa } from './privileged-mfa.service.js'
 import {
     assertPasswordSecurityPolicy,
     assertPasswordVerificationInput,
@@ -93,11 +95,13 @@ type RegisterInput = {
 type LoginInput = {
     email: string
     password: string
+    mfaCode?: string
 } & SessionInfo
 
 type CompletePasswordSetupInput = {
     token: string
     password: string
+    mfaCode?: string
 } & Pick<SessionInfo, 'userAgent' | 'ipAddress'>
 
 type CompletePasswordResetInput = {
@@ -373,6 +377,44 @@ export async function loginUser(input: LoginInput) {
         })
     }
 
+    if (isAdminRole(user.role)) {
+        if (!await isPrivilegedMfaProvisioned(user.id)) {
+            throw new AppError({
+                statusCode: 403,
+                code: ERROR_CODES.MfaEnrollmentRequired,
+                message: 'Authenticator enrollment is required for this privileged account.',
+            })
+        }
+        if (!input.mfaCode || !await verifyPrivilegedMfa(user.id, input.mfaCode)) {
+            const failedLogin = await recordFailedLogin(user.id)
+            const isLocked = isLoginLocked(failedLogin.lockedUntil, new Date())
+            await recordSecurityEvent({
+                actorId: user.id,
+                action: isLocked ? AuditAction.AccountLocked : AuditAction.LoginFailed,
+                targetId: user.id,
+                targetType: 'user',
+                request: input.request,
+                metadata: normalizeSecurityEventMetadata({
+                    failedLoginAttempts: failedLogin.failedLoginAttempts,
+                    lockedUntil: failedLogin.lockedUntil?.toISOString() ?? null,
+                    ipAddress: input.ipAddress ?? null,
+                }),
+            }, user.role)
+            if (isLocked) {
+                await enqueueSecurityNotificationSafely({
+                    type: 'account_locked',
+                    userId: user.id,
+                    lockedUntil: failedLogin.lockedUntil?.toISOString() ?? null,
+                })
+            }
+            throw new AppError({
+                statusCode: 401,
+                code: ERROR_CODES.Unauthorized,
+                message: 'Invalid sign-in credentials.',
+            })
+        }
+    }
+
     await resetFailedLogins(user)
 
     const session = await createUserSession({
@@ -380,6 +422,7 @@ export async function loginUser(input: LoginInput) {
         userAgent: input.userAgent,
         ipAddress: input.ipAddress,
         expiresAt: getRefreshSessionExpiry(),
+        mfaVerifiedAt: isAdminRole(user.role) ? new Date() : null,
     })
 
     const tokens = createAuthTokens(user, session.id, session.expiresAt)
@@ -466,9 +509,30 @@ export async function refreshAuth(
     request?: FastifyRequest,
 ) {
     const user = await getUserById(userId, tokenVersion)
+    if (isAdminRole(user.role) && !sessionId) {
+        throw new AppError({
+            statusCode: 401,
+            code: ERROR_CODES.Unauthorized,
+            message: 'A current session is required for privileged access.',
+        })
+    }
 
     let sessionExpiresAt: Date | undefined
     if (sessionId) {
+        if (isAdminRole(user.role)) {
+            const currentSession = await AppDataSource.getRepository(UserSessionEntity).findOne({
+                where: { id: sessionId, userId, revokedAt: IsNull() },
+            })
+            // A missing session must reach rotation's reuse-detection path,
+            // which revokes the user's other sessions and records the event.
+            if (currentSession && !currentSession.mfaVerifiedAt) {
+                throw new AppError({
+                    statusCode: 401,
+                    code: ERROR_CODES.Unauthorized,
+                    message: 'A verified second factor is required for privileged access.',
+                })
+            }
+        }
         const session = await rotateUserSession(sessionId, userId)
 
         if (!session) {
@@ -573,6 +637,23 @@ export async function completePasswordSetup(input: CompletePasswordSetupInput) {
                 })
             }
 
+            if (isAdminRole(user.role)) {
+                if (!await isPrivilegedMfaProvisioned(user.id)) {
+                    throw new AppError({
+                        statusCode: 403,
+                        code: ERROR_CODES.MfaEnrollmentRequired,
+                        message: 'Authenticator enrollment is required for this privileged account.',
+                    })
+                }
+                if (!input.mfaCode || !await verifyPrivilegedMfa(user.id, input.mfaCode, Date.now(), manager)) {
+                    throw new AppError({
+                        statusCode: 401,
+                        code: ERROR_CODES.Unauthorized,
+                        message: 'Invalid sign-in credentials.',
+                    })
+                }
+            }
+
             const password = await assertPasswordSecurityPolicy(input.password, {
                 mode: env.auth.breachedPasswordCheckMode,
                 timeoutMs: env.auth.breachedPasswordCheckTimeoutMs,
@@ -596,6 +677,7 @@ export async function completePasswordSetup(input: CompletePasswordSetupInput) {
                     ipAddress: metadata.ipAddress,
                     lastActiveAt: new Date(),
                     expiresAt: getRefreshSessionExpiry(),
+                    mfaVerifiedAt: isAdminRole(savedUser.role) ? new Date() : null,
                     revokedAt: null,
                     revocationReason: null,
                 }),

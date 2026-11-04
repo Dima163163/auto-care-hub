@@ -4,6 +4,7 @@ import { type UserEntity } from '../../entities/user/user.entity.js'
 import { ServiceRequestEntity, ServiceRequestStatus } from '../../entities/automotive/service-request.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
+import { createBlindIndex } from '../../shared/security/data-encryption/field-encryption.js'
 import { queueReviewModerationEvidence } from './moderation-evidence.service.js'
 import { normalizeAutoCareReviewContent } from './review-integrity-policy.js'
 import { normalizeAutoCareReviewUuid } from './review-input-policy.js'
@@ -96,10 +97,17 @@ export async function updateClientAutoCareReview(client: UserEntity, reviewId: s
         review.contentRevision += 1
         const saved = await repository.save(review)
         const evidenceRepository = manager.getRepository(AutoCareTrustEvidenceEntity)
-        await evidenceRepository.update(
-            { kind: 'review', referenceIndex: saved.id, status: 'pending' },
-            { status: 'superseded', notes: 'Отзыв изменён; это подтверждение относится к прежней версии.' },
-        )
+        const supersededEvidence = await evidenceRepository.createQueryBuilder('evidence')
+            .where('evidence.kind = :kind', { kind: 'review' })
+            .andWhere('evidence.referenceIndex = :referenceIndex', { referenceIndex: createBlindIndex(saved.id, 'evidence-reference') })
+            .andWhere('evidence.status = :status', { status: 'pending' })
+            .setLock('pessimistic_write')
+            .getMany()
+        for (const evidence of supersededEvidence) {
+            evidence.status = 'superseded'
+            evidence.notes = 'Отзыв изменён; это подтверждение относится к прежней версии.'
+        }
+        await evidenceRepository.save(supersededEvidence)
         await queueReviewModerationEvidence(manager, saved)
         return saved
     })

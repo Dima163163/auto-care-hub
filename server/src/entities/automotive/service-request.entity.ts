@@ -106,12 +106,15 @@ export class ServiceRequestEntity {
     @Column({ type: 'timestamptz', nullable: true }) cancelledAt!: Date | null
     @Column({ type: 'uuid', nullable: true }) cancelledById!: string | null
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_service_requests', 'cancellationReason', 'text') }) cancellationReason!: string | null
+    @Column({ type: 'text', nullable: true }) cancellationReasonBinding!: string | null
     @Column({ type: 'timestamptz', nullable: true }) noShowAt!: Date | null
     @Column({ type: 'uuid', nullable: true }) noShowById!: string | null
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_service_requests', 'noShowReason', 'text') }) noShowReason!: string | null
+    @Column({ type: 'text', nullable: true }) noShowReasonBinding!: string | null
     @Column({ type: 'timestamptz', nullable: true }) completedAt!: Date | null
     @Column({ type: 'uuid', nullable: true }) completedById!: string | null
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_service_requests', 'completionNote', 'text') }) completionNote!: string | null
+    @Column({ type: 'text', nullable: true }) completionNoteBinding!: string | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
     @UpdateDateColumn({ type: 'timestamptz' }) updatedAt!: Date
 }

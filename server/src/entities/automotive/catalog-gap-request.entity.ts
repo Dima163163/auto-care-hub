@@ -17,12 +17,16 @@ export class AutomotiveCatalogGapRequestEntity {
     @Column({ type: 'text' }) proposedSlug!: string
     @Column({ type: 'text' }) categorySlug!: string
     @Column({ type: 'jsonb', transformer: createEncryptedFieldTransformer('autocare_catalog_gap_requests', 'labels', 'jsonb') }) labels: Record<string, string> = {}
+    @Column({ type: 'text', nullable: true }) labelsBinding!: string | null
     @Column({ type: 'text' }) priceType!: string
     @Column({ type: 'jsonb', transformer: createEncryptedFieldTransformer('autocare_catalog_gap_requests', 'comparisonAttributes', 'jsonb') }) comparisonAttributes: string[] = []
+    @Column({ type: 'text', nullable: true }) comparisonAttributesBinding!: string | null
     @Column({ type: 'text', transformer: createEncryptedFieldTransformer('autocare_catalog_gap_requests', 'rationale', 'text') }) rationale!: string
+    @Column({ type: 'text', nullable: true }) rationaleBinding!: string | null
     @Column({ type: 'enum', enum: AutomotiveCatalogGapRequestStatus, enumName: 'autocare_catalog_gap_request_status', default: AutomotiveCatalogGapRequestStatus.Pending }) status!: AutomotiveCatalogGapRequestStatus
     @Column({ type: 'uuid', nullable: true }) reviewedById!: string | null
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_catalog_gap_requests', 'reviewReason', 'text') }) reviewReason!: string | null
+    @Column({ type: 'text', nullable: true }) reviewReasonBinding!: string | null
     @Column({ type: 'timestamptz', nullable: true }) reviewedAt!: Date | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
     @UpdateDateColumn({ type: 'timestamptz' }) updatedAt!: Date

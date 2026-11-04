@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 
 import {
   evaluateAdminRouteAuth,
@@ -51,4 +52,22 @@ test('generic route contract supports protected prefixes', () => {
   ].join('\n'), { prefix: '/admin/' })
   assert.deepEqual(results.map((result) => result.status), ['pass', 'blocked'])
   assert.match(formatOwnerRouteAuthResults(results), /PATCH \/admin\/unsafe-order.*authenticate before validating/i)
+})
+
+test('recognizes authenticated MFA wrappers before validation without weakening owner verification', () => {
+  const owner = evaluateOwnerRouteAuth([
+    "app.post('/owner/safe', async (request) => update(await requireFreshMfaForPrivilegedUser(request, true), validateBody(schema, request.body)))",
+    "app.post('/owner/unverified', async (request) => update(await requireFreshMfaForPrivilegedUser(request), validateBody(schema, request.body)))",
+    "app.post('/owner/unsafe-order', async (request) => update(validateBody(schema, request.body), await requireFreshMfaForPrivilegedUser(request, true)))",
+  ].join('\n'))
+  assert.deepEqual(owner.map((result) => result.status), ['pass', 'blocked', 'blocked'])
+  const admin = evaluateAdminRouteAuth("app.patch('/admin/safe', async (request) => update(await requireRecentPrivilegedMfa(request), validateBody(schema, request.body)))")
+  assert.deepEqual(admin.map((result) => result.status), ['pass'])
+})
+
+test('recognized MFA wrappers still authenticate the request in their implementations', () => {
+  const ownerSource = loadOwnerRouteSource()
+  const privilegedSource = readFileSync(new URL('../server/src/modules/auth/privileged-step-up.service.ts', import.meta.url), 'utf8')
+  assert.match(ownerSource, /async function requireFreshMfaForPrivilegedUser\([^)]*\)\s*\{\s*const user = verifiedEmail \? await requireVerifiedEmail\(request\) : await requireAuth\(request\)/)
+  assert.match(privilegedSource, /export async function requireRecentPrivilegedMfa\([^)]*\)[^{]*\{\s*const user = await requireAuth\(request\)/)
 })

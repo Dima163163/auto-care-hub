@@ -10,6 +10,12 @@ import {
     AutoCareChatThreadEntity,
     AutoCareChatThreadType,
     AutoCareRepairEventEntity,
+    AutoCareBroadcastRequestEntity,
+    AutoCareBroadcastOfferEntity,
+    AutoCareGuaranteeClaimEntity,
+    AutoCareExpertQuestionEntity,
+    AutoCareFleetAccountEntity,
+    AutoCareFleetVehicleEntity,
     AutomotiveMarketCountryEntity,
     AutomotiveMarketEntity,
     AutomotivePriceType,
@@ -36,6 +42,9 @@ import {
     AccountDeletionRequestStatus,
 } from '../../entities/account-deletion-request/account-deletion-request.entity.js'
 import { UserEntity, UserRole, UserStatus } from '../../entities/user/user.entity.js'
+import { UserMfaFactorEntity } from '../../entities/user-mfa/user-mfa-factor.entity.js'
+import { UserMfaRecoveryCodeEntity } from '../../entities/user-mfa/user-mfa-recovery-code.entity.js'
+import { encryptRecordBoundFieldValue } from '../../shared/security/data-encryption/field-encryption.js'
 import {
     createAutoCareAttachmentObjectKey,
     readAutoCareAttachmentObject,
@@ -87,6 +96,12 @@ describe('AutoCare account deletion retention invariants', () => {
     let providerMessage: ServiceMessageEntity
     let privateThread: AutoCareChatThreadEntity
     let repairEvent: AutoCareRepairEventEntity
+    let broadcastRequest: AutoCareBroadcastRequestEntity
+    let broadcastOffer: AutoCareBroadcastOfferEntity
+    let guaranteeClaim: AutoCareGuaranteeClaimEntity
+    let expertQuestion: AutoCareExpertQuestionEntity
+    let fleetAccount: AutoCareFleetAccountEntity
+    let fleetVehicle: AutoCareFleetVehicleEntity
     let deletionRequest: AccountDeletionRequestEntity
     let pendingOutboxId: string
     let completedOutboxId: string
@@ -104,6 +119,21 @@ describe('AutoCare account deletion retention invariants', () => {
             users.create({ name: 'Deletion Provider Owner', email: `deletion-owner-${suffix}@example.com`, role: UserRole.Owner, status: UserStatus.Active, passwordHash: 'hash', emailVerifiedAt: new Date() }),
         ])
         deletedOwnerEmail = deletedOwner.email
+        // A former admin may retain a factor after demotion. Deletion must
+        // remove its encrypted secret and all unused recovery hashes.
+        await AppDataSource.getRepository(UserMfaFactorEntity).save({
+            userId: deletedOwner.id,
+            secretCiphertext: JSON.stringify(encryptRecordBoundFieldValue(
+                'user_mfa_factors', 'secret', 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ',
+                { rowId: deletedOwner.id, ownerId: deletedOwner.id },
+            )),
+            lastAcceptedCounter: -1,
+        })
+        await AppDataSource.getRepository(UserMfaRecoveryCodeEntity).save({
+            userId: deletedOwner.id,
+            codeHash: 'a'.repeat(64),
+            consumedAt: null,
+        })
         const countries = AppDataSource.getRepository(AutomotiveMarketCountryEntity)
         country = await countries.save(countries.create({
             code: `RETENTION-${suffix}`,
@@ -282,6 +312,59 @@ describe('AutoCare account deletion retention invariants', () => {
             notes: 'Private repair note',
             metadata: { private: true },
         })
+        broadcastRequest = await AppDataSource.getRepository(AutoCareBroadcastRequestEntity).save({
+            clientId: deletedOwner.id,
+            serviceDefinitionId: definition.id,
+            marketId: market.id,
+            issueDescription: 'Private broadcast issue',
+            vehicleSnapshot: { make: 'Private car' },
+            photoUrls: ['private://autocare/broadcasts/deletion-fixture-photo'],
+            preferredAt: null,
+            status: 'open',
+            maxProviders: 5,
+            expiresAt: new Date(Date.now() + 86_400_000),
+        })
+        broadcastOffer = await AppDataSource.getRepository(AutoCareBroadcastOfferEntity).save({
+            broadcastRequestId: broadcastRequest.id,
+            providerId: provider.id,
+            locationId: location.id,
+            offerSnapshot: { amountMinor: 10000, currencyCode: 'RUB', note: 'Private offer note' },
+            status: 'pending',
+        })
+        guaranteeClaim = await AppDataSource.getRepository(AutoCareGuaranteeClaimEntity).save({
+            requestId: serviceRequest.id,
+            caseKey: serviceRequest.id,
+            clientId: deletedOwner.id,
+            providerId: provider.id,
+            claimType: 'quality',
+            status: 'submitted',
+            summary: 'Private guarantee issue',
+            evidenceUrls: [],
+            resolution: 'Private resolution',
+            resolvedById: superAdmin.id,
+            resolvedAt: new Date(),
+        })
+        expertQuestion = await AppDataSource.getRepository(AutoCareExpertQuestionEntity).save({
+            clientId: deletedOwner.id,
+            vehicleSnapshot: { make: 'Private car' },
+            symptoms: 'Private symptoms',
+            categorySlug: null,
+            status: 'answered',
+            answer: 'Private expert answer',
+            answeredById: superAdmin.id,
+            answeredAt: new Date(),
+        })
+        fleetAccount = await AppDataSource.getRepository(AutoCareFleetAccountEntity).save({
+            ownerId: deletedOwner.id,
+            name: 'Private fleet name',
+            notes: 'Private fleet notes',
+        })
+        fleetVehicle = await AppDataSource.getRepository(AutoCareFleetVehicleEntity).save({
+            fleetId: fleetAccount.id,
+            label: 'Private vehicle label',
+            vehicleSnapshot: { make: 'Private car' },
+            approvalPolicy: 'Private approval details',
+        })
         await AppDataSource.getRepository(AutomotiveProviderMembershipEntity).save({
             providerId: provider.id,
             userId: deletedOwner.id,
@@ -390,6 +473,9 @@ describe('AutoCare account deletion retention invariants', () => {
         await AppDataSource.getRepository(CabinetEntity).delete({ id: legacyCabinet?.id })
         await AppDataSource.getRepository(AutoCareChatThreadEntity).delete({ id: privateThread?.id })
         await AppDataSource.getRepository(ServiceRequestEntity).delete({ id: serviceRequest?.id })
+        await AppDataSource.getRepository(AutoCareBroadcastRequestEntity).delete({ id: broadcastRequest?.id })
+        await AppDataSource.getRepository(AutoCareExpertQuestionEntity).delete({ id: expertQuestion?.id })
+        await AppDataSource.getRepository(AutoCareFleetAccountEntity).delete({ id: fleetAccount?.id })
         await AppDataSource.getRepository(AutomotiveProviderEntity).delete({ id: provider?.id })
         await AppDataSource.getRepository(AutomotiveServiceDefinitionEntity).delete({ id: definition?.id })
         await AppDataSource.getRepository(AutomotiveServiceLocationEntity).delete({ id: location?.id })
@@ -449,21 +535,70 @@ describe('AutoCare account deletion retention invariants', () => {
             bookingSnapshotBinding: null,
             cancelledById: null,
             cancellationReason: null,
+            cancellationReasonBinding: null,
             noShowById: null,
             noShowReason: null,
+            noShowReasonBinding: null,
             completedById: null,
             completionNote: null,
+            completionNoteBinding: null,
         })
         const redactedRepairEvent = await AppDataSource.getRepository(AutoCareRepairEventEntity).findOneByOrFail({ id: repairEvent.id })
         expect(redactedRepairEvent).toMatchObject({
             actorId: null,
             title: 'Review removed after account deletion.',
             notes: null,
+            notesBinding: null,
             metadata: {},
         })
+        expect(redactedRepairEvent.titleBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(redactedRepairEvent.metadataBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        const redactedBroadcast = await AppDataSource.getRepository(AutoCareBroadcastRequestEntity).findOneByOrFail({ id: broadcastRequest.id })
+        expect(redactedBroadcast).toMatchObject({
+            issueDescription: 'Review removed after account deletion.',
+            vehicleSnapshot: null,
+            vehicleSnapshotBinding: null,
+            photoUrls: [],
+        })
+        expect(redactedBroadcast.issueDescriptionBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        const redactedOffer = await AppDataSource.getRepository(AutoCareBroadcastOfferEntity).findOneByOrFail({ id: broadcastOffer.id })
+        expect(redactedOffer.offerSnapshot).toEqual({ redacted: true })
+        expect(redactedOffer.offerSnapshotBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        const redactedClaim = await AppDataSource.getRepository(AutoCareGuaranteeClaimEntity).findOneByOrFail({ id: guaranteeClaim.id })
+        expect(redactedClaim).toMatchObject({
+            summary: 'Review removed after account deletion.',
+            resolution: null,
+            resolutionBinding: null,
+            evidenceUrls: [],
+        })
+        expect(redactedClaim.summaryBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        const redactedQuestion = await AppDataSource.getRepository(AutoCareExpertQuestionEntity).findOneByOrFail({ id: expertQuestion.id })
+        expect(redactedQuestion).toMatchObject({
+            symptoms: 'Review removed after account deletion.',
+            vehicleSnapshot: null,
+            vehicleSnapshotBinding: null,
+            answer: null,
+            answerBinding: null,
+        })
+        expect(redactedQuestion.symptomsBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        const redactedFleet = await AppDataSource.getRepository(AutoCareFleetAccountEntity).findOneByOrFail({ id: fleetAccount.id })
+        expect(redactedFleet.name).not.toBe('Private fleet name')
+        expect(redactedFleet.notes).toBeNull()
+        expect(redactedFleet.notesBinding).toBeNull()
+        expect(redactedFleet.nameBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        const redactedFleetVehicle = await AppDataSource.getRepository(AutoCareFleetVehicleEntity).findOneByOrFail({ id: fleetVehicle.id })
+        expect(redactedFleetVehicle).toMatchObject({
+            label: 'Deleted account',
+            vehicleSnapshot: {},
+            approvalPolicy: null,
+        })
+        expect(redactedFleetVehicle.labelBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(redactedFleetVehicle.vehicleSnapshotBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
         expect(await AppDataSource.getRepository(AutoCareBonusAccountEntity).countBy({ clientId: deletedOwner.id })).toBe(0)
         expect(await AppDataSource.getRepository(AutoCareBonusLedgerEntity).countBy({ clientId: deletedOwner.id })).toBe(0)
         expect(await AppDataSource.getRepository(AutomotiveProviderMembershipEntity).countBy({ userId: deletedOwner.id })).toBe(0)
+        expect(await AppDataSource.getRepository(UserMfaFactorEntity).countBy({ userId: deletedOwner.id })).toBe(0)
+        expect(await AppDataSource.getRepository(UserMfaRecoveryCodeEntity).countBy({ userId: deletedOwner.id })).toBe(0)
         expect(await AppDataSource.getRepository(AutomotiveProviderInvitationEntity).countBy({ invitedById: deletedOwner.id })).toBe(0)
         expect(await AppDataSource.getRepository(AutomotiveProviderInvitationEntity).countBy({ email: deletedOwnerEmail })).toBe(0)
 

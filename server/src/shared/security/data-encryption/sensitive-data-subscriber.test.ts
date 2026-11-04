@@ -5,6 +5,14 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { AutomotiveProviderInvitationEntity } from '../../../entities/automotive/provider-invitation.entity.js'
 import { UserEntity } from '../../../entities/user/user.entity.js'
 import { ClientVehicleEntity } from '../../../entities/user/client-vehicle.entity.js'
+import { BookingStatusHistoryEntity } from '../../../entities/booking/booking-status-history.entity.js'
+import { BookingStatus } from '../../../entities/booking/booking.entity.js'
+import { BookingEntity } from '../../../entities/booking/booking.entity.js'
+import { BookingRescheduleRequestEntity, BookingRescheduleStatus } from '../../../entities/booking/booking-reschedule-request.entity.js'
+import { AutoCareRescheduleRequestEntity, AutoCareRescheduleStatus } from '../../../entities/automotive/autocare-reschedule-request.entity.js'
+import { AutoCareServiceQuoteEntity } from '../../../entities/automotive/service-quote.entity.js'
+import { AutoCareChatBlockEntity, AutoCareChatBlockStatus, AutoCareChatReportEntity, AutoCareChatReportCategory, AutoCareChatReportStatus } from '../../../entities/automotive/chat-moderation.entity.js'
+import { AutoCareTrustEvidenceEntity } from '../../../entities/automotive/marketplace-enhancements.entity.js'
 import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.js'
 import { OAuthIdentityEntity, OAuthIdentityProvider } from '../../../entities/oauth-identity/oauth-identity.entity.js'
 import { AutoCareChatThreadEntity, AutoCareChatThreadType, ServiceMessageEntity, ServiceMessageKind, ServiceRequestEntity } from '../../../entities/automotive/service-request.entity.js'
@@ -899,6 +907,468 @@ describe('encrypted service request note record binding', () => {
         } finally {
             if (previous === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_NOTE_RECORD_BINDING
             else process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_NOTE_RECORD_BINDING = previous
+        }
+    })
+})
+
+describe('encrypted service request outcome record binding', () => {
+    function storedRequest() {
+        const request = new ServiceRequestEntity()
+        request.clientId = randomUUID()
+        request.providerId = randomUUID()
+        request.locationId = randomUUID()
+        request.definitionId = randomUUID()
+        request.cancellationReason = 'Changed plans'
+        request.noShowReason = 'Did not arrive'
+        request.completionNote = 'Finished work'
+        subscriber.beforeInsert({ metadata: { tableName: 'autocare_service_requests' }, entity: request } as InsertEvent<ServiceRequestEntity>)
+        return request
+    }
+
+    function loadRequest(request: ServiceRequestEntity) {
+        subscriber.afterLoad(request, { metadata: { tableName: 'autocare_service_requests' } } as LoadEvent<ServiceRequestEntity>)
+        return request
+    }
+
+    it('binds all outcome fields to row and service scope', () => {
+        const source = storedRequest()
+        const target = storedRequest()
+        expect(source.cancellationReasonBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(source.noShowReasonBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(source.completionNoteBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(loadRequest(source).completionNote).toBe('Finished work')
+        target.completionNote = source.completionNote
+        target.completionNoteBinding = source.completionNoteBinding
+        expect(() => loadRequest(target)).toThrow('Encrypted record binding authentication failed.')
+        source.clientId = randomUUID()
+        expect(() => loadRequest(source)).toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('rebinds updated text, clears null and enforces strict mode', () => {
+        const request = storedRequest()
+        const previous = request.cancellationReasonBinding
+        request.cancellationReason = 'Changed plans again'
+        subscriber.beforeUpdate({ metadata: { tableName: 'autocare_service_requests' }, entity: request } as UpdateEvent<ServiceRequestEntity>)
+        expect(request.cancellationReasonBinding).not.toBe(previous)
+        request.noShowReason = null
+        subscriber.beforeUpdate({ metadata: { tableName: 'autocare_service_requests' }, entity: request } as UpdateEvent<ServiceRequestEntity>)
+        expect(request.noShowReasonBinding).toBeNull()
+        request.noShowReasonBinding = previous
+        expect(() => loadRequest(request)).toThrow('Encrypted autocare_service_requests.noShowReason record binding is invalid.')
+        request.noShowReasonBinding = null
+        request.completionNoteBinding = null
+        expect(loadRequest(request).completionNote).toBe('Finished work')
+        const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_OUTCOME_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_OUTCOME_RECORD_BINDING = 'true'
+        try {
+            expect(() => loadRequest(request)).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_OUTCOME_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_OUTCOME_RECORD_BINDING = previousStrict
+        }
+    })
+})
+
+describe('encrypted booking status reason record binding', () => {
+    function storedHistory(reason: string | null) {
+        const history = new BookingStatusHistoryEntity()
+        history.bookingId = randomUUID()
+        history.status = BookingStatus.Cancelled
+        history.reason = reason
+        subscriber.beforeInsert({ metadata: { tableName: 'booking_status_history' }, entity: history } as InsertEvent<BookingStatusHistoryEntity>)
+        return history
+    }
+
+    function loadHistory(history: BookingStatusHistoryEntity) {
+        subscriber.afterLoad(history, { metadata: { tableName: 'booking_status_history' } } as LoadEvent<BookingStatusHistoryEntity>)
+        return history
+    }
+
+    it('binds reason to history row, booking and status', () => {
+        const source = storedHistory('Client cancelled')
+        const target = storedHistory('Other reason')
+        expect(source.reasonBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(loadHistory(source).reason).toBe('Client cancelled')
+        target.reason = source.reason
+        target.reasonBinding = source.reasonBinding
+        expect(() => loadHistory(target)).toThrow('Encrypted record binding authentication failed.')
+        source.status = BookingStatus.Completed
+        expect(() => loadHistory(source)).toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('handles null, updates and strict legacy reads', () => {
+        const history = storedHistory('Original reason')
+        const previous = history.reasonBinding
+        history.reason = 'Updated reason'
+        subscriber.beforeUpdate({ metadata: { tableName: 'booking_status_history' }, entity: history } as UpdateEvent<BookingStatusHistoryEntity>)
+        expect(history.reasonBinding).not.toBe(previous)
+        history.reason = null
+        subscriber.beforeUpdate({ metadata: { tableName: 'booking_status_history' }, entity: history } as UpdateEvent<BookingStatusHistoryEntity>)
+        expect(history.reasonBinding).toBeNull()
+        history.reasonBinding = previous
+        expect(() => loadHistory(history)).toThrow('Encrypted booking_status_history.reason record binding is invalid.')
+        history.reason = 'Legacy reason'
+        history.reasonBinding = null
+        expect(loadHistory(history).reason).toBe('Legacy reason')
+        const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_STATUS_REASON_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_STATUS_REASON_RECORD_BINDING = 'true'
+        try {
+            expect(() => loadHistory(history)).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_STATUS_REASON_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_STATUS_REASON_RECORD_BINDING = previousStrict
+        }
+    })
+})
+
+describe('encrypted booking text record binding', () => {
+    function storedBooking() {
+        const booking = new BookingEntity()
+        booking.clientId = randomUUID()
+        booking.cabinetId = randomUUID()
+        booking.serviceId = randomUUID()
+        booking.comment = 'Please call me'
+        booking.cancellationReason = 'Schedule changed'
+        booking.ownerNote = 'Client prefers morning'
+        subscriber.beforeInsert({ metadata: { tableName: 'bookings' }, entity: booking } as InsertEvent<BookingEntity>)
+        return booking
+    }
+
+    function loadBooking(booking: BookingEntity) {
+        subscriber.afterLoad(booking, { metadata: { tableName: 'bookings' } } as LoadEvent<BookingEntity>)
+        return booking
+    }
+
+    it('binds all three fields to booking, client, cabinet and service', () => {
+        const source = storedBooking()
+        const target = storedBooking()
+        expect(source.commentBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(source.cancellationReasonBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(source.ownerNoteBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(loadBooking(source).comment).toBe('Please call me')
+        target.comment = source.comment
+        target.commentBinding = source.commentBinding
+        expect(() => loadBooking(target)).toThrow('Encrypted record binding authentication failed.')
+        source.clientId = target.clientId
+        expect(() => loadBooking(source)).toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('updates bindings, rejects stale null bindings and gates legacy reads', () => {
+        const booking = storedBooking()
+        const previous = booking.ownerNoteBinding
+        booking.ownerNote = 'Changed note'
+        subscriber.beforeUpdate({ metadata: { tableName: 'bookings' }, entity: booking } as UpdateEvent<BookingEntity>)
+        expect(booking.ownerNoteBinding).not.toBe(previous)
+        booking.ownerNote = null
+        subscriber.beforeUpdate({ metadata: { tableName: 'bookings' }, entity: booking } as UpdateEvent<BookingEntity>)
+        expect(booking.ownerNoteBinding).toBeNull()
+        booking.ownerNoteBinding = previous
+        expect(() => loadBooking(booking)).toThrow('Encrypted bookings.ownerNote record binding is invalid.')
+        booking.ownerNoteBinding = null
+        booking.commentBinding = null
+        expect(loadBooking(booking).comment).toBe('Please call me')
+        const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_TEXT_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_TEXT_RECORD_BINDING = 'true'
+        try {
+            expect(() => loadBooking(booking)).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_TEXT_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_TEXT_RECORD_BINDING = previousStrict
+        }
+    })
+})
+
+describe('encrypted booking reschedule reason record binding', () => {
+    function storedRequest(reason: string | null) {
+        const request = new BookingRescheduleRequestEntity()
+        request.bookingId = randomUUID()
+        request.requestedById = randomUUID()
+        request.resolvedById = randomUUID()
+        request.status = BookingRescheduleStatus.Rejected
+        request.resolutionReason = reason
+        subscriber.beforeInsert({ metadata: { tableName: 'booking_reschedule_requests' }, entity: request } as InsertEvent<BookingRescheduleRequestEntity>)
+        return request
+    }
+
+    function loadRequest(request: BookingRescheduleRequestEntity) {
+        subscriber.afterLoad(request, { metadata: { tableName: 'booking_reschedule_requests' } } as LoadEvent<BookingRescheduleRequestEntity>)
+        return request
+    }
+
+    it('binds reason to request, booking, client, resolver and decision', () => {
+        const source = storedRequest('Slot unavailable')
+        const target = storedRequest('Other reason')
+        expect(source.resolutionReasonBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(loadRequest(source).resolutionReason).toBe('Slot unavailable')
+        target.resolutionReason = source.resolutionReason
+        target.resolutionReasonBinding = source.resolutionReasonBinding
+        expect(() => loadRequest(target)).toThrow('Encrypted record binding authentication failed.')
+        source.resolvedById = target.resolvedById
+        expect(() => loadRequest(source)).toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('handles null and strict legacy reads', () => {
+        const request = storedRequest('Original reason')
+        request.resolutionReason = null
+        subscriber.beforeUpdate({ metadata: { tableName: 'booking_reschedule_requests' }, entity: request } as UpdateEvent<BookingRescheduleRequestEntity>)
+        expect(request.resolutionReasonBinding).toBeNull()
+        request.resolutionReason = 'Legacy reason'
+        expect(loadRequest(request).resolutionReason).toBe('Legacy reason')
+        const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_RESCHEDULE_REASON_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_RESCHEDULE_REASON_RECORD_BINDING = 'true'
+        try {
+            expect(() => loadRequest(request)).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_RESCHEDULE_REASON_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_BOOKING_RESCHEDULE_REASON_RECORD_BINDING = previousStrict
+        }
+    })
+})
+
+describe('encrypted AutoCare reschedule text record binding', () => {
+    function storedRequest() {
+        const request = new AutoCareRescheduleRequestEntity()
+        request.requestId = randomUUID()
+        request.requestedById = randomUUID()
+        request.resolvedById = null
+        request.status = AutoCareRescheduleStatus.Pending
+        request.reason = 'Service needs a new slot'
+        request.resolutionReason = null
+        subscriber.beforeInsert({ metadata: { tableName: 'autocare_reschedule_requests' }, entity: request } as InsertEvent<AutoCareRescheduleRequestEntity>)
+        return request
+    }
+
+    function loadRequest(request: AutoCareRescheduleRequestEntity) {
+        subscriber.afterLoad(request, { metadata: { tableName: 'autocare_reschedule_requests' } } as LoadEvent<AutoCareRescheduleRequestEntity>)
+        return request
+    }
+
+    it('keeps proposal binding valid after decision while binding decision reason to resolver and status', () => {
+        const request = storedRequest()
+        const proposalBinding = request.reasonBinding
+        request.status = AutoCareRescheduleStatus.Rejected
+        request.resolvedById = randomUUID()
+        request.resolutionReason = 'Client unavailable'
+        subscriber.beforeUpdate({ metadata: { tableName: 'autocare_reschedule_requests' }, entity: request } as UpdateEvent<AutoCareRescheduleRequestEntity>)
+        expect(request.reasonBinding).toBe(proposalBinding)
+        expect(request.resolutionReasonBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(loadRequest(request).reason).toBe('Service needs a new slot')
+        request.resolvedById = randomUUID()
+        expect(() => loadRequest(request)).toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('rejects copied proposals and enforces the strict switch', () => {
+        const source = storedRequest()
+        const target = storedRequest()
+        target.reason = source.reason
+        target.reasonBinding = source.reasonBinding
+        expect(() => loadRequest(target)).toThrow('Encrypted record binding authentication failed.')
+        source.reasonBinding = null
+        expect(loadRequest(source).reason).toBe('Service needs a new slot')
+        const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_AUTOCARE_RESCHEDULE_TEXT_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_AUTOCARE_RESCHEDULE_TEXT_RECORD_BINDING = 'true'
+        try {
+            expect(() => loadRequest(source)).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_AUTOCARE_RESCHEDULE_TEXT_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_AUTOCARE_RESCHEDULE_TEXT_RECORD_BINDING = previousStrict
+        }
+    })
+})
+
+describe('encrypted service quote snapshot record binding', () => {
+    function storedQuote() {
+        const quote = new AutoCareServiceQuoteEntity()
+        quote.requestId = randomUUID()
+        quote.providerId = randomUUID()
+        quote.version = 1
+        quote.snapshot = { lineItems: [{ title: 'Repair', amountMinor: 1000 }] }
+        subscriber.beforeInsert({ metadata: { tableName: 'autocare_service_quotes' }, entity: quote } as InsertEvent<AutoCareServiceQuoteEntity>)
+        return quote
+    }
+
+    function loadQuote(quote: AutoCareServiceQuoteEntity) {
+        subscriber.afterLoad(quote, { metadata: { tableName: 'autocare_service_quotes' } } as LoadEvent<AutoCareServiceQuoteEntity>)
+        return quote
+    }
+
+    it('binds snapshot to quote, request, provider and version', () => {
+        const source = storedQuote()
+        const target = storedQuote()
+        expect(source.snapshotBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(loadQuote(source).snapshot).toHaveProperty('lineItems')
+        target.snapshot = source.snapshot
+        target.snapshotBinding = source.snapshotBinding
+        expect(() => loadQuote(target)).toThrow('Encrypted record binding authentication failed.')
+        source.version = 2
+        expect(() => loadQuote(source)).toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('rejects missing bindings after strict cutover', () => {
+        const quote = storedQuote()
+        quote.snapshotBinding = null
+        expect(loadQuote(quote).snapshot).toHaveProperty('lineItems')
+        const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_QUOTE_SNAPSHOT_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_QUOTE_SNAPSHOT_RECORD_BINDING = 'true'
+        try {
+            expect(() => loadQuote(quote)).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_QUOTE_SNAPSHOT_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_SERVICE_QUOTE_SNAPSHOT_RECORD_BINDING = previousStrict
+        }
+    })
+})
+
+describe('encrypted chat report text record binding', () => {
+    function storedReport() {
+        const report = new AutoCareChatReportEntity()
+        report.threadId = randomUUID()
+        report.reporterId = randomUUID()
+        report.category = AutoCareChatReportCategory.Other
+        report.status = AutoCareChatReportStatus.Pending
+        report.description = 'Unsafe message'
+        report.resolutionReason = null
+        report.assignmentReason = 'Review required'
+        report.extensionReason = 'More time needed'
+        subscriber.beforeInsert({ metadata: { tableName: 'autocare_chat_reports' }, entity: report } as InsertEvent<AutoCareChatReportEntity>)
+        return report
+    }
+
+    function loadReport(report: AutoCareChatReportEntity) {
+        subscriber.afterLoad(report, { metadata: { tableName: 'autocare_chat_reports' } } as LoadEvent<AutoCareChatReportEntity>)
+        return report
+    }
+
+    it('binds all private texts to report, thread and reporter', () => {
+        const source = storedReport()
+        const target = storedReport()
+        expect(source.descriptionBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(source.assignmentReasonBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(source.extensionReasonBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        source.status = AutoCareChatReportStatus.Resolved
+        source.resolutionReason = 'Reviewed case'
+        subscriber.beforeUpdate({ metadata: { tableName: 'autocare_chat_reports' }, entity: source } as UpdateEvent<AutoCareChatReportEntity>)
+        expect(source.resolutionReasonBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(loadReport(source).description).toBe('Unsafe message')
+        target.description = source.description
+        target.descriptionBinding = source.descriptionBinding
+        expect(() => loadReport(target)).toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('clears bindings with null and gates legacy reads', () => {
+        const report = storedReport()
+        report.assignmentReason = null
+        subscriber.beforeUpdate({ metadata: { tableName: 'autocare_chat_reports' }, entity: report } as UpdateEvent<AutoCareChatReportEntity>)
+        expect(report.assignmentReasonBinding).toBeNull()
+        report.descriptionBinding = null
+        expect(loadReport(report).description).toBe('Unsafe message')
+        const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_CHAT_REPORT_TEXT_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_CHAT_REPORT_TEXT_RECORD_BINDING = 'true'
+        try {
+            expect(() => loadReport(report)).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_CHAT_REPORT_TEXT_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_CHAT_REPORT_TEXT_RECORD_BINDING = previousStrict
+        }
+    })
+})
+
+describe('encrypted chat block reason record binding', () => {
+    function storedBlock(reason: string | null) {
+        const block = new AutoCareChatBlockEntity()
+        block.threadId = randomUUID()
+        block.blockerId = randomUUID()
+        block.blockedUserId = randomUUID()
+        block.status = AutoCareChatBlockStatus.Active
+        block.reason = reason
+        subscriber.beforeInsert({ metadata: { tableName: 'autocare_chat_blocks' }, entity: block } as InsertEvent<AutoCareChatBlockEntity>)
+        return block
+    }
+
+    function loadBlock(block: AutoCareChatBlockEntity) {
+        subscriber.afterLoad(block, { metadata: { tableName: 'autocare_chat_blocks' } } as LoadEvent<AutoCareChatBlockEntity>)
+        return block
+    }
+
+    it('binds reason to block, thread and both users across status changes', () => {
+        const source = storedBlock('Unsafe behavior')
+        const target = storedBlock('Other reason')
+        expect(source.reasonBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        source.status = AutoCareChatBlockStatus.Revoked
+        expect(loadBlock(source).reason).toBe('Unsafe behavior')
+        target.reason = source.reason
+        target.reasonBinding = source.reasonBinding
+        expect(() => loadBlock(target)).toThrow('Encrypted record binding authentication failed.')
+        source.blockedUserId = target.blockedUserId
+        expect(() => loadBlock(source)).toThrow('Encrypted record binding authentication failed.')
+    })
+
+    it('clears null binding and rejects legacy rows after strict cutover', () => {
+        const block = storedBlock('Original reason')
+        block.reason = null
+        subscriber.beforeUpdate({ metadata: { tableName: 'autocare_chat_blocks' }, entity: block } as UpdateEvent<AutoCareChatBlockEntity>)
+        expect(block.reasonBinding).toBeNull()
+        block.reason = 'Legacy reason'
+        expect(loadBlock(block).reason).toBe('Legacy reason')
+        const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_CHAT_BLOCK_REASON_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_CHAT_BLOCK_REASON_RECORD_BINDING = 'true'
+        try {
+            expect(() => loadBlock(block)).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_CHAT_BLOCK_REASON_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_CHAT_BLOCK_REASON_RECORD_BINDING = previousStrict
+        }
+    })
+})
+
+describe('encrypted trust evidence record binding', () => {
+    function storedEvidence() {
+        const evidence = new AutoCareTrustEvidenceEntity()
+        evidence.providerId = randomUUID()
+        evidence.kind = 'review'
+        evidence.reference = randomUUID()
+        evidence.referenceIndex = evidence.reference
+        evidence.notes = 'Moderator note'
+        subscriber.beforeInsert({ metadata: { tableName: 'autocare_trust_evidence' }, entity: evidence } as InsertEvent<AutoCareTrustEvidenceEntity>)
+        return evidence
+    }
+
+    function loadEvidence(evidence: AutoCareTrustEvidenceEntity) {
+        subscriber.afterLoad(evidence, { metadata: { tableName: 'autocare_trust_evidence' } } as LoadEvent<AutoCareTrustEvidenceEntity>)
+        return evidence
+    }
+
+    it('binds reference and notes to evidence/provider/kind and checks blind index', () => {
+        const source = storedEvidence()
+        const target = storedEvidence()
+        expect(source.referenceBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(source.notesBinding).toMatch(/^p2_[A-Za-z0-9_-]{43}$/)
+        expect(source.referenceIndex).toMatch(/^h1_[A-Za-z0-9_-]{43}$/)
+        expect(loadEvidence(source).reference).toBe(source.reference)
+        target.reference = source.reference
+        target.referenceIndex = source.referenceIndex
+        target.referenceBinding = source.referenceBinding
+        expect(() => loadEvidence(target)).toThrow('Encrypted record binding authentication failed.')
+        source.referenceIndex = 'h1_invalid'
+        expect(() => loadEvidence(source)).toThrow('Encrypted trust evidence reference index authentication failed.')
+    })
+
+    it('clears reference index and binding on null, then gates legacy rows', () => {
+        const evidence = storedEvidence()
+        evidence.reference = null
+        subscriber.beforeUpdate({ metadata: { tableName: 'autocare_trust_evidence' }, entity: evidence } as UpdateEvent<AutoCareTrustEvidenceEntity>)
+        expect(evidence.referenceIndex).toBeNull()
+        expect(evidence.referenceBinding).toBeNull()
+        evidence.reference = 'legacy-reference'
+        evidence.referenceIndex = createBlindIndex(evidence.reference, 'evidence-reference')
+        expect(loadEvidence(evidence).reference).toBe('legacy-reference')
+        const previousStrict = process.env.DATA_ENCRYPTION_REQUIRE_TRUST_EVIDENCE_RECORD_BINDING
+        process.env.DATA_ENCRYPTION_REQUIRE_TRUST_EVIDENCE_RECORD_BINDING = 'true'
+        try {
+            expect(() => loadEvidence(evidence)).toThrow('Encrypted record binding is missing.')
+        } finally {
+            if (previousStrict === undefined) delete process.env.DATA_ENCRYPTION_REQUIRE_TRUST_EVIDENCE_RECORD_BINDING
+            else process.env.DATA_ENCRYPTION_REQUIRE_TRUST_EVIDENCE_RECORD_BINDING = previousStrict
         }
     })
 })

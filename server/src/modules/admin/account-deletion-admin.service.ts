@@ -6,6 +6,8 @@ import {
 } from '../../entities/account-deletion-request/account-deletion-request.entity.js'
 import { UserEntity, UserStatus } from '../../entities/user/user.entity.js'
 import { UserSessionEntity } from '../../entities/user-session/user-session.entity.js'
+import { UserMfaFactorEntity } from '../../entities/user-mfa/user-mfa-factor.entity.js'
+import { UserMfaRecoveryCodeEntity } from '../../entities/user-mfa/user-mfa-recovery-code.entity.js'
 import { SecurityTokenEntity } from '../../entities/security-token/security-token.entity.js'
 import { OAuthIdentityEntity } from '../../entities/oauth-identity/oauth-identity.entity.js'
 import { OAuthLinkRequestEntity } from '../../entities/oauth-link-request/oauth-link-request.entity.js'
@@ -25,6 +27,16 @@ import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { createEmailBlindIndex, encryptRedactedFieldValue } from '../../shared/security/data-encryption/field-encryption.js'
 import { createPlaintextRecordBinding } from '../../shared/security/data-encryption/plaintext-record-binding.js'
 import { chatThreadRecordContext, type ChatThreadRecordScope } from '../../shared/security/data-encryption/chat-thread-record-scope.js'
+import { providerChangeRequestContext } from '../../shared/security/data-encryption/provider-change-request-record-binding.js'
+import { appealContext } from '../../shared/security/data-encryption/appeal-record-binding.js'
+import { catalogGapContext } from '../../shared/security/data-encryption/catalog-gap-record-binding.js'
+import { repairEventContext } from '../../shared/security/data-encryption/repair-event-record-binding.js'
+import { broadcastRequestContext } from '../../shared/security/data-encryption/broadcast-request-record-binding.js'
+import { broadcastOfferContext } from '../../shared/security/data-encryption/broadcast-offer-record-binding.js'
+import { guaranteeClaimContext } from '../../shared/security/data-encryption/guarantee-claim-record-binding.js'
+import { expertQuestionContext } from '../../shared/security/data-encryption/expert-question-record-binding.js'
+import { fleetAccountContext } from '../../shared/security/data-encryption/fleet-account-record-binding.js'
+import { fleetVehicleContext } from '../../shared/security/data-encryption/fleet-vehicle-record-binding.js'
 import { isSuperAdmin } from '../../shared/auth/roles.js'
 import {
     assertCursorDate,
@@ -44,6 +56,7 @@ import { getAutoCareProviderLogoFileName, removeAutoCareProviderLogo } from '../
 import { getAutoCareProviderMediaFileName, removeAutoCareProviderMedia } from '../autocare/autocare-provider-media-storage.js'
 import { deleteUploadedCabinetImages } from '../cabinets/cabinet-image-storage.js'
 import { assertAutoCareDeletionInvariants } from '../users/account-deletion-invariants.js'
+import { redactServiceQuoteSnapshots } from './service-quote-redaction.js'
 import {
     normalizeAccountDeletionRequestsQuery,
     normalizeAccountDeletionRequestUuid,
@@ -187,6 +200,8 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
     await userRepository.save(user)
 
     await manager.getRepository(UserSessionEntity).delete({ userId })
+    await manager.getRepository(UserMfaRecoveryCodeEntity).delete({ userId })
+    await manager.getRepository(UserMfaFactorEntity).delete({ userId })
     await manager.getRepository(SecurityTokenEntity).delete({ userId })
     await manager.getRepository(OAuthLinkRequestEntity).delete({ userId })
     await manager.getRepository(OAuthIdentityEntity).delete({ userId })
@@ -257,15 +272,101 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
              OR "completedById" = $1`,
         [userId],
     )
-    await manager.query('UPDATE "autocare_service_quotes" SET "snapshot" = $1 WHERE "requestId" IN (SELECT "id" FROM "autocare_service_requests" WHERE "clientId" = $2)', [encryptedRedactedJson('autocare_service_quotes', 'snapshot', { redacted: true }), userId])
-    await manager.query('UPDATE "autocare_broadcast_requests" SET "issueDescription" = $1, "vehicleSnapshot" = NULL, "photoUrls" = \'{}\' WHERE "clientId" = $2', [encryptedRedactedText('autocare_broadcast_requests', 'issueDescription', ANONYMIZED_REVIEW_TEXT), userId])
-    await manager.query('UPDATE "autocare_guarantee_claims" SET "summary" = $1, "evidenceUrls" = \'{}\', "resolution" = NULL WHERE "clientId" = $2', [encryptedRedactedText('autocare_guarantee_claims', 'summary', ANONYMIZED_REVIEW_TEXT), userId])
+    await redactServiceQuoteSnapshots(manager, userId)
+    const broadcastsToRedact = await manager.query(
+        'SELECT "id", "clientId", "serviceDefinitionId", "marketId" FROM "autocare_broadcast_requests" WHERE "clientId" = $1 ORDER BY "id" FOR UPDATE',
+        [userId],
+    ) as Array<{ id: string; clientId: string; serviceDefinitionId: string; marketId: string | null }>
+    const redactedBroadcastIssue = encryptedRedactedText('autocare_broadcast_requests', 'issueDescription', ANONYMIZED_REVIEW_TEXT)
+    for (const broadcast of broadcastsToRedact) {
+        const context = broadcastRequestContext(broadcast)
+        await manager.query(
+            `UPDATE "autocare_broadcast_requests" SET "issueDescription" = $2,
+                "issueDescriptionBinding" = $3, "vehicleSnapshot" = NULL,
+                "vehicleSnapshotBinding" = NULL, "photoUrls" = '{}' WHERE "id" = $1`,
+            [broadcast.id, redactedBroadcastIssue,
+                createPlaintextRecordBinding('autocare_broadcast_requests', 'issueDescription', ANONYMIZED_REVIEW_TEXT, broadcast.id, context)],
+        )
+    }
+    const broadcastOffersToRedact = await manager.query(
+        `SELECT offer."id", offer."broadcastRequestId", offer."providerId", offer."locationId"
+           FROM "autocare_broadcast_offers" offer
+           JOIN "autocare_broadcast_requests" request ON request."id" = offer."broadcastRequestId"
+          WHERE request."clientId" = $1 ORDER BY offer."id" FOR UPDATE OF offer`,
+        [userId],
+    ) as Array<{ id: string; broadcastRequestId: string; providerId: string; locationId: string }>
+    const redactedOfferSnapshot = { redacted: true }
+    const encryptedRedactedOfferSnapshot = encryptedRedactedJson('autocare_broadcast_offers', 'offerSnapshot', redactedOfferSnapshot)
+    for (const offer of broadcastOffersToRedact) {
+        await manager.query(
+            'UPDATE "autocare_broadcast_offers" SET "offerSnapshot" = $2::jsonb, "offerSnapshotBinding" = $3 WHERE "id" = $1',
+            [offer.id, encryptedRedactedOfferSnapshot,
+                createPlaintextRecordBinding('autocare_broadcast_offers', 'offerSnapshot',
+                    JSON.stringify(redactedOfferSnapshot), offer.id, broadcastOfferContext(offer))],
+        )
+    }
+    const guaranteeClaimsToRedact = await manager.query(
+        'SELECT "id", "requestId", "clientId", "providerId", "claimType" FROM "autocare_guarantee_claims" WHERE "clientId" = $1 ORDER BY "id" FOR UPDATE',
+        [userId],
+    ) as Array<{ id: string; requestId: string; clientId: string; providerId: string; claimType: string }>
+    const redactedGuaranteeSummary = encryptedRedactedText('autocare_guarantee_claims', 'summary', ANONYMIZED_REVIEW_TEXT)
+    for (const claim of guaranteeClaimsToRedact) {
+        await manager.query(
+            `UPDATE "autocare_guarantee_claims" SET "summary" = $2, "summaryBinding" = $3,
+                "evidenceUrls" = '{}', "resolution" = NULL, "resolutionBinding" = NULL WHERE "id" = $1`,
+            [claim.id, redactedGuaranteeSummary,
+                createPlaintextRecordBinding('autocare_guarantee_claims', 'summary', ANONYMIZED_REVIEW_TEXT, claim.id, guaranteeClaimContext(claim))],
+        )
+    }
     await manager.query('UPDATE "autocare_guarantee_claims" SET "resolvedById" = NULL WHERE "resolvedById" = $1', [userId])
-    await manager.query('UPDATE "autocare_expert_questions" SET "symptoms" = $1, "vehicleSnapshot" = NULL, "answer" = NULL WHERE "clientId" = $2', [encryptedRedactedText('autocare_expert_questions', 'symptoms', ANONYMIZED_REVIEW_TEXT), userId])
+    const expertQuestionsToRedact = await manager.query(
+        'SELECT "id", "clientId" FROM "autocare_expert_questions" WHERE "clientId" = $1 ORDER BY "id" FOR UPDATE',
+        [userId],
+    ) as Array<{ id: string; clientId: string }>
+    const redactedExpertSymptoms = encryptedRedactedText('autocare_expert_questions', 'symptoms', ANONYMIZED_REVIEW_TEXT)
+    for (const question of expertQuestionsToRedact) {
+        await manager.query(
+            `UPDATE "autocare_expert_questions" SET "symptoms" = $2, "symptomsBinding" = $3,
+                "vehicleSnapshot" = NULL, "vehicleSnapshotBinding" = NULL,
+                "answer" = NULL, "answerBinding" = NULL WHERE "id" = $1`,
+            [question.id, redactedExpertSymptoms,
+                createPlaintextRecordBinding('autocare_expert_questions', 'symptoms', ANONYMIZED_REVIEW_TEXT, question.id, expertQuestionContext(question))],
+        )
+    }
     await manager.query('UPDATE "autocare_expert_questions" SET "answeredById" = NULL WHERE "answeredById" = $1', [userId])
-    await manager.query('UPDATE "autocare_fleet_accounts" SET "notes" = NULL WHERE "ownerId" = $1', [userId])
-    await manager.query('UPDATE "autocare_fleet_vehicles" SET "label" = $1, "vehicleSnapshot" = $2, "approvalPolicy" = NULL WHERE "fleetId" IN (SELECT "id" FROM "autocare_fleet_accounts" WHERE "ownerId" = $3)', [encryptedRedactedText('autocare_fleet_vehicles', 'label', identity.name), encryptedRedactedJson('autocare_fleet_vehicles', 'vehicleSnapshot', {}), userId])
-    await manager.query('UPDATE "autocare_service_requests" SET "cancellationReason" = NULL, "noShowReason" = NULL, "completionNote" = NULL WHERE "clientId" = $1', [userId])
+    const fleetsToRedact = await manager.query(
+        'SELECT "id", "ownerId" FROM "autocare_fleet_accounts" WHERE "ownerId" = $1 ORDER BY "id" FOR UPDATE',
+        [userId],
+    ) as Array<{ id: string; ownerId: string }>
+    const redactedFleetName = encryptedRedactedText('autocare_fleet_accounts', 'name', identity.name)
+    for (const fleet of fleetsToRedact) {
+        await manager.query(
+            'UPDATE "autocare_fleet_accounts" SET "name" = $2, "nameBinding" = $3, "notes" = NULL, "notesBinding" = NULL WHERE "id" = $1',
+            [fleet.id, redactedFleetName,
+                createPlaintextRecordBinding('autocare_fleet_accounts', 'name', identity.name, fleet.id, fleetAccountContext(fleet))],
+        )
+    }
+    const fleetVehiclesToRedact = await manager.query(
+        `SELECT vehicle."id", vehicle."fleetId" FROM "autocare_fleet_vehicles" vehicle
+           JOIN "autocare_fleet_accounts" fleet ON fleet."id" = vehicle."fleetId"
+          WHERE fleet."ownerId" = $1 ORDER BY vehicle."id" FOR UPDATE OF vehicle`,
+        [userId],
+    ) as Array<{ id: string; fleetId: string }>
+    const redactedFleetVehicleLabel = encryptedRedactedText('autocare_fleet_vehicles', 'label', identity.name)
+    const redactedFleetVehicleSnapshot = encryptedRedactedJson('autocare_fleet_vehicles', 'vehicleSnapshot', {})
+    for (const vehicle of fleetVehiclesToRedact) {
+        const context = fleetVehicleContext(vehicle)
+        await manager.query(
+            `UPDATE "autocare_fleet_vehicles" SET "label" = $2, "labelBinding" = $3,
+                "vehicleSnapshot" = $4::jsonb, "vehicleSnapshotBinding" = $5,
+                "approvalPolicy" = NULL WHERE "id" = $1`,
+            [vehicle.id, redactedFleetVehicleLabel,
+                createPlaintextRecordBinding('autocare_fleet_vehicles', 'label', identity.name, vehicle.id, context),
+                redactedFleetVehicleSnapshot,
+                createPlaintextRecordBinding('autocare_fleet_vehicles', 'vehicleSnapshot', '{}', vehicle.id, context)],
+        )
+    }
+    await manager.query('UPDATE "autocare_service_requests" SET "cancellationReason" = NULL, "cancellationReasonBinding" = NULL, "noShowReason" = NULL, "noShowReasonBinding" = NULL, "completionNote" = NULL, "completionNoteBinding" = NULL WHERE "clientId" = $1', [userId])
     await manager.query(
         `UPDATE "autocare_service_messages"
             SET "body" = NULL, "bodyBinding" = NULL, "offer" = NULL, "offerBinding" = NULL
@@ -274,8 +375,8 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
              OR "threadId" IN (SELECT "id" FROM "autocare_chat_threads" WHERE "clientId" = $1 OR "createdById" = $1)`,
         [userId],
     )
-    await manager.query('UPDATE "autocare_chat_reports" SET "description" = NULL, "reportedUserId" = NULL, "reviewedById" = NULL, "resolutionReason" = NULL, "assignmentReason" = NULL, "extensionReason" = NULL WHERE "reporterId" = $1 OR "reportedUserId" = $1 OR "reviewedById" = $1 OR "assignedModeratorId" = $1 OR "assignedById" = $1 OR "threadId" IN (SELECT "id" FROM "autocare_chat_threads" WHERE "clientId" = $1 OR "createdById" = $1)', [userId])
-    await manager.query('UPDATE "autocare_chat_blocks" SET "reason" = NULL WHERE "blockerId" = $1 OR "blockedUserId" = $1 OR "threadId" IN (SELECT "id" FROM "autocare_chat_threads" WHERE "clientId" = $1 OR "createdById" = $1)', [userId])
+    await manager.query('UPDATE "autocare_chat_reports" SET "description" = NULL, "descriptionBinding" = NULL, "reportedUserId" = NULL, "reviewedById" = NULL, "resolutionReason" = NULL, "resolutionReasonBinding" = NULL, "assignmentReason" = NULL, "assignmentReasonBinding" = NULL, "extensionReason" = NULL, "extensionReasonBinding" = NULL WHERE "reporterId" = $1 OR "reportedUserId" = $1 OR "reviewedById" = $1 OR "assignedModeratorId" = $1 OR "assignedById" = $1 OR "threadId" IN (SELECT "id" FROM "autocare_chat_threads" WHERE "clientId" = $1 OR "createdById" = $1)', [userId])
+    await manager.query('UPDATE "autocare_chat_blocks" SET "reason" = NULL, "reasonBinding" = NULL WHERE "blockerId" = $1 OR "blockedUserId" = $1 OR "threadId" IN (SELECT "id" FROM "autocare_chat_threads" WHERE "clientId" = $1 OR "createdById" = $1)', [userId])
     const threadsToRedact = await manager.query(
         'SELECT "id", "type", "requestId", "providerId" FROM "autocare_chat_threads" WHERE "clientId" = $1 OR "createdById" = $1 ORDER BY "id" FOR UPDATE',
         [userId],
@@ -289,31 +390,88 @@ async function anonymizeAccount(manager: EntityManager, userId: string) {
             [thread.id, redactedChatSubject, binding],
         )
     }
-    await manager.query(
-        `UPDATE "autocare_repair_events"
-            SET "actorId" = NULL, "title" = $2, "notes" = NULL, "metadata" = $3
+    const repairEventsToRedact = await manager.query(
+        `SELECT "id", "requestId", "eventType" FROM "autocare_repair_events"
           WHERE "actorId" = $1
-             OR "requestId" IN (SELECT "id" FROM "autocare_service_requests" WHERE "clientId" = $1)`,
-        [userId, encryptedRedactedText('autocare_repair_events', 'title', ANONYMIZED_REVIEW_TEXT), encryptedRedactedJson('autocare_repair_events', 'metadata', {})],
-    )
-    await manager.query('UPDATE "autocare_trust_evidence" SET "verifiedById" = NULL, "reference" = NULL, "notes" = NULL WHERE "verifiedById" = $1 OR "providerId" = ANY($2::uuid[])', [userId, ownedProviders.map(({ id }) => id)])
-    await manager.query('UPDATE "autocare_provider_change_requests" SET "payload" = $1, "reviewedById" = NULL, "reviewReason" = NULL WHERE "requestedById" = $2', [encryptedRedactedJson('autocare_provider_change_requests', 'payload', { redacted: true }), userId])
-    await manager.query('UPDATE "autocare_provider_change_requests" SET "reviewedById" = NULL, "reviewReason" = NULL WHERE "reviewedById" = $1', [userId])
-    await manager.query('UPDATE "autocare_catalog_gap_requests" SET "labels" = $1, "comparisonAttributes" = $2, "rationale" = $3, "reviewedById" = NULL, "reviewReason" = NULL WHERE "requestedById" = $4', [encryptedRedactedJson('autocare_catalog_gap_requests', 'labels', {}), encryptedRedactedJson('autocare_catalog_gap_requests', 'comparisonAttributes', []), encryptedRedactedText('autocare_catalog_gap_requests', 'rationale', ANONYMIZED_REVIEW_TEXT), userId])
-    await manager.query('UPDATE "autocare_catalog_gap_requests" SET "reviewedById" = NULL, "reviewReason" = NULL WHERE "reviewedById" = $1', [userId])
-    await manager.query('UPDATE "autocare_appeals" SET "reason" = $1, "evidenceIds" = \'{}\', "decidedById" = NULL, "decisionReason" = NULL WHERE "submittedById" = $2', [encryptedRedactedText('autocare_appeals', 'reason', ANONYMIZED_REVIEW_TEXT), userId])
-    await manager.query('UPDATE "autocare_appeals" SET "decidedById" = NULL, "decisionReason" = NULL WHERE "decidedById" = $1', [userId])
+             OR "requestId" IN (SELECT "id" FROM "autocare_service_requests" WHERE "clientId" = $1)
+          ORDER BY "id" FOR UPDATE`,
+        [userId],
+    ) as Array<{ id: string; requestId: string; eventType: string }>
+    const redactedRepairTitle = encryptedRedactedText('autocare_repair_events', 'title', ANONYMIZED_REVIEW_TEXT)
+    const redactedRepairMetadata = encryptedRedactedJson('autocare_repair_events', 'metadata', {})
+    for (const repairEvent of repairEventsToRedact) {
+        const context = repairEventContext(repairEvent)
+        await manager.query(
+            `UPDATE "autocare_repair_events" SET "actorId" = NULL, "title" = $2,
+                "titleBinding" = $3, "notes" = NULL, "notesBinding" = NULL,
+                "metadata" = $4::jsonb, "metadataBinding" = $5 WHERE "id" = $1`,
+            [repairEvent.id, redactedRepairTitle,
+                createPlaintextRecordBinding('autocare_repair_events', 'title', ANONYMIZED_REVIEW_TEXT, repairEvent.id, context),
+                redactedRepairMetadata,
+                createPlaintextRecordBinding('autocare_repair_events', 'metadata', '{}', repairEvent.id, context)],
+        )
+    }
+    await manager.query('UPDATE "autocare_trust_evidence" SET "verifiedById" = NULL, "reference" = NULL, "referenceIndex" = NULL, "referenceBinding" = NULL, "notes" = NULL, "notesBinding" = NULL WHERE "verifiedById" = $1 OR "providerId" = ANY($2::uuid[])', [userId, ownedProviders.map(({ id }) => id)])
+    const providerChangesToRedact = await manager.query(
+        'SELECT "id", "providerId", "requestedById", "kind" FROM "autocare_provider_change_requests" WHERE "requestedById" = $1 ORDER BY "id" FOR UPDATE',
+        [userId],
+    ) as Array<{ id: string; providerId: string; requestedById: string; kind: string }>
+    const redactedProviderChangePayload = { redacted: true }
+    const encryptedProviderChangePayload = encryptedRedactedJson('autocare_provider_change_requests', 'payload', redactedProviderChangePayload)
+    for (const change of providerChangesToRedact) {
+        const context = providerChangeRequestContext(change)
+        const binding = createPlaintextRecordBinding('autocare_provider_change_requests', 'payload',
+            JSON.stringify(redactedProviderChangePayload), change.id, context)
+        await manager.query(
+            'UPDATE "autocare_provider_change_requests" SET "payload" = $2::jsonb, "payloadBinding" = $3, "reviewedById" = NULL, "reviewReason" = NULL, "reviewReasonBinding" = NULL WHERE "id" = $1',
+            [change.id, encryptedProviderChangePayload, binding],
+        )
+    }
+    await manager.query('UPDATE "autocare_provider_change_requests" SET "reviewedById" = NULL, "reviewReason" = NULL, "reviewReasonBinding" = NULL WHERE "reviewedById" = $1', [userId])
+    const gapsToRedact = await manager.query(
+        'SELECT "id", "requestedById", "providerId", "proposedSlug", "categorySlug", "priceType" FROM "autocare_catalog_gap_requests" WHERE "requestedById" = $1 ORDER BY "id" FOR UPDATE',
+        [userId],
+    ) as Array<{ id: string; requestedById: string; providerId: string | null; proposedSlug: string; categorySlug: string; priceType: string }>
+    const redactedLabels = encryptedRedactedJson('autocare_catalog_gap_requests', 'labels', {})
+    const redactedAttributes = encryptedRedactedJson('autocare_catalog_gap_requests', 'comparisonAttributes', [])
+    const redactedRationale = encryptedRedactedText('autocare_catalog_gap_requests', 'rationale', ANONYMIZED_REVIEW_TEXT)
+    for (const gap of gapsToRedact) {
+        const context = catalogGapContext(gap)
+        const labelsBinding = createPlaintextRecordBinding('autocare_catalog_gap_requests', 'labels', '{}', gap.id, context)
+        const attributesBinding = createPlaintextRecordBinding('autocare_catalog_gap_requests', 'comparisonAttributes', '[]', gap.id, context)
+        const rationaleBinding = createPlaintextRecordBinding('autocare_catalog_gap_requests', 'rationale', ANONYMIZED_REVIEW_TEXT, gap.id, context)
+        await manager.query(
+            'UPDATE "autocare_catalog_gap_requests" SET "labels" = $2::jsonb, "labelsBinding" = $3, "comparisonAttributes" = $4::jsonb, "comparisonAttributesBinding" = $5, "rationale" = $6, "rationaleBinding" = $7, "reviewedById" = NULL, "reviewReason" = NULL, "reviewReasonBinding" = NULL WHERE "id" = $1',
+            [gap.id, redactedLabels, labelsBinding, redactedAttributes, attributesBinding,
+                redactedRationale, rationaleBinding],
+        )
+    }
+    await manager.query('UPDATE "autocare_catalog_gap_requests" SET "reviewedById" = NULL, "reviewReason" = NULL, "reviewReasonBinding" = NULL WHERE "reviewedById" = $1', [userId])
+    const appealsToRedact = await manager.query(
+        'SELECT "id", "subject", "subjectId", "submittedById", "providerId" FROM "autocare_appeals" WHERE "submittedById" = $1 ORDER BY "id" FOR UPDATE',
+        [userId],
+    ) as Array<{ id: string; subject: string; subjectId: string; submittedById: string; providerId: string | null }>
+    const redactedAppealReason = encryptedRedactedText('autocare_appeals', 'reason', ANONYMIZED_REVIEW_TEXT)
+    for (const appeal of appealsToRedact) {
+        const binding = createPlaintextRecordBinding('autocare_appeals', 'reason',
+            ANONYMIZED_REVIEW_TEXT, appeal.id, appealContext(appeal))
+        await manager.query(
+            'UPDATE "autocare_appeals" SET "reason" = $2, "reasonBinding" = $3, "evidenceIds" = \'{}\', "decidedById" = NULL, "decisionReason" = NULL, "decisionReasonBinding" = NULL WHERE "id" = $1',
+            [appeal.id, redactedAppealReason, binding],
+        )
+    }
+    await manager.query('UPDATE "autocare_appeals" SET "decidedById" = NULL, "decisionReason" = NULL, "decisionReasonBinding" = NULL WHERE "decidedById" = $1', [userId])
     await manager.query(
         `UPDATE "autocare_reschedule_requests"
-            SET "reason" = NULL, "resolvedById" = NULL, "resolutionReason" = NULL
+            SET "reason" = NULL, "reasonBinding" = NULL, "resolvedById" = NULL, "resolutionReason" = NULL, "resolutionReasonBinding" = NULL
           WHERE "requestedById" = $1
              OR "resolvedById" = $1
              OR "requestId" IN (SELECT "id" FROM "autocare_service_requests" WHERE "clientId" = $1)`,
         [userId],
     )
-    await manager.query('UPDATE "booking_reschedule_requests" SET "resolvedById" = NULL, "resolutionReason" = NULL WHERE "requestedById" = $1 OR "resolvedById" = $1 OR "bookingId" IN (SELECT "id" FROM "bookings" WHERE "clientId" = $1)', [userId])
-    await manager.query('UPDATE "booking_status_history" SET "changedById" = NULL, "reason" = NULL WHERE "changedById" = $1 OR "bookingId" IN (SELECT "id" FROM "bookings" WHERE "clientId" = $1)', [userId])
-    await manager.query('UPDATE "bookings" SET "comment" = NULL, "cancellationReason" = NULL, "ownerNote" = NULL WHERE "clientId" = $1', [userId])
+    await manager.query('UPDATE "booking_reschedule_requests" SET "resolvedById" = NULL, "resolutionReason" = NULL, "resolutionReasonBinding" = NULL WHERE "requestedById" = $1 OR "resolvedById" = $1 OR "bookingId" IN (SELECT "id" FROM "bookings" WHERE "clientId" = $1)', [userId])
+    await manager.query('UPDATE "booking_status_history" SET "changedById" = NULL, "reason" = NULL, "reasonBinding" = NULL WHERE "changedById" = $1 OR "bookingId" IN (SELECT "id" FROM "bookings" WHERE "clientId" = $1)', [userId])
+    await manager.query('UPDATE "bookings" SET "comment" = NULL, "commentBinding" = NULL, "cancellationReason" = NULL, "cancellationReasonBinding" = NULL, "ownerNote" = NULL, "ownerNoteBinding" = NULL WHERE "clientId" = $1', [userId])
     await manager.query('UPDATE "autocare_trust_policy" SET "updatedById" = NULL WHERE "updatedById" = $1', [userId])
     await manager.query('UPDATE "autocare_bonus_ledger" SET "actorId" = NULL WHERE "actorId" = $1', [userId])
     await manager.query('UPDATE "security_event_actions" SET "assignee_id" = NULL WHERE "assignee_id" = $1', [userId])

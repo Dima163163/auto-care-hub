@@ -6,7 +6,7 @@ import { NotificationCategory } from '../../entities/notification/notification.e
 import { AuditAction } from '../../entities/audit-log/audit-log.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
-import { calculateAutoCareChatExtendedExpiry, normalizeAutoCareChatModeratorAssignment, normalizeAutoCareChatModeratorExtension, normalizeAutoCareChatReportUuid } from './chat-moderation-policy.js'
+import { calculateAutoCareChatExtendedExpiry, isAutoCareChatReportParty, normalizeAutoCareChatModeratorAssignment, normalizeAutoCareChatModeratorExtension, normalizeAutoCareChatReportUuid } from './chat-moderation-policy.js'
 import { recordAuditLog } from '../admin/audit-log.service.js'
 import { enqueueNotification } from '../outbox/notification-outbox.service.js'
 import { lockThreadForMutation } from './chat-access.service.js'
@@ -34,6 +34,11 @@ export async function assignAdminAutoCareChatModerator(user: UserEntity, reportI
             const moderator = await manager.getRepository(UserEntity).findOneBy({ id: normalizedInput.moderatorId })
             if (!moderator || moderator.role !== UserRole.Admin || moderator.status !== UserStatus.Active) fail(400, 'The moderator must be an active administrator.')
         }
+        const threadReports = await reports.find({ where: { threadId: lockedThread.id } })
+        if (threadReports.some((item) => isAutoCareChatReportParty(item, user.id))) fail(403, 'A chat report party cannot assign a moderator for this thread.')
+        const pending = threadReports.filter((item) => item.status === AutoCareChatReportStatus.Pending)
+        const targetModeratorId = normalizedInput.moderatorId
+        if (targetModeratorId && threadReports.some((item) => isAutoCareChatReportParty(item, targetModeratorId))) fail(403, 'A chat report party cannot be assigned as moderator.')
         const now = new Date()
         if (normalizedInput.moderatorId
             && lockedReport.assignedModeratorId === normalizedInput.moderatorId
@@ -47,7 +52,6 @@ export async function assignAdminAutoCareChatModerator(user: UserEntity, reportI
             select: { id: true, threadId: true, requestId: true, kind: true, deletedAt: true },
         })
         if (!anchor || anchor.threadId !== lockedThread.id || anchor.kind !== ServiceMessageKind.Text || anchor.deletedAt) fail(409, 'This report does not reference an eligible message in the service-request thread.')
-        const pending = await reports.find({ where: { threadId: lockedThread.id, status: AutoCareChatReportStatus.Pending } })
         const assignable = pending.filter((item) => item.reportedMessageId && item.acknowledgedAt && item.policyVersion)
         const accessExpiresAt = normalizedInput.moderatorId ? new Date(now.getTime() + 24 * 60 * 60_000) : null
         const extensionAlreadyUsed = assignable.some((item) => item.extensionUsed)
@@ -97,6 +101,7 @@ export async function extendAdminAutoCareChatModeratorAccess(user: UserEntity, r
     const reports = AppDataSource.getRepository(AutoCareChatReportEntity)
     const report = await reports.findOneBy({ id: normalizedReportId })
     if (!report) fail(404, 'Chat report not found.')
+    if (isAutoCareChatReportParty(report, user.id)) fail(403, 'A chat report party cannot extend moderation access.')
     if (user.role === UserRole.Admin && report.assignedModeratorId !== user.id) fail(403, 'Only the assigned moderator can extend this access.')
     const thread = await AppDataSource.getRepository(AutoCareChatThreadEntity).findOneBy({ id: report.threadId })
     if (!thread) fail(404, 'Chat not found.')
@@ -106,10 +111,13 @@ export async function extendAdminAutoCareChatModeratorAccess(user: UserEntity, r
         if (lockedThread.type !== AutoCareChatThreadType.ServiceRequest || !lockedThread.requestId) fail(409, 'Moderator access can only be extended for a service-request thread.')
         const lockedReport = await manager.getRepository(AutoCareChatReportEntity).findOne({ where: { id: normalizedReportId }, lock: { mode: 'pessimistic_write' } })
         if (!lockedReport) fail(404, 'Chat report not found.')
+        if (isAutoCareChatReportParty(lockedReport, user.id)) fail(403, 'A chat report party cannot extend moderation access.')
         if (lockedReport.status !== AutoCareChatReportStatus.Pending || !lockedReport.assignedModeratorId) fail(409, 'Only an assigned pending report can be extended.')
         if (!lockedReport.reportedMessageId || !lockedReport.acknowledgedAt || !lockedReport.policyVersion) fail(409, 'This report has no message-level consent for moderator access.')
         if (user.role === UserRole.Admin && lockedReport.assignedModeratorId !== user.id) fail(403, 'Only the assigned moderator can extend this access.')
-        const pendingReports = (await manager.getRepository(AutoCareChatReportEntity).find({ where: { threadId: thread.id, status: AutoCareChatReportStatus.Pending } })).filter((active) => active.reportedMessageId && active.acknowledgedAt && active.policyVersion && active.assignedModeratorId)
+        const threadReports = await manager.getRepository(AutoCareChatReportEntity).find({ where: { threadId: lockedThread.id } })
+        if (threadReports.some((active) => isAutoCareChatReportParty(active, user.id))) fail(403, 'A chat report party cannot extend moderation access.')
+        const pendingReports = threadReports.filter((active) => active.status === AutoCareChatReportStatus.Pending && active.reportedMessageId && active.acknowledgedAt && active.policyVersion && active.assignedModeratorId)
         if (pendingReports.some((active) => active.extensionUsed)) fail(409, 'Moderation access can only be extended once for this service request.')
         if (pendingReports.some((active) => !active.accessExpiresAt || active.accessExpiresAt.getTime() <= Date.now())) fail(409, 'Expired moderation access cannot be extended.')
         if (pendingReports.some((active) => active.assignedModeratorId !== lockedReport.assignedModeratorId)) fail(409, 'Moderator assignment is inconsistent for this service request.')

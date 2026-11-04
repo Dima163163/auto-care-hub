@@ -268,6 +268,7 @@ adminAuditLogs: {
         loadMore: 'Загрузить ещё',
         loadingMore: 'Загрузка...',
         targetTypes: {
+            audit_logs: 'Журнал аудита',
             account_deletion_request: 'Запрос на удаление аккаунта',
             cabinet: 'Кабинет',
             autocare_appeal: 'Апелляция AutoCare',
@@ -317,6 +318,9 @@ adminAuditLogs: {
             login_failed: 'Неудачная попытка входа',
             account_locked: 'Аккаунт заблокирован',
             refresh_token_reuse: 'Обнаружено повторное использование refresh-токена',
+            mfa_step_up_succeeded: 'Личность администратора повторно подтверждена',
+            mfa_factor_reset: 'Приложение кодов администратора сброшено',
+            audit_logs_exported: 'Журнал аудита экспортирован',
             outbox_retried: 'Событие outbox отправлено повторно',
             outbox_dead_lettered: 'Событие outbox перемещено в dead letter',
             oauth_identity_linked: 'OAuth-аккаунт привязан',

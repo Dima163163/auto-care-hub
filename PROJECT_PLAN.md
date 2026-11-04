@@ -1,5 +1,294 @@
 # AutoCare Hub — Project Plan
 
+## PR #43 CI follow-up — 2026-11-04
+
+- [x] Добавить существующую таблицу reschedule text-binding checkpoint в
+  обязательный AutoCare integrity manifest; миграция и PlantUML уже отражают её.
+- [x] Ограничить два ложных срабатывания Gitleaks публичного RFC 6238 TOTP
+  вектора точными историческими fingerprint; другие секреты не исключать.
+- [x] Повторить локальный release integrity gate: 179 миграций,
+  44 таблицы в manifest, 30 pending constraints validated на disposable PostgreSQL.
+- [ ] Получить зелёный exact-SHA Quality CI PR #43; затем merge в dev,
+  дождаться dev push Quality и провести
+  защищённый dev → main PR по обязательным проверкам и review.
+
+## Exact-candidate local quality replay — 2026-11-04
+
+- [x] Обновить два source-level quality guard после внедрения MFA:
+  owner/admin route-auth checker распознаёт проверенные обёртки,
+  проверяет auth до валидации и verified email для owner mutations;
+  threat-surface checker требует MFA на admin moderation queue.
+  Негативные контрактные сценарии и проверка реализации обёрток PASS.
+- [x] Повторить локальные проверки кандидата: frontend 204 файла / 671 тест,
+  полный lint, Next production build; `quality:backend` с тестовой конфигурацией
+  PASS, backend unit 463 файла / 1723 теста; isolated seeded PostgreSQL/Redis
+  integration 30 файлов / 149 PASS / 1 skip. Временные контейнеры удалены.
+- [ ] Получить exact-SHA CI, опубликованный staging/browser replay, KMS/restore,
+  MFA/recovery и pilot evidence. Локальные PASS не закрывают U01–U03 и pilot
+  остаётся NO-GO.
+
+## U03 — служебные чаты admin в mock, 2026-11-04
+
+- [x] Согласовать mock с backend: admin читает историю support/escalation
+  и вложения служебного чата без назначения на приватную жалобу. Доступ к
+  request chat остаётся ограниченным назначением. Mock regression 8/8
+  PASS, TypeScript noEmit и targeted lint PASS.
+- [ ] Проверить опубликованный browser/staging сценарий;
+  U03 и pilot NO-GO сохраняются.
+
+## U03 — область обычной блокировки в mock, 2026-11-04
+
+- [x] Запретить admin/super-admin создавать participant block через обычный
+  POST; блокировка допускает только другого участника переписки. Mock
+  regression 7/7 PASS, TypeScript noEmit и targeted lint PASS.
+- [ ] Проверить в опубликованном browser/staging окружении;
+  U03 и pilot NO-GO сохраняются.
+
+## U03 — изоляция санкции от обычной блокировки в mock, 2026-11-04
+
+- [x] Повторное создание participant block выбирает только собственную
+  действующую обычную блокировку. Запись санкции с `sourceReportId` больше
+  не перезаписывается, остаётся активной после удаления обычной блокировки
+  и требует апелляции. Mock regression 6/6 PASS, TypeScript noEmit и
+  targeted lint PASS.
+- [ ] Проверить тот же сценарий в опубликованном browser/staging окружении;
+  U03 и pilot NO-GO сохраняются.
+
+## U03 — mock parity приватной модерации, 2026-11-04
+
+- [x] Согласовать mock с backend: super-admin список не содержит private
+  request chats, независимый direct emergency read разрешён по ID с причиной,
+  сторона жалобы получает 403 даже по закрытому делу. Служебная очередь,
+  решение и назначение также учитывают стороны всей истории; быстрый
+  request → chat-thread маршрут закрыт для privileged ролей. Mock 9/9 PASS,
+  TypeScript noEmit и targeted lint PASS.
+- [ ] Проверить эти же сценарии в опубликованном browser/staging окружении.
+
+## U03 — прямой аварийный доступ к собственному делу, 2026-11-04
+
+- [x] Запретить super-admin стороне жалобы прямое открытие приватного чата,
+  вложений и live WebSocket через общий `assertThreadAccess`, включая
+  закрытую жалобу. Независимый super-admin сохраняет доступ с причиной и
+  аудитом. Boundary 39 PASS, isolated seeded PostgreSQL 11/11 PASS;
+  backend build и targeted lint PASS.
+- [ ] Проверить staging с реальной ролью, MFA, причиной и аудитом; U03
+  остаётся открытым, pilot NO-GO.
+
+## U03 — снятие блокировки через обычный маршрут, 2026-11-04
+
+- [x] Убрать обход апелляции: `DELETE /v1/chats/:chatId/blocks/:blockId`
+  снимает только собственную participant block; ограничение от жалобы
+  (`sourceReportId`) отвергается для всех ролей, включая super-admin.
+  Mock и OpenAPI согласованы. Boundary 38 PASS, mock 4 PASS, isolated
+  seeded PostgreSQL integration 10/10 PASS, backend build и targeted lint PASS.
+- [ ] Проверить реальное решение апелляции, отзыв блокировки и аудит на
+  staging; U03 и pilot NO-GO сохраняются.
+
+## U03 — исторический конфликт при модерации чата, 2026-11-04
+
+- [x] Распространить запрет модерации на стороны закрытых жалоб той же
+  переписки. Admin и super-admin не получают конфликтную переписку в
+  служебном списке; назначение, чтение admin, продление и решение проверяют
+  всю историю. Только текущая pending жалоба даёт ограниченный доступ
+  независимому модератору. Boundary 38 PASS, isolated seeded PostgreSQL
+  integration 8/8 PASS, backend build и targeted lint PASS.
+- [ ] Проверить правило в staging с действительными ролями, сессиями и
+  журналом аудита. U03 и pilot NO-GO сохраняются.
+
+## Local gate replay — 2026-10-29
+
+- [x] Backend unit 463 файла / 1722 PASS, isolated seeded integration
+  30 файлов / 144 PASS / 1 skip, static security 7/7 и migration filenames
+  179/179 PASS. Тестовые контейнеры и файлы убраны.
+- [ ] Получить реальные pilot evidence, CI/staging, KMS/restore и browser
+  acceptance; `docs/operations/pilot-evidence.json` ещё отсутствует.
+  Локальный replay не меняет pilot NO-GO.
+
+## Integration setup — disposable DB, 2026-10-29
+
+- [x] Дописать в README миграции и оба seed шага перед full integration;
+  назвать route test по фактической seeded зависимости. Empty-table fallback
+  отдельно покрыт unit. Последний full integration 30 файлов / 144 PASS /
+  1 skip.
+
+## PostgreSQL schema parity — broadcast photoUrls, 2026-10-29
+
+- [x] Согласовать `AutoCareBroadcastRequest.photoUrls` с миграцией
+  PostgreSQL (`text[]` вместо ошибочного `jsonb`): реальный insert с
+  непустым массивом и удаление аккаунта теперь проходят на isolated DB.
+  Account deletion integration 1/1 PASS; полный seeded backend integration
+  30 файлов / 144 PASS / 1 skip.
+
+## U03 — границы привилегированных чатов, 2026-10-29
+
+- [x] Повторить на isolated PostgreSQL новые chat conflict проверки:
+  admin список исключает конфликтную переписку, super-admin не решает
+  соседнюю жалобу, приватное описание собственной жалобы скрыто;
+  сторона жалобы не получает назначение, чтение и продление, независимый
+  назначенный модератор сохраняет доступ. Integration 1 файл / 6 тестов PASS.
+- [x] Прогнать полный backend unit на 463 файлах / 1722 сценариях и
+  isolated PostgreSQL/Redis integration: исправить cleanup MFA fixture,
+  который пытался удалить append-only security events без разрешённого
+  transaction flag. Targeted MFA integration 2 файла / 5 тестов PASS.
+  После исправления `photoUrls` и обязательных seeds полный integration
+  30 файлов / 144 PASS / 1 skip. DB replay новых chat conflict
+  сценариев выполнен отдельно; staging acceptance остаётся открытым.
+- [x] Повторно проверить под lock весь набор pending жалоб той же
+  переписки перед решением: super-admin, бывший участник другого дела,
+  не может решить соседнее. Boundary 38 PASS; PostgreSQL replay открыт.
+- [x] Исключить участника жалобы из назначения модератором, чтения
+  приватного request-чата, продления доступа и решения жалобы после смены
+  роли. Для admin список скрывает дела конфликтной переписки; super-admin
+  не получает приватное описание собственного дела. Boundary 37 PASS;
+  PostgreSQL/staging replay открыт.
+- [x] Запретить admin/super-admin решение собственной appeal, включая
+  chat restriction, под row lock до смены статуса и отзыва блока.
+  Boundary suite 6 PASS; PostgreSQL replay открыт.
+- [x] Запретить решение собственной provider change request после смены
+  owner → admin/super-admin; проверка под row lock до изменения provider и
+  outbox. Boundary suite 6 PASS; PostgreSQL replay открыт.
+- [x] Запретить admin/super-admin решать собственную catalog-gap заявку
+  под row lock до создания определения или смены статуса; независимый
+  reviewer может отклонить заявку. Boundary suite 7 PASS.
+- [x] Потребовать fresh MFA у admin/super-admin перед 14 маршрутами
+  переходов service/broadcast request: сообщения, офферы, смета, перенос,
+  подтверждение, отмена и завершение. PostgreSQL negative matrix добавлена.
+- [x] Потребовать fresh MFA у admin/super-admin перед 16 provider workspace
+  mutations: ресурсы, доступ, catalog/change request, бонусы, отзывы,
+  медиа и создание сервиса. PostgreSQL negative matrix добавлена.
+- [x] Потребовать fresh MFA у admin/super-admin перед 12 приватными GET
+  маршрутами provider workspace, сохранив email verification; негативная
+  PostgreSQL матрица добавлена для обеих ролей.
+- [x] Потребовать fresh MFA у admin/super-admin перед broadcast detail и
+  owner inbox; PostgreSQL negative matrix добавлена для обеих ролей.
+- [x] Потребовать fresh MFA у admin/super-admin перед чтением detail и
+  timeline заявки, а также owner списка заявок; PostgreSQL negative matrix
+  добавлена для обеих ролей. Локальный replay без БД остаётся открытым.
+- [x] Закрыть доступ admin к приватному чату через provider membership при
+  отсутствии действующего назначенного moderation report; быстрый маршрут
+  request → chat-thread отказывает admin/super-admin до чтения БД.
+- [x] Проверить отрицательные пути и положительный путь назначенной жалобы:
+  chat service boundary 30 PASS, backend build и targeted lint PASS.
+- [x] Закрыть legacy request conversation, attachment и WebSocket для
+  admin/super-admin; read receipt не меняет состояние. Request boundary
+  12 PASS, backend build и targeted lint PASS.
+- [x] Защитить `/v1/chats` свежим MFA, ограничить super-admin список
+  support/escalation, исключить расширение через provider membership и
+  записывать привилегированные чтения в аудит без тем сообщений.
+- [x] Защитить admin/super-admin действия с чатами и вложениями свежим MFA;
+  mock-список синхронизирован. Unit backend 5 PASS, frontend mock 1 PASS;
+  TypeScript, targeted lint и backend build PASS.
+- [ ] Выполнить добавленные PostgreSQL/browser сценарии и staging replay;
+  U03 и pilot NO-GO сохраняются.
+
+## U02 — автомобили автопарка, 2026-10-28
+
+- [x] Привязать label и vehicleSnapshot к vehicle/fleet UUID; не отдавать bindings в API.
+- [x] Подготовить migration 178680, bounded compare-write backfill, полный verify и opt-in strict reader. Удаление владельца переподписывает оба обезличенных поля каждой строки.
+- [ ] Подтвердить PostgreSQL/browser CI, staging KMS/restore и strict cutover. Общая приёмка U02 остаётся открытой.
+
+
+## U02 — автопарки, 2026-10-28
+
+- [x] Привязать name и notes к fleet/owner UUID; не отдавать bindings в API.
+- [x] Подготовить migration 178679, bounded compare-write backfill, полный verify и opt-in strict reader. Удаление владельца переподписывает обезличенное название и очищает notes/binding; invariant проверяет название.
+- [ ] Подтвердить PostgreSQL/browser CI, staging KMS/restore и strict cutover. Поля автомобилей автопарка остаются открытыми.
+
+
+## U02 — вопросы эксперту, 2026-10-28
+
+- [x] Привязать vehicleSnapshot, symptoms и answer к question/client UUID; не отдавать bindings в API.
+- [x] Подготовить migration 178678, bounded compare-write backfill, полный verify и opt-in strict reader. Удаление клиента переподписывает symptoms каждой строки и очищает snapshot/answer с bindings.
+- [ ] Подтвердить PostgreSQL/browser CI, staging KMS/restore и strict cutover. Другие зашифрованные поля U02 остаются открытыми.
+
+
+## U02 — гарантийные обращения, 2026-10-28
+
+- [x] Привязать summary и resolution к claim/request/client/provider UUID и claimType; не отдавать bindings в API.
+- [x] Подготовить migration 178677, bounded compare-write backfill, полный verify и opt-in strict reader. Удаление клиента переподписывает summary каждой строки и очищает resolution/binding.
+- [ ] Подтвердить PostgreSQL/browser CI, staging KMS/restore и strict cutover. Другие зашифрованные поля U02 остаются открытыми.
+
+
+## U02 — предложения по рассылке, 2026-10-28
+
+- [x] Привязать offerSnapshot к offer/broadcast/provider/location UUID; не отдавать binding в API.
+- [x] Подготовить migration 178676, bounded compare-write backfill, полный verify и opt-in strict reader. Удаление клиента переподписывает redacted snapshot каждой строки и проверяет invariant.
+- [ ] Подтвердить PostgreSQL/browser CI, staging KMS/restore и strict cutover. Другие зашифрованные поля U02 остаются открытыми.
+
+
+## U02 — рассылка заявки сервисам, 2026-10-28
+
+- [x] Привязать issueDescription и vehicleSnapshot к broadcast/client/definition UUID; не отдавать bindings в API.
+- [x] Подготовить migration 178675, bounded compare-write backfill, полный verify и opt-in strict reader. Удаление аккаунта переподписывает issueDescription каждой строки и очищает vehicleSnapshot/binding.
+- [ ] Подтвердить PostgreSQL/browser CI, staging KMS/restore и strict cutover. Другие зашифрованные поля U02 остаются открытыми.
+
+
+## U02 — журнал работ по заявке, 2026-10-28
+
+- [x] Привязать title, notes и metadata к event/request UUID и eventType; не отдавать bindings в API.
+- [x] Подготовить migration 178674, bounded compare-write backfill, полный verify и opt-in strict reader. Удаление аккаунта переподписывает redacted title/metadata каждой строки и очищает notes/binding.
+- [ ] Подтвердить PostgreSQL/browser CI, staging KMS/restore и strict cutover. Другие зашифрованные поля U02 остаются открытыми.
+
+
+## U02 — заявки на расширение каталога, 2026-10-28
+
+- [x] Привязать labels, comparisonAttributes, rationale и reviewReason к
+  gap/requester UUID, nullable provider UUID, двум slug и priceType; API не
+  отдаёт bindings.
+- [x] Подготовить migration 178673, bounded compare-write backfill, полный
+  verify и opt-in strict reader. Удаление аккаунта переподписывает три
+  redacted поля отдельно для каждой строки и очищает reviewReason/binding.
+- [ ] Подтвердить PostgreSQL/browser CI, staging KMS/restore и strict cutover.
+  Другие зашифрованные поля U02 остаются открытыми.
+
+## U02 — тексты апелляций, 2026-10-28
+
+- [x] Привязать reason и decisionReason к appeal/subject/submitter UUID,
+  предмету обращения и nullable provider UUID; API не отдаёт bindings.
+- [x] Подготовить migration 178672, bounded compare-write backfill, полный
+  verify и opt-in strict reader. Удаление аккаунта переподписывает redacted
+  reason каждой строки и очищает decisionReason/binding.
+- [ ] Подтвердить PostgreSQL/browser CI, staging KMS/restore и strict cutover.
+  Другие зашифрованные поля U02 открыты.
+
+## U02 — заявки на изменение профиля сервиса, 2026-10-28
+
+- [x] Привязать payload и reviewReason к request/provider/requester UUID и kind;
+  исключить bindings из API и сохранить полный ORM-контекст при решении.
+- [x] Подготовить migration 178671, bounded compare-write backfill, полный
+  verify и opt-in strict reader. При удалении аккаунта переподписывать
+  redacted payload отдельно для каждой строки и очищать reason/binding.
+- [ ] Подтвердить PostgreSQL/browser CI, staging KMS/restore и strict cutover.
+  Остальные зашифрованные поля U02 открыты.
+
+## U03 — обязательный сеанс для привилегированных токенов, 2026-10-28
+
+- [x] Требовать свежий MFA для оставшихся admin/platform-review mutations
+  (модерация, сервисы, каталог, рынки, кабинеты). Backend build, targeted
+  lint и полный unit suite 463/1704 PASS; PostgreSQL negative matrix добавлена.
+- [ ] Выполнить mutation matrix на isolated PostgreSQL и staging.
+
+- [x] Требовать свежий MFA перед чтением персональных/операционных admin
+  dashboards и очереди отзывов платформы; public market hierarchy не меняется.
+  Backend build/targeted lint PASS; negative PostgreSQL matrix добавлена,
+  локально не запускалась.
+- [ ] Проверить admin read matrix на isolated PostgreSQL и staging.
+
+- [x] Добавить свежий MFA перед admin/super-admin чтением жалоб и приватного чата,
+  вложений, chat WebSocket и super-admin просмотром заявки; live WebSocket
+  перепроверяет свежесть. Unit, backend build и targeted lint PASS 29.10;
+  PostgreSQL negative case добавлен, локально не запускался.
+- [x] Сохранить JSON код отказа вместо Blob для приватного attachment GET,
+  чтобы общий frontend step-up повторил запрос; frontend unit и Next build PASS.
+- [ ] Проверить этот путь на PostgreSQL/browser/staging и закрыть остальные
+  чувствительные чтения до приёмки U03.
+
+- [x] Запретить access и refresh без persisted session для текущих
+  admin/super-admin, включая токены с устаревшей ролью client.
+- [x] Проверить положительный путь с активным сеансом и отказ для двух ролей.
+- [ ] Реализовать MFA/SSO, recovery и step-up; проверить PostgreSQL/browser
+  сценарии. Этот локальный барьер сам по себе V2-SEC-02 не закрывает.
+
 ## U02 — вторичные поля пользователя, 2026-10-28
 
 - [x] Привязать avatar URL, community display name и preferred city к UUID

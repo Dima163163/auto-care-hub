@@ -88,7 +88,7 @@ export function evaluateThreatSurface(sourceMap) {
             sourceMap.admin,
             [
                 "app.get('/admin/autocare-appeals', async (request) => {",
-                'const user = await requireAuth(request)',
+                'const user = await requireRecentPrivilegedMfa(request)',
                 'AutoCareAppealsViewed',
                 'AutoCareModerationQueueViewed',
                 'AutoCareChatReportsViewed',

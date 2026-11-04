@@ -7,29 +7,66 @@ participant "Fastify\nauth routes + guards" as API
 participant "Auth/session services" as Auth
 database "PostgreSQL\nUser / UserSession" as PG
 User -> Front : sign in
-Front -> API : CSRF bootstrap / auth/login\ncredentials + browser mutation guards
+Front -> API : CSRF bootstrap / auth/login\npassword + optional TOTP/recovery code
 API -> Auth : validate input / password / account status
-Auth -> PG : load user / persist refresh session
+alt current admin/super-admin
+  Auth -> PG : lock MFA factor / consume TOTP step or recovery code
+  Auth -> PG : persist session with mfaVerifiedAt
+else ordinary role
+  Auth -> PG : persist refresh session
+end
 Auth --> API : access token + refresh token\nJWT exp = persisted session expiry
 API --> Front : access DTO + HttpOnly refresh cookie
 Front -> Front : access token в памяти\nRTK auth/cache state
+group sensitive admin operation or exceptional read after five minutes
+  Front -> API : privileged mutation / chat action / CSV export\nprivate admin read / privileged chat index
+  API -> Auth : requireRecentPrivilegedMfa / current session timestamp
+  Auth -> PG : read mfaVerifiedAt
+  API --> Front : MFA_STEP_UP_REQUIRED if stale
+  Front -> API : /auth/step-up\nnew TOTP or unused recovery code + CSRF
+  Auth -> PG : lock session and factor / consume code / update mfaVerifiedAt
+  API --> Front : success / audited verification
+  Front -> API : retry original request once
+end
+group controlled operator MFA reset
+  Auth -> PG : lock target + two other super-admins
+  Auth -> PG : consume both MFA proofs / replace target factor
+  Auth -> PG : delete target sessions / increment tokenVersion / audit ticket
+end
+group linked Google/Yandex callback
+  Front -> API : /auth/oauth/:provider/callback
+  API -> Auth : resolve linked identity and current user role
+  Auth -> PG : lock linked user row
+  alt current admin/super-admin
+    Auth --> API : reject before profile update or session creation
+    API --> Front : redirect to login error
+  else ordinary role
+    Auth -> PG : update profile / create session
+    API --> Front : HttpOnly refresh cookie / callback redirect
+  end
+end
 Front -> API : protected request\nBearer access token
 API -> Auth : requireAuth / getUserById\nassertAccessSessionActive
 Auth -> PG : active user / session-token state checks
-alt valid and resource scope allowed
+alt valid session and resource scope allowed
   API --> Front : authorized DTO
-else access token no longer accepted
+else access token no longer accepted, including privileged sessionless token
   API --> Front : 401
   Front -> Front : refresh-access-token single flight
   Front -> API : /auth/refresh\nrefresh cookie + CSRF/Origin policy
-  API -> Auth : validate / rotate refresh session
-  Auth -> PG : session lock / rotate with original expiry / revoke on reuse
-  alt refresh succeeds
-    API --> Front : new access DTO + rotated cookie\nMax-Age <= remaining JWT lifetime
-    Front -> API : retry original request
-  else refresh fails
-    API --> Front : unauthorized / session-expired
+  API -> Auth : validate current role / sessionId / rotate refresh session
+  alt current admin/super-admin without sessionId
+    API --> Front : 401 / sign in again
     Front -> Front : clear identity/cache / login navigation
+  else eligible refresh
+    Auth -> PG : session lock / rotate with original expiry / revoke on reuse
+    alt refresh succeeds
+      API --> Front : new access DTO + rotated cookie\nMax-Age <= remaining JWT lifetime
+      Front -> API : retry original request
+    else refresh fails
+      API --> Front : unauthorized / session-expired
+      Front -> Front : clear identity/cache / login navigation
+    end
   end
 end
 note over Front
@@ -39,7 +76,23 @@ note over Front
 end note
 note over Auth, PG
   Для session-bound access проверяется persisted session;
-  legacy/setup токены могут не содержать sessionId.
+  legacy/setup токены могут не содержать sessionId только для обычных ролей.
+  Текущая роль admin/super-admin требует persisted session при access
+  и refresh. Linked OAuth callback и link/start отказывают этим ролям:
+  IdP не предоставляет приложению подтверждённый второй фактор.
+  Password login для admin/super-admin требует TOTP либо одноразовый
+  recovery code. Секрет хранится в row-bound envelope по user UUID;
+  password setup для новой привилегированной учётной записи также
+  требует код и создаёт сессию только после его проверки.
+  старые сессии без mfaVerifiedAt отвергаются, refresh переносит отметку.
+  Enrollment требует private terminal/DB operator. Step-up действует для
+  user/role/create/deletion, trust-policy, security-center, outbox
+  admin/moderation/governance and privileged chat mutations,
+  audit/security CSV export,
+  private admin dashboards, privileged chat subject index
+  и exceptional chat/request reads;
+  другие sensitive reads, внешний identity check,
+  break-glass и полная staging-проверка открыты.
   Preferences обновляют только свои поля с проверкой status/tokenVersion.
   Login reset counters использует условный UPDATE;
   смена пароля блокирует User row и отзывает сессии в той же transaction.

@@ -6,7 +6,7 @@ import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { hasProviderWorkspacePermission } from './provider-access.service.js'
 import { assertCursorDate, decodeCursor, encodeCursor, getCursorLimit } from '../../shared/http/cursor-pagination.js'
-import { normalizeAutoCareChatReportDecision, normalizeAutoCareChatReportInput, normalizeAutoCareChatReportStatus, normalizeAutoCareChatReportUuid, resolveAutoCareChatReportConflict } from './chat-moderation-policy.js'
+import { isAutoCareChatReportParty, normalizeAutoCareChatReportDecision, normalizeAutoCareChatReportInput, normalizeAutoCareChatReportStatus, normalizeAutoCareChatReportUuid, resolveAutoCareChatReportConflict } from './chat-moderation-policy.js'
 import { enqueueNotification } from '../outbox/notification-outbox.service.js'
 import { assertThreadAccess, getThread, lockThreadForMutation } from './chat-access.service.js'
 import { assertRole, fail } from './chat-errors.js'
@@ -165,6 +165,11 @@ export async function listAdminAutoCareChatReports(user: UserEntity, input: {
             { search: normalizedSearch },
         )
     }
+    query.andWhere(`NOT EXISTS (
+            SELECT 1 FROM autocare_chat_reports conflicting_report
+            WHERE conflicting_report."threadId" = report."threadId"
+              AND (conflicting_report."reporterId" = :reviewerId OR conflicting_report."reportedUserId" = :reviewerId)
+        )`, { reviewerId: user.id })
     const totalCount = await query.clone().getCount()
     if (input.cursor) {
         const cursor = decodeCursor(input.cursor, ['createdAt', 'id'])
@@ -186,6 +191,7 @@ export async function listAdminAutoCareChatReports(user: UserEntity, input: {
     const items = reports.map((report) => reportResponse(report,
         report.status === AutoCareChatReportStatus.Pending
         && Boolean(report.reportedMessageId && report.acknowledgedAt && report.policyVersion)
+        && !isAutoCareChatReportParty(report, user.id)
         && (user.role === UserRole.SuperAdmin || (report.assignedModeratorId === user.id && Boolean(report.accessExpiresAt && report.accessExpiresAt.getTime() > now))),
     ))
     const lastReport = reports.at(-1)
@@ -208,6 +214,7 @@ export async function decideAdminAutoCareChatReport(user: UserEntity, reportId: 
     const reports = AppDataSource.getRepository(AutoCareChatReportEntity)
     const report = await reports.findOneBy({ id: normalizedReportId })
     if (!report) fail(404, 'Chat report not found.')
+    if (isAutoCareChatReportParty(report, user.id)) fail(403, 'A chat report party cannot decide the case.')
     if (report.status !== AutoCareChatReportStatus.Pending) return reportResponse(report)
     const thread = await AppDataSource.getRepository(AutoCareChatThreadEntity).findOneBy({ id: report.threadId })
     if (!thread) fail(404, 'Chat not found.')
@@ -216,7 +223,10 @@ export async function decideAdminAutoCareChatReport(user: UserEntity, reportId: 
         const lockedReports = manager.getRepository(AutoCareChatReportEntity)
         const lockedReport = await lockedReports.findOne({ where: { id: normalizedReportId }, lock: { mode: 'pessimistic_write' } })
         if (!lockedReport) fail(404, 'Chat report not found.')
+        if (isAutoCareChatReportParty(lockedReport, user.id)) fail(403, 'A chat report party cannot decide the case.')
         if (lockedReport.status !== AutoCareChatReportStatus.Pending) return lockedReport
+        const threadReports = await lockedReports.find({ where: { threadId: lockedThread.id }, select: { reporterId: true, reportedUserId: true } })
+        if (threadReports.some((item) => isAutoCareChatReportParty(item, user.id))) fail(403, 'A chat report party cannot moderate another case in the same thread.')
         if ((!lockedReport.reportedMessageId || !lockedReport.acknowledgedAt || !lockedReport.policyVersion) && user.role === UserRole.SuperAdmin && (normalizedInput.reason?.length ?? 0) < 10) {
             fail(400, 'A reason of at least 10 characters is required to close a legacy report without consent metadata.')
         }

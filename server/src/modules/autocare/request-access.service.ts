@@ -22,7 +22,7 @@ export async function getParticipantRequest(user: UserEntity, requestId: string)
  * socket after session, membership or provider-access changes.
  */
 export async function assertAutoCareServiceRequestRealtimeAccess(user: UserEntity, requestId: string) {
-    if (user.role === UserRole.SuperAdmin) forbidden('SuperAdmin chat review must use the audited chat access route.')
+    if (user.role === UserRole.Admin || user.role === UserRole.SuperAdmin) forbidden('Administrators must use the audited chat access route.')
     await getParticipantRequest(user, requestId)
     return true
 }

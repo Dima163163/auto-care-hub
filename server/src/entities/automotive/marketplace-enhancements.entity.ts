@@ -40,9 +40,11 @@ export class AutoCareTrustEvidenceEntity {
     @Column({ type: 'text', default: 'pending' }) status!: string
     @Column({ type: 'timestamptz', nullable: true }) expiresAt!: Date | null
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_trust_evidence', 'reference', 'text') }) reference!: string | null
+    @Column({ type: 'text', nullable: true }) referenceBinding!: string | null
     @Column({ type: 'text', nullable: true, transformer: createBlindIndexTransformer('evidence-reference') }) referenceIndex!: string | null
     @Column({ type: 'integer', nullable: true }) reviewRevision!: number | null
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_trust_evidence', 'notes', 'text') }) notes!: string | null
+    @Column({ type: 'text', nullable: true }) notesBinding!: string | null
     @Column({ type: 'uuid', nullable: true }) verifiedById!: string | null
     @Column({ type: 'timestamptz', nullable: true }) verifiedAt!: Date | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
@@ -73,8 +75,11 @@ export class AutoCareRepairEventEntity {
     @Column({ type: 'text' }) eventType!: string
     @Column({ type: 'uuid', nullable: true }) actorId!: string | null
     @Column({ type: 'text', transformer: createEncryptedFieldTransformer('autocare_repair_events', 'title', 'text') }) title!: string
+    @Column({ type: 'text', nullable: true }) titleBinding!: string | null
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_repair_events', 'notes', 'text') }) notes!: string | null
+    @Column({ type: 'text', nullable: true }) notesBinding!: string | null
     @Column({ type: 'jsonb', transformer: createEncryptedFieldTransformer('autocare_repair_events', 'metadata', 'jsonb') }) metadata: Record<string, unknown> = {}
+    @Column({ type: 'text', nullable: true }) metadataBinding!: string | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
 }
 
@@ -86,8 +91,10 @@ export class AutoCareBroadcastRequestEntity {
     @Column({ type: 'uuid' }) serviceDefinitionId!: string
     @Column({ type: 'uuid', nullable: true }) marketId!: string | null
     @Column({ type: 'text', transformer: createEncryptedFieldTransformer('autocare_broadcast_requests', 'issueDescription', 'text') }) issueDescription!: string
+    @Column({ type: 'text', nullable: true }) issueDescriptionBinding!: string | null
     @Column({ type: 'jsonb', nullable: true, transformer: createEncryptedFieldTransformer('autocare_broadcast_requests', 'vehicleSnapshot', 'jsonb') }) vehicleSnapshot!: Record<string, unknown> | null
-    @Column({ type: 'jsonb', default: () => "'[]'" }) photoUrls!: string[]
+    @Column({ type: 'text', nullable: true }) vehicleSnapshotBinding!: string | null
+    @Column('text', { array: true, default: () => "'{}'" }) photoUrls!: string[]
     @Column({ type: 'timestamptz', nullable: true }) preferredAt!: Date | null
     @Column({ type: 'text', default: 'open' }) status!: string
     @Column({ type: 'integer', default: 5 }) maxProviders!: number
@@ -104,6 +111,7 @@ export class AutoCareBroadcastOfferEntity {
     @Column({ type: 'uuid' }) providerId!: string
     @Column({ type: 'uuid' }) locationId!: string
     @Column({ type: 'jsonb', transformer: createEncryptedFieldTransformer('autocare_broadcast_offers', 'offerSnapshot', 'jsonb') }) offerSnapshot!: Record<string, unknown>
+    @Column({ type: 'text', nullable: true }) offerSnapshotBinding!: string | null
     @Column({ type: 'text', default: 'pending' }) status!: string
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
     @UpdateDateColumn({ type: 'timestamptz' }) updatedAt!: Date
@@ -121,8 +129,10 @@ export class AutoCareGuaranteeClaimEntity {
     @Column({ type: 'text' }) claimType!: string
     @Column({ type: 'text', default: 'submitted' }) status!: string
     @Column({ type: 'text', transformer: createEncryptedFieldTransformer('autocare_guarantee_claims', 'summary', 'text') }) summary!: string
+    @Column({ type: 'text', nullable: true }) summaryBinding!: string | null
     @Column('text', { array: true, default: () => "'{}'" }) evidenceUrls!: string[]
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_guarantee_claims', 'resolution', 'text') }) resolution!: string | null
+    @Column({ type: 'text', nullable: true }) resolutionBinding!: string | null
     @Column({ type: 'uuid', nullable: true }) resolvedById!: string | null
     @Column({ type: 'timestamptz', nullable: true }) resolvedAt!: Date | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
@@ -135,10 +145,13 @@ export class AutoCareExpertQuestionEntity {
     @PrimaryGeneratedColumn('uuid') id!: string
     @Column({ type: 'uuid' }) clientId!: string
     @Column({ type: 'jsonb', nullable: true, transformer: createEncryptedFieldTransformer('autocare_expert_questions', 'vehicleSnapshot', 'jsonb') }) vehicleSnapshot!: Record<string, unknown> | null
+    @Column({ type: 'text', nullable: true }) vehicleSnapshotBinding!: string | null
     @Column({ type: 'text', transformer: createEncryptedFieldTransformer('autocare_expert_questions', 'symptoms', 'text') }) symptoms!: string
+    @Column({ type: 'text', nullable: true }) symptomsBinding!: string | null
     @Column({ type: 'text', nullable: true }) categorySlug!: string | null
     @Column({ type: 'text', default: 'open' }) status!: string
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_expert_questions', 'answer', 'text') }) answer!: string | null
+    @Column({ type: 'text', nullable: true }) answerBinding!: string | null
     @Column({ type: 'uuid', nullable: true }) answeredById!: string | null
     @Column({ type: 'timestamptz', nullable: true }) answeredAt!: Date | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
@@ -151,7 +164,9 @@ export class AutoCareFleetAccountEntity {
     @PrimaryGeneratedColumn('uuid') id!: string
     @Column({ type: 'uuid' }) ownerId!: string
     @Column({ type: 'text', transformer: createEncryptedFieldTransformer('autocare_fleet_accounts', 'name', 'text') }) name!: string
+    @Column({ type: 'text', nullable: true }) nameBinding!: string | null
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_fleet_accounts', 'notes', 'text') }) notes!: string | null
+    @Column({ type: 'text', nullable: true }) notesBinding!: string | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
     @UpdateDateColumn({ type: 'timestamptz' }) updatedAt!: Date
 }
@@ -162,7 +177,9 @@ export class AutoCareFleetVehicleEntity {
     @PrimaryGeneratedColumn('uuid') id!: string
     @Column({ type: 'uuid' }) fleetId!: string
     @Column({ type: 'text', transformer: createEncryptedFieldTransformer('autocare_fleet_vehicles', 'label', 'text') }) label!: string
+    @Column({ type: 'text', nullable: true }) labelBinding!: string | null
     @Column({ type: 'jsonb', transformer: createEncryptedFieldTransformer('autocare_fleet_vehicles', 'vehicleSnapshot', 'jsonb') }) vehicleSnapshot!: Record<string, unknown>
+    @Column({ type: 'text', nullable: true }) vehicleSnapshotBinding!: string | null
     @Column({ type: 'text', nullable: true }) approvalPolicy!: string | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
     @UpdateDateColumn({ type: 'timestamptz' }) updatedAt!: Date

@@ -1,5 +1,6 @@
 import { baseApi } from '@/shared/api/baseApi'
 import type { CursorPage, CursorQuery } from '@/shared/api/cursorPagination'
+import { readCsvOrApiError } from '../lib/csv-response'
 import {
     normalizeAuditLogListResponse,
     normalizeAuditLogPageResponse,
@@ -94,6 +95,9 @@ export type KnownAuditLogAction =
     | 'login_failed'
     | 'account_locked'
     | 'refresh_token_reuse'
+    | 'mfa_step_up_succeeded'
+    | 'mfa_factor_reset'
+    | 'audit_logs_exported'
     | 'outbox_retried'
     | 'outbox_dead_lettered'
     | 'oauth_identity_linked'
@@ -372,7 +376,7 @@ export const adminApi = baseApi.injectEndpoints({
             query: (query) => ({
                 url: '/admin/audit-logs/export',
                 params: query,
-                responseHandler: (response) => response.blob(),
+                responseHandler: readCsvOrApiError,
             }),
             transformResponse: normalizeAuditLogsExportResponse,
             providesTags: [],
@@ -449,7 +453,7 @@ export const adminApi = baseApi.injectEndpoints({
             query: (query) => ({
                 url: '/admin/security-center/events/export',
                 params: query,
-                responseHandler: (response) => response.blob(),
+                responseHandler: readCsvOrApiError,
             }),
             transformResponse: normalizeSecurityCenterExportResponse,
             providesTags: [],

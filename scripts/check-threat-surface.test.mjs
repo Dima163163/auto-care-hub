@@ -35,7 +35,7 @@ const sourceMap = {
     ].join('\n'),
     admin: [
         "app.get('/admin/autocare-appeals', async (request) => {",
-        'const user = await requireAuth(request)',
+        'const user = await requireRecentPrivilegedMfa(request)',
         'AutoCareAppealsViewed',
         'AutoCareModerationQueueViewed',
         'AutoCareChatReportsViewed',
@@ -62,4 +62,14 @@ test('blocks WebSocket endpoints when connection rate limiting is removed', () =
     const websocket = results.find((result) => result.name === 'WebSocket authentication and origin controls')
     assert.equal(websocket?.status, 'blocked')
     assert.match(websocket?.detail ?? '', /autoCareWebSocketConnectionRateLimit/)
+})
+
+test('blocks moderation boundary when privileged MFA guard is removed', () => {
+    const results = evaluateThreatSurface({
+        ...sourceMap,
+        admin: sourceMap.admin.replace('const user = await requireRecentPrivilegedMfa(request)', 'const user = await requireAuth(request)'),
+    })
+    const moderation = results.find((result) => result.name === 'Admin moderation boundary')
+    assert.equal(moderation?.status, 'blocked')
+    assert.match(moderation?.detail ?? '', /requireRecentPrivilegedMfa/)
 })

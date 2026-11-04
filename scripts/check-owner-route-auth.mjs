@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 
 const PROJECT_ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)))
 const ROUTE_PATTERN = /app\.(get|post|put|patch|delete)(?:<[^>]*>)?\(\s*'([^']+)'([\s\S]*?)(?=\n\s*app\.(?:get|post|put|patch|delete)(?:<[^>]*>)?\(|\s*$)/g
+const AUTH_CALLS = ['requireAuth(request)', 'requireVerifiedEmail(request)', 'requireFreshMfaForPrivilegedUser(request', 'requireRecentPrivilegedMfa(request)']
 
 /**
  * Source-level guard for protected API surfaces. Authentication is still
@@ -15,11 +16,11 @@ export function evaluateRouteAuth(source, { prefix = '/owner/', mutationRequires
     for (const match of source.matchAll(ROUTE_PATTERN)) {
         const [, method, path, body] = match
         if (!path.startsWith(prefix)) continue
-        const requiresAuth = body.includes('requireAuth(request)') || body.includes('requireVerifiedEmail(request)')
-        const requiresVerified = !mutationRequiresVerified || method === 'get' || body.includes('requireVerifiedEmail(request)')
-        const authIndex = [body.indexOf('requireAuth(request)'), body.indexOf('requireVerifiedEmail(request)')]
+        const authIndex = AUTH_CALLS.map((token) => body.indexOf(token))
             .filter((index) => index >= 0)
             .sort((left, right) => left - right)[0] ?? -1
+        const requiresAuth = authIndex >= 0
+        const requiresVerified = !mutationRequiresVerified || method === 'get' || body.includes('requireVerifiedEmail(request)') || body.includes('requireFreshMfaForPrivilegedUser(request, true)')
         const validationIndex = ['validateParams(', 'validateQuery(', 'validateBody(']
             .map((token) => body.indexOf(token))
             .filter((index) => index >= 0)
@@ -32,7 +33,7 @@ export function evaluateRouteAuth(source, { prefix = '/owner/', mutationRequires
             detail: !requiresAuth
                 ? mutationRequiresVerified && method !== 'get'
                     ? 'route mutation must call requireVerifiedEmail(request)'
-                    : 'route must call requireAuth(request) or requireVerifiedEmail(request)'
+                    : 'route must call a recognized request authentication boundary'
                 : !requiresVerified
                     ? 'route mutation must call requireVerifiedEmail(request)'
                     : authenticatesBeforeValidation

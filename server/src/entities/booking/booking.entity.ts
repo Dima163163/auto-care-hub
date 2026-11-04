@@ -78,14 +78,23 @@ export class BookingEntity {
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('bookings', 'comment', 'text') })
     comment!: string | null
 
+    @Column({ type: 'text', nullable: true })
+    commentBinding!: string | null
+
     @Column({ name: 'idempotency_key', type: 'varchar', length: 128, nullable: true })
     idempotencyKey!: string | null
 
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('bookings', 'cancellationReason', 'text') })
     cancellationReason!: string | null
 
+    @Column({ type: 'text', nullable: true })
+    cancellationReasonBinding!: string | null
+
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('bookings', 'ownerNote', 'text') })
     ownerNote!: string | null
+
+    @Column({ type: 'text', nullable: true })
+    ownerNoteBinding!: string | null
 
     @CreateDateColumn({ type: 'timestamptz' })
     createdAt!: Date

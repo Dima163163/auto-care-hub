@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 
 import { requireAuth, requireVerifiedEmail } from '../auth/require-auth.js'
+import { requireRecentPrivilegedMfa } from '../auth/privileged-step-up.service.js'
 import { validateBody, validateParams, validateQuery } from '../../shared/validation/validate.js'
 import { createRateLimitPreHandler, getAuthenticatedUserRateLimitIdentifier } from '../../shared/security/rate-limit.js'
 import { recordAuditLog } from '../admin/audit-log.service.js'
@@ -16,7 +17,7 @@ export async function platformReviewsRoutes(app: FastifyInstance) {
     app.post('/v1/platform-reviews', { preHandler: createPlatformReviewRateLimit }, async (request) => createPlatformReview(await requireVerifiedEmail(request), { ...validateBody(createPlatformReviewSchema, request.body), idempotencyKey: getOptionalIdempotencyKey(request.headers) }))
     app.get('/v1/platform-reviews/my', async (request) => getMyPlatformReviews(await requireAuth(request)))
     app.get('/admin/platform-reviews', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const result = await getAdminPlatformReviews(user)
         await recordAuditLog({
             actorId: user.id,
@@ -28,14 +29,14 @@ export async function platformReviewsRoutes(app: FastifyInstance) {
         return result
     })
     app.post('/admin/platform-reviews/:reviewId/response', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(platformReviewParamsSchema, request.params)
         const result = await respondToPlatformReview(user, params.reviewId, validateBody(respondPlatformReviewSchema, request.body))
         await recordAuditLog({ actorId: user.id, action: AuditAction.ReviewModerated, targetId: params.reviewId, targetType: 'platform_review', metadata: { responseAdded: true }, request })
         return result
     })
     app.delete('/super-admin/platform-reviews/:reviewId', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(platformReviewParamsSchema, request.params)
         const result = await deletePlatformReview(user, params.reviewId)
         await recordAuditLog({ actorId: user.id, action: AuditAction.ReviewDeleted, targetId: params.reviewId, targetType: 'platform_review', metadata: { reason: 'moderation' }, request })

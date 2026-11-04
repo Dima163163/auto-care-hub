@@ -7,7 +7,7 @@ import { AppDataSource } from '../../database/data-source.js'
 import { AuditAction, AuditLogEntity } from '../../entities/audit-log/audit-log.entity.js'
 import { UserSessionEntity } from '../../entities/user-session/user-session.entity.js'
 import { UserEntity, UserRole, UserStatus } from '../../entities/user/user.entity.js'
-import { createAuthTokens } from '../auth/auth.service.js'
+import { createTestAccessToken } from '../../test-support/auth-session.js'
 
 describe('Security Center session revocation route', () => {
     const apps: FastifyInstance[] = []
@@ -48,7 +48,7 @@ describe('Security Center session revocation route', () => {
             revokedAt: null,
             revocationReason: null,
         }))
-        const token = createAuthTokens(superAdmin).accessToken
+        const token = await createTestAccessToken(superAdmin)
         const initialTokenVersion = target.tokenVersion
 
         try {

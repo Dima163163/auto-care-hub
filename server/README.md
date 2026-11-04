@@ -200,6 +200,9 @@ export NODE_ENV=test
 export TEST_DATABASE_URL=postgresql://test_user:test_password@127.0.0.1:5432/autocarehub_test
 export TEST_REDIS_URL=redis://127.0.0.1:6379/15
 DATABASE_URL="$TEST_DATABASE_URL" REDIS_URL="$TEST_REDIS_URL" npm run check:integration-prerequisites
+DATABASE_URL="$TEST_DATABASE_URL" REDIS_URL="$TEST_REDIS_URL" npm run migration:run
+DATABASE_URL="$TEST_DATABASE_URL" REDIS_URL="$TEST_REDIS_URL" npm run demo:seed
+DATABASE_URL="$TEST_DATABASE_URL" REDIS_URL="$TEST_REDIS_URL" npm run autocare:seed
 npm run test:integration
 ```
 

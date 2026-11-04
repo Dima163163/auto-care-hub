@@ -65,6 +65,9 @@ export class BookingRescheduleRequestEntity {
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('booking_reschedule_requests', 'resolutionReason', 'text') })
     resolutionReason!: string | null
 
+    @Column({ type: 'text', nullable: true })
+    resolutionReasonBinding!: string | null
+
     @CreateDateColumn({ type: 'timestamptz' })
     createdAt!: Date
 

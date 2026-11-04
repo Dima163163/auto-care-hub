@@ -6,6 +6,8 @@ import { ServiceEntity } from './service/service.entity.js'
 import { UserEntity } from './user/user.entity.js'
 import { ClientVehicleEntity } from './user/client-vehicle.entity.js'
 import { UserSessionEntity } from './user-session/user-session.entity.js'
+import { UserMfaFactorEntity } from './user-mfa/user-mfa-factor.entity.js'
+import { UserMfaRecoveryCodeEntity } from './user-mfa/user-mfa-recovery-code.entity.js'
 import { AuditLogEntity } from './audit-log/audit-log.entity.js'
 import { NotificationEntity } from './notification/notification.entity.js'
 import { BookingStatusHistoryEntity } from './booking/booking-status-history.entity.js'
@@ -81,6 +83,8 @@ export const entities = [
     ReviewEntity,
     SecurityTokenEntity,
     UserSessionEntity,
+    UserMfaFactorEntity,
+    UserMfaRecoveryCodeEntity,
     AuditLogEntity,
     NotificationEntity,
     BookingStatusHistoryEntity,

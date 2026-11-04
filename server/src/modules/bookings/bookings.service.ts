@@ -243,10 +243,15 @@ export async function getBookingStatusHistory(user: UserEntity, bookingId: strin
         throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Booking not found.' })
     }
 
-    return AppDataSource.getRepository(BookingStatusHistoryEntity).find({
+    const history = await AppDataSource.getRepository(BookingStatusHistoryEntity).find({
         where: { bookingId: normalizedBookingId },
         order: { createdAt: 'ASC' },
     })
+    return history.map(toBookingStatusHistoryResponse)
+}
+
+export function toBookingStatusHistoryResponse({ id, bookingId, status, changedById, reason, createdAt }: BookingStatusHistoryEntity) {
+    return { id, bookingId, status, changedById, reason, createdAt }
 }
 
 function assertClient(user: UserEntity) {

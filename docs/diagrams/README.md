@@ -1,5 +1,256 @@
 # Карта проекта AutoCare Hub
 
+**U03, mock operational chat access 2026-11-04:** `03-frontend.puml` и SVG
+показывают обычное чтение support/escalation чатов и вложений admin без
+назначения на приватную жалобу. Приватный request chat по-прежнему требует
+назначения; mock regression 8/8 PASS, staging acceptance открыта.
+
+**U03, mock participant block scope 2026-11-04:** `03-frontend.puml` и SVG
+показывают запрет обычной блокировки для admin/super-admin и чужого
+пользователя вне участников переписки. Mock regression 7/7 PASS,
+staging acceptance открыта.
+
+**U03, mock sanction isolation 2026-11-04:** `03-frontend.puml` и SVG
+показывают, что повторное создание participant block в mock не меняет
+`sourceReportId` санкции по жалобе: обычная активная блокировка переиспользуется,
+а санкция снимается только через апелляцию. Mock regression 6/6 PASS;
+staging acceptance открыта.
+
+**U03, mock emergency chat parity 2026-11-04:**
+`03-frontend.puml` и SVG показывают, что mock скрывает приватные request
+переписки из super-admin списка, но разрешает независимый direct read по ID
+с причиной. Сторона любой жалобы получает отказ в direct read и служебной
+очереди; быстрый request → chat-thread маршрут закрыт. Mock 9/9 PASS.
+
+**U03, direct emergency chat access 2026-11-04:**
+`09-access-privacy.puml` и SVG показывают, что сторона жалобы после смены
+роли на super-admin не открывает приватную переписку по ID даже с аварийной
+причиной. Независимый super-admin сохраняет audited доступ. Boundary
+39 PASS, isolated PostgreSQL 11/11 PASS; staging открыт.
+
+**U03, chat restriction revocation 2026-11-04:** `09-access-privacy.puml`
+и SVG показывают, что DELETE блокировки доступен только автору обычного
+participant block. Модерационное ограничение с `sourceReportId` снимается
+только решением по апелляции; super-admin не обходит этот путь. Mock и
+OpenAPI согласованы; isolated PostgreSQL 10/10 PASS, staging открыт.
+
+**U03, historical chat report conflict 2026-11-04:**
+`09-access-privacy.puml` и SVG показывают, что конфликт стороны жалобы
+сохраняется после закрытия дела: admin/super-admin не видят эту переписку в
+служебном списке, admin не читает и не продлевает модерацию, назначение и
+решение по новой жалобе отклоняются под thread lock. Доступ независимого
+модератора по текущей pending жалобе сохранён. PostgreSQL 8/8 PASS;
+staging acceptance открыта.
+
+**U03, chat conflict DB replay 2026-10-29:** схема
+`09-access-privacy.puml` дополнена integration anchor:
+`chat-report-conflict.integration.test.ts`. PostgreSQL 6/6 PASS для
+списка, решения, назначения, чтения и продления; staging replay открыт.
+
+**Broadcast photoUrls schema parity 2026-10-29:** `05-domain-data.puml` с SVG
+показывает PostgreSQL `text[]` для массива ссылок, согласованный с entity
+и миграцией. Isolated account deletion integration 1/1 PASS.
+
+**U03, neighboring chat reports 2026-10-29:** `09-access-privacy.puml` с SVG
+показывает запрет super-admin решения соседней pending жалобы, когда он
+сторона дела той же переписки; проверка под thread row lock.
+PostgreSQL/staging replay открыт.
+
+**U03, chat report conflict 2026-10-29:** `09-access-privacy.puml` с SVG
+показывает запрет назначения, чтения, продления и решения для стороны
+жалобы после смены роли; проверка решения и назначения под row lock.
+PostgreSQL/staging replay открыт.
+
+**U03, appeal review 2026-10-29:** `09-access-privacy.puml` с SVG
+показывает запрет решения собственной апелляции под row lock, включая
+отмену chat restriction. PostgreSQL/staging replay открыт.
+
+**U03, provider change review 2026-10-29:** `09-access-privacy.puml` с SVG
+показывает запрет решения собственной ранее созданной заявки после смены
+owner → admin/super-admin. PostgreSQL/staging replay открыт.
+
+**U03, catalog-gap review 2026-10-29:** `09-access-privacy.puml` с SVG
+показывает запрет решения собственной заявки на изменение каталога под
+row lock. PostgreSQL/staging replay открыт.
+
+**U03, request transitions 2026-10-29:** `09-access-privacy.puml` с SVG
+показывает fresh MFA для admin/super-admin перед 14 переходами service и
+broadcast request. PostgreSQL/staging replay открыт.
+
+**U03, provider workspace mutations 2026-10-29:**
+`09-access-privacy.puml` с SVG показывает fresh MFA для admin/super-admin
+перед 16 маршрутами изменения кабинета сервиса. PostgreSQL/staging replay открыт.
+
+**U03, provider workspace reads 2026-10-29:** `09-access-privacy.puml` с
+SVG показывает fresh MFA для admin/super-admin перед 12 GET маршрутами
+внутреннего кабинета сервиса. PostgreSQL/staging replay открыт.
+
+**U03, broadcast reads 2026-10-29:** `09-access-privacy.puml` с SVG
+показывает fresh MFA для admin/super-admin перед broadcast detail и owner
+inbox. PostgreSQL/staging replay открыт.
+
+**U03, service request reads 2026-10-29:** `09-access-privacy.puml` с SVG
+показывает fresh MFA для admin/super-admin перед detail, timeline и owner
+списком заявок. PostgreSQL/staging replay открыт.
+
+**U03, legacy request chat 2026-10-29:** `09-access-privacy.puml` с SVG
+показывает отказ admin/super-admin на старых conversation/attachment/WebSocket
+маршрутах заявки; приватная модерация идёт через audited chat route.
+PostgreSQL/browser/staging replay открыт.
+
+**U03, provider membership bypass 2026-10-29:** `09-access-privacy.puml`
+с SVG показывает, что admin доступ к приватному request-чату требует
+назначенной жалобы; provider membership его не заменяет. Быстрый маршрут
+request → chat-thread закрыт для admin/super-admin. PostgreSQL replay открыт.
+
+**U03, chat index audit 2026-10-29:** `09-access-privacy.puml` с SVG
+показывает запись actor/role/itemCount при admin/super-admin чтении списка
+чатов без копирования тем в аудит. PostgreSQL replay открыт.
+
+**U03, privileged chat index scope 2026-10-29:** `09-access-privacy.puml`
+с SVG показывает, что super-admin индекс содержит только support/escalation;
+приватные request-чаты открываются отдельно с причиной и аудитом. Mock
+список повторяет это правило. PostgreSQL/staging replay открыты.
+
+**U03, chat actions 2026-10-29:** `07-auth-session.puml` и
+`09-access-privacy.puml` с SVG показывают свежий MFA перед admin/super-admin
+действиями с чатами и вложениями. PostgreSQL/staging replay открыты.
+
+**U03, chat index 2026-10-29:** `07-auth-session.puml` и
+`09-access-privacy.puml` с SVG показывают свежий MFA перед выдачей списка
+тем чатов admin/super-admin. PostgreSQL/staging replay остаются открытыми.
+
+**U03, admin mutations 2026-10-29:** `07-auth-session.puml` и
+`09-access-privacy.puml` с SVG показывают свежий MFA для модерации,
+provider/catalog/market governance, кабинетов и platform reviews.
+PostgreSQL/staging replay открыт.
+
+**U03, admin reads 2026-10-29:** `07-auth-session.puml` и
+`09-access-privacy.puml` с SVG показывают свежий MFA перед приватными
+admin dashboard/платформенными отзывами. Public market hierarchy остаётся
+под role authorization; PostgreSQL/staging replay открыты.
+
+**U03, exceptional reads 2026-10-29:** `07-auth-session.puml` и
+`09-access-privacy.puml` с SVG показывают свежий MFA перед приватным чтением
+жалоб, чата и вложений admin/super-admin, chat WebSocket с live перепроверкой и
+super-admin просмотром заявки. `03-frontend.puml` показывает JSON отказ
+вместо Blob для MFA step-up на приватном изображении. Другие sensitive reads
+и staging replay открыты.
+
+**U03, operator MFA recovery 2026-10-29:** `05-domain-data.puml` и
+`07-auth-session.puml` с SVG показывают замену фактора после двух проверок
+MFA независимых super-admin, отзыв сессий, tokenVersion и аудит. Внешняя
+проверка личности и break-glass при нехватке подтверждающих лиц остаются
+операционными условиями.
+
+**U03, sensitive action step-up 2026-10-29:** `07-auth-session.puml` и
+`09-access-privacy.puml` с SVG показывают повторную проверку кода после
+пятиминутного окна для user/role, trust-policy, security-center, outbox и
+решений по удалению аккаунта. `auth/step-up` обновляет отметку текущей
+сессии, интерфейс повторяет исходное действие после подтверждения. Экспорт
+журнала аудита и отчёта безопасности также требует свежий MFA; CSV-клиент
+сохраняет структурированный код ошибки для диалога. Исключительные чтения и
+staging replay ещё открыты.
+
+**U03, privileged password login 2026-10-29:** `05-domain-data.puml`,
+`07-auth-session.puml` и `09-access-privacy.puml` с SVG показывают TOTP/одноразовый recovery code,
+row-bound секрет фактора и `mfaVerifiedAt` сессии. Старые privileged sessions
+отклоняются, удаление аккаунта очищает фактор. [Порядок включения](../operations/PRIVILEGED_MFA_ROLLOUT.md).
+Reset/step-up и staging replay остаются открытыми.
+
+**U03, privileged OAuth 2026-10-29:** `07-auth-session.puml` и SVG
+показывают отказ в OAuth callback/link для admin/super-admin до создания
+сессии. Password MFA и одноразовые recovery codes подготовлены локально;
+сброс фактора и step-up открыты.
+
+**U02, fleet vehicle 2026-10-28:** `05-domain-data.puml` и `09-access-privacy.puml` с SVG показывают HMAC label/vehicleSnapshot по vehicle/fleet UUID. Migration 178680, bounded checkpoint, full verify и opt-in strict reader подготовлены.
+
+
+**U02, fleet account 2026-10-28:** `05-domain-data.puml` и `09-access-privacy.puml` с SVG показывают HMAC name/notes по fleet/owner UUID. Migration 178679, bounded checkpoint, full verify и opt-in strict reader подготовлены.
+
+
+**U02, expert question 2026-10-28:** `05-domain-data.puml` и `09-access-privacy.puml` с SVG показывают HMAC vehicleSnapshot/symptoms/answer по question/client UUID. Migration 178678, bounded checkpoint, full verify и opt-in strict reader подготовлены.
+
+
+**U02, guarantee claim 2026-10-28:** `05-domain-data.puml` и `09-access-privacy.puml` с SVG показывают HMAC summary/resolution по claim/request/client/provider UUID и claimType. Migration 178677, bounded checkpoint, full verify и opt-in strict reader подготовлены.
+
+
+**U02, broadcast offer 2026-10-28:** `05-domain-data.puml` и `09-access-privacy.puml` с SVG показывают HMAC offerSnapshot по offer/broadcast/provider/location UUID. Migration 178676, bounded checkpoint, full verify и opt-in strict reader подготовлены.
+
+
+**U02, broadcast request 2026-10-28:** `05-domain-data.puml` и `09-access-privacy.puml` с SVG показывают HMAC issueDescription/vehicleSnapshot по broadcast/client/definition UUID. Migration 178675, bounded checkpoint, full verify и opt-in strict reader подготовлены.
+
+
+**U02, repair event 2026-10-28:** `05-domain-data.puml` и `09-access-privacy.puml` с SVG показывают HMAC title/notes/metadata по event/request UUID и eventType. Migration 178674, bounded checkpoint, full verify и opt-in strict reader подготовлены.
+
+
+**U02, catalog gap requests 2026-10-28:** `05-domain-data.puml` и
+`09-access-privacy.puml` с SVG показывают HMAC четырёх полей по gap/requester
+UUID, provider UUID и параметрам каталога. Migration 178673, bounded
+checkpoint, full verify и opt-in strict reader подготовлены.
+
+**U02, appeal text 2026-10-28:** `05-domain-data.puml` и
+`09-access-privacy.puml` с SVG показывают HMAC reason/decisionReason по
+appeal/submitter/subject UUID, subject и nullable provider UUID. Migration
+178672, bounded checkpoint и opt-in strict reader подготовлены.
+
+**U02, provider change requests 2026-10-28:** `05-domain-data.puml` и
+`09-access-privacy.puml` с SVG показывают HMAC payload/reviewReason по
+request/provider/requester UUID и kind. Migration 178671, bounded checkpoint,
+full verify и opt-in strict reader подготовлены. Staging KMS/restore открыты.
+
+**U03, privileged session 2026-10-28:** `07-auth-session.puml` и SVG
+показывают отказ admin/super-admin при access/refresh без persisted session.
+Текущий password MFA указан выше; step-up и staging acceptance открыты.
+
+**U02, trust evidence 2026-10-28:** `05-domain-data.puml` и
+`09-access-privacy.puml` с SVG показывают HMAC reference/notes по evidence/
+provider UUID и kind, проверку reference blind index, очистку старых index
+после удаления. Migration 178670, bounded checkpoint и opt-in strict reader
+подготовлены. Staging KMS/restore остаётся открытым.
+
+**U02, chat block reason 2026-10-28:** `05-domain-data.puml` и
+`09-access-privacy.puml` с SVG показывают HMAC причины блокировки по block/
+thread/blocker/blocked UUID. Migration 178669, bounded checkpoint и opt-in
+strict reader подготовлены. Staging KMS/restore остаётся открытым.
+
+**U02, chat report text 2026-10-28:** `05-domain-data.puml` и
+`09-access-privacy.puml` с SVG показывают HMAC четырёх текстов жалобы по
+report/thread/reporter UUID. Migration 178668, bounded checkpoint и opt-in
+strict reader подготовлены. Staging KMS/restore остаётся открытым.
+
+**U02, service quote snapshot 2026-10-28:** `05-domain-data.puml` и
+`09-access-privacy.puml` с SVG показывают HMAC сметы по quote/request/provider
+UUID и version. Анонимизация пересчитывает подпись каждой строки. Migration
+178667, bounded checkpoint и opt-in strict reader подготовлены. Staging
+KMS/restore остаётся открытым.
+
+**U02, AutoCare reschedule text 2026-10-28:** `05-domain-data.puml` и
+`09-access-privacy.puml` с SVG показывают HMAC причин предложения и решения.
+Migration 178666, bounded checkpoint и opt-in strict reader подготовлены.
+Staging KMS/restore остаётся открытым.
+
+**U02, booking reschedule resolution 2026-10-28:** `05-domain-data.puml`
+и `09-access-privacy.puml` с SVG показывают HMAC причины по reschedule/
+booking/requester/resolver UUID и status. Migration 178665, bounded checkpoint
+и opt-in strict reader подготовлены. Staging KMS/restore остаётся открытым.
+
+**U02, booking text fields 2026-10-28:** `05-domain-data.puml` и
+`09-access-privacy.puml` с SVG показывают HMAC комментария, причины отмены
+и заметки владельца по booking/client/cabinet/service UUID. Migration 178664,
+bounded checkpoint и opt-in strict reader подготовлены. API скрывает binding;
+другие поля U02 и staging KMS/restore остаются открытыми.
+
+**U02, booking status history reason 2026-10-28:** `05-domain-data.puml`
+и `09-access-privacy.puml` с SVG показывают HMAC причины по history/booking
+UUID и status, bounded checkpoint и opt-in strict reader. API не отдаёт
+binding. Staging KMS/restore и другие поля U02 остаются открытыми.
+**U02, service request outcomes 2026-10-28:** `05-domain-data.puml` и
+`09-access-privacy.puml` с SVG показывают HMAC причин отмены и неявки и
+заметки завершения по request/client/provider/location/definition UUID.
+Migration 178662, bounded checkpoint и opt-in strict reader подготовлены.
+Staging KMS/restore, strict cutover и другие поля U02 остаются открытыми.
+
 **U02, user secondary fields 2026-10-28:** `05-domain-data.puml` и
 `09-access-privacy.puml` с SVG показывают HMAC аватара, публичного имени и
 города по user UUID, bounded checkpoint и opt-in strict reader. Частичные

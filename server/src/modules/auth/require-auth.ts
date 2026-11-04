@@ -2,6 +2,7 @@ import type { FastifyRequest } from 'fastify'
 
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
+import { isAdminRole } from '../../shared/auth/roles.js'
 import { verifyAccessToken } from './auth-token.js'
 import { getUserById } from './auth.service.js'
 import { parseBearerToken } from './bearer-token.js'
@@ -12,7 +13,7 @@ function getBearerToken(request: FastifyRequest) {
     return parseBearerToken(request.headers.authorization)
 }
 
-export async function assertAccessSessionActive(userId: string, sessionId: string | undefined) {
+export async function assertAccessSessionActive(userId: string, sessionId: string | undefined, requireMfa = false) {
     // Legacy/setup access tokens may intentionally have no persisted session.
     // Once a token is bound to a session, however, revoking that session must
     // immediately invalidate the access token as well as its refresh token.
@@ -25,6 +26,13 @@ export async function assertAccessSessionActive(userId: string, sessionId: strin
             message: 'Session is no longer active.',
         })
     }
+    if (requireMfa && !session.mfaVerifiedAt) {
+        throw new AppError({
+            statusCode: 401,
+            code: ERROR_CODES.Unauthorized,
+            message: 'A verified second factor is required for privileged access.',
+        })
+    }
 }
 
 export async function requireAuth(request: FastifyRequest) {
@@ -33,7 +41,14 @@ export async function requireAuth(request: FastifyRequest) {
         const payload = verifyAccessToken(token)
 
         const user = await getUserById(payload.userId, payload.tokenVersion)
-        await assertAccessSessionActive(payload.userId, payload.sessionId)
+        if (isAdminRole(user.role) && !payload.sessionId) {
+            throw new AppError({
+                statusCode: 401,
+                code: ERROR_CODES.Unauthorized,
+                message: 'A current session is required for privileged access.',
+            })
+        }
+        await assertAccessSessionActive(payload.userId, payload.sessionId, isAdminRole(user.role))
         return user
     } catch (error) {
         if (error instanceof AppError) {

@@ -8,6 +8,16 @@ import {
 import { randomUUID } from 'node:crypto'
 import { UserEntity } from '../../../entities/user/user.entity.js'
 import { ClientVehicleEntity } from '../../../entities/user/client-vehicle.entity.js'
+import { BookingStatusHistoryEntity } from '../../../entities/booking/booking-status-history.entity.js'
+import { BookingEntity } from '../../../entities/booking/booking.entity.js'
+import { BookingRescheduleRequestEntity } from '../../../entities/booking/booking-reschedule-request.entity.js'
+import { AutoCareRescheduleRequestEntity } from '../../../entities/automotive/autocare-reschedule-request.entity.js'
+import { AutoCareServiceQuoteEntity } from '../../../entities/automotive/service-quote.entity.js'
+import { AutoCareChatBlockEntity, AutoCareChatReportEntity } from '../../../entities/automotive/chat-moderation.entity.js'
+import { AutoCareBroadcastOfferEntity, AutoCareBroadcastRequestEntity, AutoCareGuaranteeClaimEntity, AutoCareExpertQuestionEntity, AutoCareFleetAccountEntity, AutoCareFleetVehicleEntity, AutoCareRepairEventEntity, AutoCareTrustEvidenceEntity } from '../../../entities/automotive/marketplace-enhancements.entity.js'
+import { AutomotiveProviderChangeRequestEntity } from '../../../entities/automotive/provider-change-request.entity.js'
+import { AutoCareAppealEntity } from '../../../entities/automotive/appeal.entity.js'
+import { AutomotiveCatalogGapRequestEntity } from '../../../entities/automotive/catalog-gap-request.entity.js'
 import { AutomotiveProviderInvitationEntity } from '../../../entities/automotive/provider-invitation.entity.js'
 import { OAuthIdentityEntity } from '../../../entities/oauth-identity/oauth-identity.entity.js'
 import { OutboxEventEntity } from '../../../entities/outbox/outbox-event.entity.js'
@@ -26,6 +36,25 @@ import { serializeVehicleSnapshot } from './vehicle-snapshot-value.js'
 import { serializeServiceRequestNote } from './service-request-note-value.js'
 import { sealClientVehicleFields, openClientVehicleFields } from './client-vehicle-record-binding.js'
 import { sealUserSecondaryFields, openUserSecondaryFields } from './user-secondary-record-binding.js'
+import { sealServiceRequestOutcomeFields, openServiceRequestOutcomeFields } from './service-request-outcome-record-binding.js'
+import { sealBookingStatusReason, openBookingStatusReason } from './booking-status-reason-record-binding.js'
+import { sealBookingTextFields, openBookingTextFields } from './booking-text-record-binding.js'
+import { sealBookingRescheduleReason, openBookingRescheduleReason } from './booking-reschedule-reason-record-binding.js'
+import { sealAutoCareRescheduleTextFields, openAutoCareRescheduleTextFields } from './autocare-reschedule-text-record-binding.js'
+import { sealServiceQuoteSnapshot, openServiceQuoteSnapshot } from './service-quote-snapshot-record-binding.js'
+import { sealChatReportTextFields, openChatReportTextFields } from './chat-report-text-record-binding.js'
+import { sealChatBlockReason, openChatBlockReason } from './chat-block-reason-record-binding.js'
+import { sealTrustEvidenceFields, openTrustEvidenceFields } from './trust-evidence-record-binding.js'
+import { sealProviderChangeRequestFields, openProviderChangeRequestFields } from './provider-change-request-record-binding.js'
+import { sealAppealFields, openAppealFields } from './appeal-record-binding.js'
+import { sealCatalogGapFields, openCatalogGapFields } from './catalog-gap-record-binding.js'
+import { sealRepairEventFields, openRepairEventFields } from './repair-event-record-binding.js'
+import { sealBroadcastRequestFields, openBroadcastRequestFields } from './broadcast-request-record-binding.js'
+import { sealBroadcastOfferSnapshot, openBroadcastOfferSnapshot } from './broadcast-offer-record-binding.js'
+import { sealGuaranteeClaimFields, openGuaranteeClaimFields } from './guarantee-claim-record-binding.js'
+import { sealExpertQuestionFields, openExpertQuestionFields } from './expert-question-record-binding.js'
+import { sealFleetAccountFields, openFleetAccountFields } from './fleet-account-record-binding.js'
+import { sealFleetVehicleFields, openFleetVehicleFields } from './fleet-vehicle-record-binding.js'
 import { requireAcceptedQuoteRecordBinding, requireEstimateSnapshotRecordBinding, requireContactSnapshotRecordBinding, requireVehicleSnapshotRecordBinding, requireServiceRequestNoteRecordBinding, requireBookingSnapshotRecordBinding, requireChatSubjectRecordBinding, requireEmailRecordBinding, requireMessageBodyRecordBinding, requireMessageOfferRecordBinding, requireOAuthRecordBinding, requireUserProfileRecordBinding } from './record-binding-policy.js'
 
 type EmailRecord = {
@@ -443,7 +472,7 @@ function openProviderSubject(record: ProviderIdentityRecord) {
 
 @EventSubscriber()
 export class SensitiveDataSubscriber implements EntitySubscriberInterface {
-    beforeInsert(event: InsertEvent<UserEntity | ClientVehicleEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
+    beforeInsert(event: InsertEvent<UserEntity | ClientVehicleEntity | BookingStatusHistoryEntity | BookingEntity | BookingRescheduleRequestEntity | AutoCareRescheduleRequestEntity | AutoCareServiceQuoteEntity | AutoCareChatReportEntity | AutoCareChatBlockEntity | AutoCareTrustEvidenceEntity | AutomotiveProviderChangeRequestEntity | AutoCareAppealEntity | AutomotiveCatalogGapRequestEntity | AutoCareRepairEventEntity | AutoCareBroadcastRequestEntity | AutoCareBroadcastOfferEntity | AutoCareGuaranteeClaimEntity | AutoCareExpertQuestionEntity | AutoCareFleetAccountEntity | AutoCareFleetVehicleEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
         if (event.metadata.tableName === 'users' || event.metadata.tableName === 'autocare_provider_invitations') {
             if (!event.entity.id) event.entity.id = randomUUID()
             sealEmail(event.entity as EmailRecord, event.metadata.tableName)
@@ -462,6 +491,78 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             const vehicle = event.entity as ClientVehicleEntity
             if (!vehicle.id) vehicle.id = randomUUID()
             sealClientVehicleFields(vehicle)
+        } else if (event.metadata.tableName === 'booking_status_history') {
+            const history = event.entity as BookingStatusHistoryEntity
+            if (!history.id) history.id = randomUUID()
+            sealBookingStatusReason(history)
+        } else if (event.metadata.tableName === 'bookings') {
+            const booking = event.entity as BookingEntity
+            if (!booking.id) booking.id = randomUUID()
+            sealBookingTextFields(booking)
+        } else if (event.metadata.tableName === 'booking_reschedule_requests') {
+            const request = event.entity as BookingRescheduleRequestEntity
+            if (!request.id) request.id = randomUUID()
+            sealBookingRescheduleReason(request)
+        } else if (event.metadata.tableName === 'autocare_reschedule_requests') {
+            const request = event.entity as AutoCareRescheduleRequestEntity
+            if (!request.id) request.id = randomUUID()
+            sealAutoCareRescheduleTextFields(request)
+        } else if (event.metadata.tableName === 'autocare_service_quotes') {
+            const quote = event.entity as AutoCareServiceQuoteEntity
+            if (!quote.id) quote.id = randomUUID()
+            sealServiceQuoteSnapshot(quote)
+        } else if (event.metadata.tableName === 'autocare_chat_reports') {
+            const report = event.entity as AutoCareChatReportEntity
+            if (!report.id) report.id = randomUUID()
+            sealChatReportTextFields(report)
+        } else if (event.metadata.tableName === 'autocare_chat_blocks') {
+            const block = event.entity as AutoCareChatBlockEntity
+            if (!block.id) block.id = randomUUID()
+            sealChatBlockReason(block)
+        } else if (event.metadata.tableName === 'autocare_trust_evidence') {
+            const evidence = event.entity as AutoCareTrustEvidenceEntity
+            if (!evidence.id) evidence.id = randomUUID()
+            sealTrustEvidenceFields(evidence)
+        } else if (event.metadata.tableName === 'autocare_repair_events') {
+            const repairEvent = event.entity as AutoCareRepairEventEntity
+            if (!repairEvent.id) repairEvent.id = randomUUID()
+            sealRepairEventFields(repairEvent)
+        } else if (event.metadata.tableName === 'autocare_broadcast_requests') {
+            const request = event.entity as AutoCareBroadcastRequestEntity
+            if (!request.id) request.id = randomUUID()
+            sealBroadcastRequestFields(request)
+        } else if (event.metadata.tableName === 'autocare_broadcast_offers') {
+            const offer = event.entity as AutoCareBroadcastOfferEntity
+            if (!offer.id) offer.id = randomUUID()
+            sealBroadcastOfferSnapshot(offer)
+        } else if (event.metadata.tableName === 'autocare_guarantee_claims') {
+            const claim = event.entity as AutoCareGuaranteeClaimEntity
+            if (!claim.id) claim.id = randomUUID()
+            sealGuaranteeClaimFields(claim)
+        } else if (event.metadata.tableName === 'autocare_expert_questions') {
+            const question = event.entity as AutoCareExpertQuestionEntity
+            if (!question.id) question.id = randomUUID()
+            sealExpertQuestionFields(question)
+        } else if (event.metadata.tableName === 'autocare_fleet_accounts') {
+            const fleet = event.entity as AutoCareFleetAccountEntity
+            if (!fleet.id) fleet.id = randomUUID()
+            sealFleetAccountFields(fleet)
+        } else if (event.metadata.tableName === 'autocare_fleet_vehicles') {
+            const vehicle = event.entity as AutoCareFleetVehicleEntity
+            if (!vehicle.id) vehicle.id = randomUUID()
+            sealFleetVehicleFields(vehicle)
+        } else if (event.metadata.tableName === 'autocare_catalog_gap_requests') {
+            const request = event.entity as AutomotiveCatalogGapRequestEntity
+            if (!request.id) request.id = randomUUID()
+            sealCatalogGapFields(request)
+        } else if (event.metadata.tableName === 'autocare_appeals') {
+            const appeal = event.entity as AutoCareAppealEntity
+            if (!appeal.id) appeal.id = randomUUID()
+            sealAppealFields(appeal)
+        } else if (event.metadata.tableName === 'autocare_provider_change_requests') {
+            const request = event.entity as AutomotiveProviderChangeRequestEntity
+            if (!request.id) request.id = randomUUID()
+            sealProviderChangeRequestFields(request)
         } else if (event.metadata.tableName === 'autocare_service_messages') {
             const message = event.entity as ServiceMessageEntity
             if (!message.id) message.id = randomUUID()
@@ -480,11 +581,12 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             sealContactSnapshot(request)
             sealVehicleSnapshot(request)
             sealServiceRequestNote(request)
+            sealServiceRequestOutcomeFields(request)
             sealBookingSnapshot(request)
         }
     }
 
-    beforeUpdate(event: UpdateEvent<UserEntity | ClientVehicleEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
+    beforeUpdate(event: UpdateEvent<UserEntity | ClientVehicleEntity | BookingStatusHistoryEntity | BookingEntity | BookingRescheduleRequestEntity | AutoCareRescheduleRequestEntity | AutoCareServiceQuoteEntity | AutoCareChatReportEntity | AutoCareChatBlockEntity | AutoCareTrustEvidenceEntity | AutomotiveProviderChangeRequestEntity | AutoCareAppealEntity | AutomotiveCatalogGapRequestEntity | AutoCareRepairEventEntity | AutoCareBroadcastRequestEntity | AutoCareBroadcastOfferEntity | AutoCareGuaranteeClaimEntity | AutoCareExpertQuestionEntity | AutoCareFleetAccountEntity | AutoCareFleetVehicleEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
         if (event.entity && (event.metadata.tableName === 'users' || event.metadata.tableName === 'autocare_provider_invitations')) {
             sealEmail(event.entity as EmailRecord, event.metadata.tableName)
             if (event.metadata.tableName === 'users') {
@@ -498,6 +600,42 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             if (outbox.id && outbox.payload) setOutboxPayloadRecordId(outbox.payload, outbox.id)
         } else if (event.entity && event.metadata.tableName === 'client_vehicles') {
             sealClientVehicleFields(event.entity as ClientVehicleEntity)
+        } else if (event.entity && event.metadata.tableName === 'booking_status_history') {
+            sealBookingStatusReason(event.entity as BookingStatusHistoryEntity)
+        } else if (event.entity && event.metadata.tableName === 'bookings') {
+            sealBookingTextFields(event.entity as BookingEntity)
+        } else if (event.entity && event.metadata.tableName === 'booking_reschedule_requests') {
+            sealBookingRescheduleReason(event.entity as BookingRescheduleRequestEntity)
+        } else if (event.entity && event.metadata.tableName === 'autocare_reschedule_requests') {
+            sealAutoCareRescheduleTextFields(event.entity as AutoCareRescheduleRequestEntity)
+        } else if (event.entity && event.metadata.tableName === 'autocare_service_quotes') {
+            sealServiceQuoteSnapshot(event.entity as AutoCareServiceQuoteEntity)
+        } else if (event.entity && event.metadata.tableName === 'autocare_chat_reports') {
+            sealChatReportTextFields(event.entity as AutoCareChatReportEntity)
+        } else if (event.entity && event.metadata.tableName === 'autocare_chat_blocks') {
+            sealChatBlockReason(event.entity as AutoCareChatBlockEntity)
+        } else if (event.entity && event.metadata.tableName === 'autocare_trust_evidence') {
+            sealTrustEvidenceFields(event.entity as AutoCareTrustEvidenceEntity)
+        } else if (event.entity && event.metadata.tableName === 'autocare_repair_events') {
+            sealRepairEventFields(event.entity as AutoCareRepairEventEntity)
+        } else if (event.entity && event.metadata.tableName === 'autocare_broadcast_requests') {
+            sealBroadcastRequestFields(event.entity as AutoCareBroadcastRequestEntity)
+        } else if (event.entity && event.metadata.tableName === 'autocare_broadcast_offers') {
+            sealBroadcastOfferSnapshot(event.entity as AutoCareBroadcastOfferEntity)
+        } else if (event.entity && event.metadata.tableName === 'autocare_guarantee_claims') {
+            sealGuaranteeClaimFields(event.entity as AutoCareGuaranteeClaimEntity)
+        } else if (event.entity && event.metadata.tableName === 'autocare_expert_questions') {
+            sealExpertQuestionFields(event.entity as AutoCareExpertQuestionEntity)
+        } else if (event.entity && event.metadata.tableName === 'autocare_fleet_accounts') {
+            sealFleetAccountFields(event.entity as AutoCareFleetAccountEntity)
+        } else if (event.entity && event.metadata.tableName === 'autocare_fleet_vehicles') {
+            sealFleetVehicleFields(event.entity as AutoCareFleetVehicleEntity)
+        } else if (event.entity && event.metadata.tableName === 'autocare_catalog_gap_requests') {
+            sealCatalogGapFields(event.entity as AutomotiveCatalogGapRequestEntity)
+        } else if (event.entity && event.metadata.tableName === 'autocare_appeals') {
+            sealAppealFields(event.entity as AutoCareAppealEntity)
+        } else if (event.entity && event.metadata.tableName === 'autocare_provider_change_requests') {
+            sealProviderChangeRequestFields(event.entity as AutomotiveProviderChangeRequestEntity)
         } else if (event.entity && event.metadata.tableName === 'autocare_service_messages') {
             sealMessageBody(event.entity as MessageRecord)
             sealMessageOffer(event.entity as MessageRecord)
@@ -509,11 +647,12 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             sealContactSnapshot(event.entity as ContactSnapshotRecord)
             sealVehicleSnapshot(event.entity as VehicleSnapshotRecord)
             sealServiceRequestNote(event.entity as ServiceRequestNoteRecord)
+            sealServiceRequestOutcomeFields(event.entity as ServiceRequestEntity)
             sealBookingSnapshot(event.entity as BookingSnapshotRecord)
         }
     }
 
-    afterLoad(entity: UserEntity | ClientVehicleEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity, event?: LoadEvent<UserEntity | ClientVehicleEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
+    afterLoad(entity: UserEntity | ClientVehicleEntity | BookingStatusHistoryEntity | BookingEntity | BookingRescheduleRequestEntity | AutoCareRescheduleRequestEntity | AutoCareServiceQuoteEntity | AutoCareChatReportEntity | AutoCareChatBlockEntity | AutoCareTrustEvidenceEntity | AutomotiveProviderChangeRequestEntity | AutoCareAppealEntity | AutomotiveCatalogGapRequestEntity | AutoCareRepairEventEntity | AutoCareBroadcastRequestEntity | AutoCareBroadcastOfferEntity | AutoCareGuaranteeClaimEntity | AutoCareExpertQuestionEntity | AutoCareFleetAccountEntity | AutoCareFleetVehicleEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity, event?: LoadEvent<UserEntity | ClientVehicleEntity | BookingStatusHistoryEntity | BookingEntity | BookingRescheduleRequestEntity | AutoCareRescheduleRequestEntity | AutoCareServiceQuoteEntity | AutoCareChatReportEntity | AutoCareChatBlockEntity | AutoCareTrustEvidenceEntity | AutomotiveProviderChangeRequestEntity | AutoCareAppealEntity | AutomotiveCatalogGapRequestEntity | AutoCareRepairEventEntity | AutoCareBroadcastRequestEntity | AutoCareBroadcastOfferEntity | AutoCareGuaranteeClaimEntity | AutoCareExpertQuestionEntity | AutoCareFleetAccountEntity | AutoCareFleetVehicleEntity | AutomotiveProviderInvitationEntity | OAuthIdentityEntity | OutboxEventEntity | ServiceMessageEntity | AutoCareChatThreadEntity | ServiceRequestEntity>) {
         const record = entity as EmailRecord
         const table = event?.metadata.tableName
         if ((table === 'users' || table === 'autocare_provider_invitations')
@@ -523,6 +662,24 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             openUserSecondaryFields(entity as UserEntity)
         }
         if (table === 'client_vehicles') openClientVehicleFields(entity as ClientVehicleEntity)
+        if (table === 'booking_status_history') openBookingStatusReason(entity as BookingStatusHistoryEntity)
+        if (table === 'bookings') openBookingTextFields(entity as BookingEntity)
+        if (table === 'booking_reschedule_requests') openBookingRescheduleReason(entity as BookingRescheduleRequestEntity)
+        if (table === 'autocare_reschedule_requests') openAutoCareRescheduleTextFields(entity as AutoCareRescheduleRequestEntity)
+        if (table === 'autocare_service_quotes') openServiceQuoteSnapshot(entity as AutoCareServiceQuoteEntity)
+        if (table === 'autocare_chat_reports') openChatReportTextFields(entity as AutoCareChatReportEntity)
+        if (table === 'autocare_chat_blocks') openChatBlockReason(entity as AutoCareChatBlockEntity)
+        if (table === 'autocare_trust_evidence') openTrustEvidenceFields(entity as AutoCareTrustEvidenceEntity)
+        if (table === 'autocare_provider_change_requests') openProviderChangeRequestFields(entity as AutomotiveProviderChangeRequestEntity)
+        if (table === 'autocare_appeals') openAppealFields(entity as AutoCareAppealEntity)
+        if (table === 'autocare_catalog_gap_requests') openCatalogGapFields(entity as AutomotiveCatalogGapRequestEntity)
+        if (table === 'autocare_repair_events') openRepairEventFields(entity as AutoCareRepairEventEntity)
+        if (table === 'autocare_broadcast_requests') openBroadcastRequestFields(entity as AutoCareBroadcastRequestEntity)
+        if (table === 'autocare_broadcast_offers') openBroadcastOfferSnapshot(entity as AutoCareBroadcastOfferEntity)
+        if (table === 'autocare_guarantee_claims') openGuaranteeClaimFields(entity as AutoCareGuaranteeClaimEntity)
+        if (table === 'autocare_expert_questions') openExpertQuestionFields(entity as AutoCareExpertQuestionEntity)
+        if (table === 'autocare_fleet_accounts') openFleetAccountFields(entity as AutoCareFleetAccountEntity)
+        if (table === 'autocare_fleet_vehicles') openFleetVehicleFields(entity as AutoCareFleetVehicleEntity)
         if (table === 'oauth_identities') {
             const identity = entity as ProviderIdentityRecord
             if (identity.providerSubject !== undefined || identity.providerSubjectCiphertext !== undefined) openProviderSubject(identity)
@@ -547,6 +704,7 @@ export class SensitiveDataSubscriber implements EntitySubscriberInterface {
             openContactSnapshot(entity as ContactSnapshotRecord)
             openVehicleSnapshot(entity as VehicleSnapshotRecord)
             openServiceRequestNote(entity as ServiceRequestNoteRecord)
+            openServiceRequestOutcomeFields(entity as ServiceRequestEntity)
             openBookingSnapshot(entity as BookingSnapshotRecord)
         }
     }

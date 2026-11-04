@@ -1,5 +1,167 @@
 # Encryption backfill rollout — N09
 
+## Fleet vehicle binding expansion
+
+New `autocare_fleet_vehicles.label` and `vehicleSnapshot` writes receive separate HMACs over plaintext, vehicle UUID and fleet UUID. Migration `1786800000000` adds nullable bindings and a durable checkpoint. Owner account deletion reseals both anonymized values per row. API responses omit bindings.
+
+After old writers have drained and a tested backup and approved KMS keyring are available:
+
+1. Apply migration `1786800000000`. Run `npm --prefix server run encryption:backfill-fleet-vehicle-binding -- --mode apply --batch-size 100 --max-batches 100` until `exhausted:true`.
+2. Run the same command with `--mode verify` using a full pass budget. Any mismatch or incomplete scan blocks cutover. Compare-write checks scope, ciphertext and both bindings.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy `DATA_ENCRYPTION_REQUIRE_FLEET_VEHICLE_RECORD_BINDING=true` to all API/worker instances. Rehearse create/list, account deletion and backup restore. Partial reads selecting a protected field need its binding plus vehicle/fleet scope.
+
+
+## Fleet account binding expansion
+
+New `autocare_fleet_accounts.name` and non-null `notes` writes receive separate HMACs over plaintext, fleet UUID and owner UUID. Migration `1786790000000` adds nullable bindings and a durable checkpoint. Owner account deletion reseals an anonymized name per row and clears notes with its binding. API responses omit bindings.
+
+After old writers have drained and a tested backup and approved KMS keyring are available:
+
+1. Apply migration `1786790000000`. Run `npm --prefix server run encryption:backfill-fleet-account-binding -- --mode apply --batch-size 100 --max-batches 100` until `exhausted:true`.
+2. Run the same command with `--mode verify` using a full pass budget. Any mismatch or incomplete scan blocks cutover. Compare-write checks scope, ciphertext and both bindings.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy `DATA_ENCRYPTION_REQUIRE_FLEET_ACCOUNT_RECORD_BINDING=true` to all API/worker instances. Rehearse create/list, account deletion and backup restore. Partial reads selecting a protected field need its binding plus fleet/owner scope.
+
+
+## Expert question binding expansion
+
+New `autocare_expert_questions.symptoms` and non-null `vehicleSnapshot`/`answer` writes receive separate HMACs over plaintext, question UUID and client UUID. Migration `1786780000000` adds nullable bindings and a durable checkpoint. Client account deletion reseals redacted symptoms per row and clears snapshot/answer with their bindings. API responses omit bindings.
+
+After old writers have drained and a tested backup and approved KMS keyring are available:
+
+1. Apply migration `1786780000000`. Run `npm --prefix server run encryption:backfill-expert-question-binding -- --mode apply --batch-size 100 --max-batches 100` until `exhausted:true`.
+2. Run the same command with `--mode verify` using a full pass budget. Any mismatch or incomplete scan blocks cutover. Compare-write checks scope, ciphertext and all three bindings.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy `DATA_ENCRYPTION_REQUIRE_EXPERT_QUESTION_RECORD_BINDING=true` to all API/worker instances. Rehearse create/list, account deletion and backup restore. Partial reads selecting a protected field need its binding plus question/client scope.
+
+
+## Guarantee claim binding expansion
+
+New `autocare_guarantee_claims.summary` and non-null `resolution` writes receive separate HMACs over plaintext, claim UUID, request UUID, client UUID, provider UUID and claimType. Migration `1786770000000` adds nullable bindings and a durable checkpoint. Client account deletion reseals redacted summary per row and clears resolution with its binding. API responses omit bindings.
+
+After old writers have drained and a tested backup and approved KMS keyring are available:
+
+1. Apply migration `1786770000000`. Run `npm --prefix server run encryption:backfill-guarantee-claim-binding -- --mode apply --batch-size 100 --max-batches 100` until `exhausted:true`.
+2. Run the same command with `--mode verify` using a full pass budget. Any mismatch or incomplete scan blocks cutover. Compare-write checks scope, ciphertext and both bindings.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy `DATA_ENCRYPTION_REQUIRE_GUARANTEE_CLAIM_RECORD_BINDING=true` to all API/worker instances. Rehearse create/list, account deletion and backup restore. Partial reads selecting a protected field need its binding plus claim/request/client/provider/type scope.
+
+
+## Broadcast offer binding expansion
+
+New `autocare_broadcast_offers.offerSnapshot` writes receive an HMAC over plaintext, offer UUID, broadcast request UUID, provider UUID and location UUID. Migration `1786760000000` adds a nullable binding and a durable checkpoint. Client account deletion reseals a redacted snapshot for each offer. API responses omit the binding.
+
+After old writers have drained and a tested backup and approved KMS keyring are available:
+
+1. Apply migration `1786760000000`. Run `npm --prefix server run encryption:backfill-broadcast-offer-binding -- --mode apply --batch-size 100 --max-batches 100` until `exhausted:true`.
+2. Run the same command with `--mode verify` using a full pass budget. Any mismatch or incomplete scan blocks cutover. Compare-write checks scope, ciphertext and binding.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy `DATA_ENCRYPTION_REQUIRE_BROADCAST_OFFER_RECORD_BINDING=true` to all API/worker instances. Rehearse offer creation/list, account deletion and backup restore. Partial reads selecting offerSnapshot need its binding plus offer/broadcast/provider/location scope.
+
+
+## Broadcast request binding expansion
+
+New `autocare_broadcast_requests.issueDescription` and non-null `vehicleSnapshot` writes receive separate HMACs over plaintext, broadcast UUID, client UUID and service definition UUID. `marketId` is excluded because its foreign key sets it to null when a market is deleted. Migration `1786750000000` adds nullable bindings and a durable checkpoint. Account deletion reseals redacted issue per row and clears snapshot with its binding. API responses omit bindings.
+
+After old writers have drained and a tested backup and approved KMS keyring are available:
+
+1. Apply migration `1786750000000`. Run `npm --prefix server run encryption:backfill-broadcast-request-binding -- --mode apply --batch-size 100 --max-batches 100` until `exhausted:true`.
+2. Run the same command with `--mode verify` using a full pass budget. Any mismatch or incomplete scan blocks cutover. Compare-write checks scope, ciphertext and both bindings.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy `DATA_ENCRYPTION_REQUIRE_BROADCAST_REQUEST_RECORD_BINDING=true` to all API/worker instances. Rehearse create/list, account deletion and backup restore. Partial reads selecting a protected field need its binding plus broadcast/client/definition scope.
+
+
+## Repair event binding expansion
+
+New `autocare_repair_events.title`, non-null `notes` and `metadata` writes receive separate HMACs over plaintext, event UUID, request UUID and eventType. Migration `1786740000000` adds nullable bindings and a durable checkpoint. Account deletion reseals redacted title and metadata per row and clears notes with its binding. API responses omit bindings.
+
+After old writers have drained and a tested backup and approved KMS keyring are available:
+
+1. Apply migration `1786740000000`. Run `npm --prefix server run encryption:backfill-repair-event-binding -- --mode apply --batch-size 100 --max-batches 100` until `exhausted:true`.
+2. Run the same command with `--mode verify` using a full pass budget. Any mismatch or incomplete scan blocks cutover. Compare-write checks scope, ciphertext and all three bindings.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy `DATA_ENCRYPTION_REQUIRE_REPAIR_EVENT_RECORD_BINDING=true` to all API/worker instances. Rehearse event creation/list, account deletion and backup restore. Partial reads selecting a protected field need its binding plus event/request scope.
+
+
+## Catalog gap request binding expansion
+
+New `autocare_catalog_gap_requests.labels`, `comparisonAttributes`,
+`rationale` and non-null `reviewReason` writes receive separate HMACs over
+plaintext, gap UUID, requester UUID, nullable provider UUID, proposed/category
+slugs and price type. Migration `1786730000000` adds nullable bindings and a
+durable checkpoint. Account deletion reseals the three required redacted
+fields per row and clears review reason with its binding. API responses omit
+bindings.
+
+After old writers have drained and a tested backup and approved KMS keyring
+are available:
+
+1. Apply migration `1786730000000`. Run
+   `npm --prefix server run encryption:backfill-catalog-gap-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until `exhausted:true`.
+2. Run the same command with `--mode verify` using a full pass budget. Any
+   mismatch or incomplete scan blocks cutover. Compare-write checks the full
+   scope, ciphertext and all four bindings.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_CATALOG_GAP_RECORD_BINDING=true` to all API/worker
+   instances. Rehearse create/decision/list, account deletion and backup
+   restore. Partial reads selecting a protected field need its binding and
+   gap/requester/provider/slugs/priceType scope.
+
+## Appeal text binding expansion
+
+New `autocare_appeals.reason` and non-null `decisionReason` writes receive
+HMACs over plaintext, appeal UUID, subject, subject UUID, submitter UUID and
+nullable provider UUID. Migration `1786720000000` adds nullable bindings and
+a durable checkpoint. Account deletion reseals each redacted reason with its
+own MAC; decision reason and binding are cleared together. API responses omit
+bindings.
+
+After old writers have drained and a tested backup and approved KMS keyring
+are available:
+
+1. Apply migration `1786720000000`. Run
+   `npm --prefix server run encryption:backfill-appeal-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until `exhausted:true`.
+2. Run the same command with `--mode verify` using a full pass budget. Any
+   mismatch or incomplete scan blocks cutover. Compare-write checks subject,
+   all scope UUIDs, ciphertext and both bindings.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_APPEAL_RECORD_BINDING=true` to all API/worker
+   instances. Rehearse create/decision/withdraw/list, account deletion and
+   backup restore. Partial reads selecting either text need the corresponding
+   binding plus appeal/subject/submitter/provider scope.
+
+## Provider change request binding expansion
+
+New `autocare_provider_change_requests.payload` and non-null `reviewReason`
+writes receive HMACs over plaintext, request UUID, provider UUID, requester
+UUID and kind. Migration `1786710000000` adds nullable bindings and a durable
+checkpoint. Account deletion reseals each redacted payload with its own MAC;
+review reason and binding are cleared together. API responses omit bindings.
+
+After old writers have drained and a tested backup and approved KMS keyring
+are available:
+
+1. Apply migration `1786710000000`. Run
+   `npm --prefix server run encryption:backfill-provider-change-request-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until `exhausted:true`.
+2. Run the same command with `--mode verify` using a full pass budget. Any
+   mismatch or incomplete scan blocks cutover. Compare-write checks scope
+   UUIDs, kind, ciphertext and both bindings.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_PROVIDER_CHANGE_REQUEST_RECORD_BINDING=true` to all
+   API/worker instances. Rehearse create/decision/cancel/list, account deletion
+   and backup restore. Partial reads selecting payload or reason must include
+   the corresponding binding and full request/provider/requester/kind scope.
+
 The published `1786410000000` migration is immutable. It loads entire columns
 and identities in one transaction and is unsuitable for an unmeasured large
 legacy database. Do not rewrite its checksum, run it blindly on real data,
@@ -431,6 +593,235 @@ command and a tested backup exists:
    binding and all owner/service links. Keep old keys during the recovery window.
 
 This does not bind other U02 encrypted fields.
+
+## Service request outcome binding expansion
+
+New non-null `autocare_service_requests.cancellationReason`, `noShowReason`
+and `completionNote` writes receive separate companion HMACs. Each MAC covers
+the decrypted text, request UUID and client/provider/location/definition UUIDs.
+Migration `1786620000000` adds nullable bindings and a durable checkpoint.
+The bounded command authenticates existing ciphertext and MACs, compare-writes
+missing bindings with checkpoint progress in one transaction and prints counts
+only. Account deletion clears values and bindings together.
+
+After old writers have drained, the approved KMS keyring and tested backup are
+available:
+
+1. Apply migration `1786620000000`. Run
+   `npm --prefix server run encryption:backfill-service-request-outcome-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until `exhausted:true`. Interrupted runs resume their checkpoint.
+2. Run the same command with `--mode verify` and a budget large enough for a
+   full pass. Mismatch or budget exhaustion blocks cutover. Compare-write
+   checks all four owner/service links and all three value/binding pairs.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they have drained. Reset removes only the checkpoint.
+4. Only after a full staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_OUTCOME_RECORD_BINDING=true` to all
+   API/worker instances. Rehearse request transitions/read, data export,
+   account deletion and backup restore. Partial reads selecting an outcome field
+   must also select its binding and all four owner/service UUIDs.
+## Booking status history reason binding expansion
+
+New non-null `booking_status_history.reason` writes receive a companion HMAC
+in `reasonBinding`. It covers decrypted text, history UUID, booking UUID and
+status. Migration `1786630000000` adds the nullable binding and durable
+checkpoint. The bounded command authenticates ciphertext and existing MACs,
+then compare-writes missing bindings with checkpoint progress in one short
+transaction. The status history API excludes the internal binding. Account
+deletion clears reason and binding together.
+
+After old writers have drained, an approved KMS keyring and tested backup are
+available:
+
+1. Apply migration `1786630000000`. Run
+   `npm --prefix server run encryption:backfill-booking-status-reason-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until `exhausted:true`. Interrupted runs resume from the checkpoint.
+2. Run the same command with `--mode verify` and a budget large enough for a
+   full pass. Any mismatch or incomplete scan blocks cutover. Compare-write
+   checks booking UUID, status, ciphertext and existing binding.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_BOOKING_STATUS_REASON_RECORD_BINDING=true` to all
+   API/worker instances. Rehearse status writes/reads, account deletion and
+   backup restore. Partial reads selecting `reason` must also select its
+   binding, history ID, booking ID and status.
+
+## Trust evidence record binding expansion
+
+New non-null `autocare_trust_evidence.reference` and `notes` writes receive
+separate HMACs over decrypted text, evidence UUID, provider UUID and kind.
+Reference is also checked against its blind index. Migration `1786700000000`
+adds nullable bindings and a durable checkpoint. Account deletion clears both
+texts, bindings and the reference index. Review revision supersession now loads
+the evidence row before updating its encrypted note.
+
+After old writers have drained and a tested backup and approved KMS keyring
+are available:
+
+1. Apply migration `1786700000000`. Run
+   `npm --prefix server run encryption:backfill-trust-evidence-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until `exhausted:true`. Legacy null references with a stale index are
+   cleared in the same compare-write transaction.
+2. Run the same command with `--mode verify` using a full pass budget. Any
+   mismatch or incomplete scan blocks cutover. Compare-write checks provider
+   UUID, kind, both ciphertext/binding pairs and the index.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_TRUST_EVIDENCE_RECORD_BINDING=true` to all API/worker
+   instances. Rehearse evidence create/review/revision/read, account deletion
+   and backup restore. Partial reads selecting text must also select its
+   binding, evidence/provider UUID and kind; reference also needs its index.
+
+## Chat block reason binding expansion
+
+New non-null `autocare_chat_blocks.reason` writes receive a companion HMAC
+over decrypted text, block UUID, thread UUID, blocker UUID and blocked-user
+UUID. Migration `1786690000000` adds the nullable binding and durable
+checkpoint. Account deletion clears reason and binding together.
+
+After old writers have drained and a tested backup and approved KMS keyring
+are available:
+
+1. Apply migration `1786690000000`. Run
+   `npm --prefix server run encryption:backfill-chat-block-reason-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until `exhausted:true`.
+2. Run the same command with `--mode verify` using a full pass budget. Any
+   mismatch or incomplete scan blocks cutover. Compare-write checks all scope
+   UUIDs, ciphertext and binding.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_CHAT_BLOCK_REASON_RECORD_BINDING=true` to all
+   API/worker instances. Rehearse restriction create/revoke/read, account
+   deletion and backup restore. Partial reads selecting reason must also
+   select its binding and block/thread/blocker/blocked UUIDs.
+
+## Chat report text binding expansion
+
+New non-null `autocare_chat_reports.description`, `resolutionReason`,
+`assignmentReason` and `extensionReason` writes receive separate companion
+HMACs. Each covers decrypted text, report UUID, thread UUID and reporter UUID.
+Migration `1786680000000` adds nullable bindings and a durable checkpoint.
+Account deletion clears values and bindings together. Response DTOs omit them.
+
+After old writers have drained and a tested backup and approved KMS keyring
+are available:
+
+1. Apply migration `1786680000000`. Run
+   `npm --prefix server run encryption:backfill-chat-report-text-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until `exhausted:true`.
+2. Run the same command with `--mode verify` using a full pass budget. Any
+   mismatch or incomplete scan blocks cutover. Compare-write checks thread/
+   reporter UUIDs and all four ciphertext/binding pairs.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_CHAT_REPORT_TEXT_RECORD_BINDING=true` to all
+   API/worker instances. Rehearse report filing, assignment, extension,
+   resolution, account deletion and backup restore. Partial entity reads
+   selecting text must also select its binding and report/thread/reporter UUIDs.
+
+## Service quote snapshot binding expansion
+
+New `autocare_service_quotes.snapshot` writes receive a companion HMAC over
+the decrypted JSON, quote UUID, request UUID, provider UUID and version.
+Migration `1786670000000` adds the nullable binding and durable checkpoint.
+Account deletion locks and redacts quotes in bounded ID pages, writing a
+separate encrypted redacted snapshot and binding for each row.
+
+After old writers have drained and a tested backup and approved KMS keyring
+are available:
+
+1. Apply migration `1786670000000`. Run
+   `npm --prefix server run encryption:backfill-service-quote-snapshot-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until `exhausted:true`.
+2. Run the same command with `--mode verify` using a full pass budget. Any
+   mismatch or incomplete scan blocks cutover. Compare-write checks
+   request/provider UUIDs, version, ciphertext and binding.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_SERVICE_QUOTE_SNAPSHOT_RECORD_BINDING=true` to all
+   API/worker instances. Rehearse quote create/update/read, account deletion,
+   data export and backup restore. Partial reads selecting snapshot must also
+   select its binding, quote/request/provider UUIDs and version.
+
+## AutoCare reschedule text binding expansion
+
+New non-null `autocare_reschedule_requests.reason` writes receive a companion
+HMAC over decrypted text and reschedule/request/requester UUIDs. The separate
+`resolutionReason` HMAC also covers nullable resolver UUID and decision status.
+Migration `1786660000000` adds the nullable bindings and durable checkpoint.
+Account deletion clears both value/binding pairs.
+
+After old writers have drained and a tested backup and approved KMS keyring
+are available:
+
+1. Apply migration `1786660000000`. Run
+   `npm --prefix server run encryption:backfill-autocare-reschedule-text-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until `exhausted:true`.
+2. Run the same command with `--mode verify` using a full pass budget. Any
+   mismatch or incomplete scan blocks cutover. Compare-write checks scope,
+   status and both ciphertext/binding pairs.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_AUTOCARE_RESCHEDULE_TEXT_RECORD_BINDING=true` to all
+   API/worker instances. Rehearse proposal/decision/expiry reads, account
+   deletion and backup restore. Partial reads selecting text must also select
+   its binding and required scope UUIDs.
+
+## Booking reschedule resolution reason binding expansion
+
+New non-null `booking_reschedule_requests.resolutionReason` writes receive a
+companion HMAC over decrypted text, request UUID, booking UUID, requester UUID,
+nullable resolver UUID and decision status. Migration `1786650000000` adds the
+nullable binding and durable checkpoint. Account deletion clears the reason
+and binding together. The booking response excludes the internal binding.
+
+After old writers have drained and a tested backup and approved KMS keyring
+are available:
+
+1. Apply migration `1786650000000`. Run
+   `npm --prefix server run encryption:backfill-booking-reschedule-reason-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until `exhausted:true`.
+2. Run the same command with `--mode verify` using a budget for a full pass.
+   Any mismatch or incomplete scan blocks cutover. Compare-write checks
+   booking/requester/resolver UUIDs, status, ciphertext and binding.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_BOOKING_RESCHEDULE_REASON_RECORD_BINDING=true` to
+   all API/worker instances. Rehearse resolution, reads, account deletion and
+   backup restore. Partial reads selecting the reason must also select the
+   binding, request ID, all owner UUIDs and status.
+
+## Booking text field binding expansion
+
+New non-null `bookings.comment`, `cancellationReason` and `ownerNote` writes
+receive separate companion HMACs. Each covers decrypted text, booking UUID,
+client UUID, cabinet UUID and service UUID. Migration `1786640000000` adds the
+nullable bindings and durable checkpoint. Account deletion clears the value
+and binding together; client and owner responses omit binding columns.
+
+After old writers have drained and a tested backup and approved KMS keyring
+are available:
+
+1. Apply migration `1786640000000`. Run
+   `npm --prefix server run encryption:backfill-booking-text-binding -- --mode apply --batch-size 100 --max-batches 100`
+   until `exhausted:true`. Interrupted runs resume from the checkpoint.
+2. Run the same command with `--mode verify` and a budget large enough for a
+   complete pass. Any mismatch or incomplete scan blocks cutover. Compare-write
+   checks the three scope UUIDs and all three ciphertext/binding pairs.
+3. If old writers were active, coordinate `--mode reset`, then repeat apply
+   and verify after they drain. Reset removes only the checkpoint.
+4. After staging KMS/restore rehearsal, deploy
+   `DATA_ENCRYPTION_REQUIRE_BOOKING_TEXT_RECORD_BINDING=true` to all API/worker
+   instances. Rehearse booking create/cancel/note/read, data export, account
+   deletion and backup restore. Partial entity reads selecting a text field
+   must also select the binding, booking ID and three scope UUIDs.
 
 ## Outbox recipient record binding expansion
 

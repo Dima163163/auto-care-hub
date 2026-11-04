@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 
 import { requireAuth } from '../auth/require-auth.js'
+import { requireRecentPrivilegedMfa } from '../auth/privileged-step-up.service.js'
 import {
     validateBody,
     validateParams,
@@ -248,15 +249,15 @@ export async function adminRoutes(
     app: FastifyInstance
 ) {
     app.get<{ Reply: AdminAutoCareProvider[] }>('/admin/autocare-providers', async (request) => {
-        return getAdminAutoCareProviders(await requireAuth(request))
+        return getAdminAutoCareProviders(await requireRecentPrivilegedMfa(request))
     })
 
     app.get<{ Reply: AutoCareQualityMonitoringResponse }>('/admin/autocare-quality-monitoring', async (request) => {
-        return getAutoCareQualityMonitoring(await requireAuth(request))
+        return getAutoCareQualityMonitoring(await requireRecentPrivilegedMfa(request))
     })
 
     app.get('/admin/autocare-appeals', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const query = validateQuery(adminAutoCareAppealsQuerySchema, request.query)
         const result = await listAdminAutoCareAppeals(user, query)
         await recordAuditLog({
@@ -270,7 +271,7 @@ export async function adminRoutes(
     })
 
     app.patch('/admin/autocare-appeals/:id/decision', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(adminAutoCareAppealParamsSchema, request.params)
         const body = validateBody(decideAdminAutoCareAppealSchema, request.body)
         const result = await decideAdminAutoCareAppeal(user, params.id, body)
@@ -279,7 +280,7 @@ export async function adminRoutes(
     })
 
     app.get('/admin/autocare-moderation-evidence', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const query = validateQuery(adminAutoCareModerationEvidenceQuerySchema, request.query)
         const result = await listAdminAutoCareModerationEvidence(user, query.status)
         await recordAuditLog({
@@ -293,7 +294,7 @@ export async function adminRoutes(
     })
 
     app.get('/admin/autocare-reviews', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const result = await listAdminAutoCareReviews(user)
         await recordAuditLog({
             actorId: user.id,
@@ -306,7 +307,7 @@ export async function adminRoutes(
     })
 
     app.patch('/admin/autocare-reviews/:reviewId/status', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(adminAutoCareReviewParamsSchema, request.params)
         const body = validateBody(decideAdminAutoCareReviewSchema, request.body)
         const result = await decideAdminAutoCareReview(user, params.reviewId, body)
@@ -326,7 +327,7 @@ export async function adminRoutes(
     })
 
     app.patch('/admin/autocare-moderation-evidence/:id/decision', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(adminAutoCareModerationEvidenceParamsSchema, request.params)
         const body = validateBody(decideAdminAutoCareModerationEvidenceSchema, request.body)
         const result = await decideAdminAutoCareModerationEvidence(user, params.id, body)
@@ -337,7 +338,7 @@ export async function adminRoutes(
     app.patch<{ Params: unknown; Body: unknown; Reply: AdminAutoCareProvider }>(
         '/admin/autocare-providers/:id/status',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const params = validateParams(adminAutoCareProviderParamsSchema, request.params)
             const body = validateBody(updateAdminAutoCareProviderStatusSchema, request.body)
             const result = await updateAdminAutoCareProviderStatus(user, params.id, body.status)
@@ -354,7 +355,7 @@ export async function adminRoutes(
     )
 
     app.get('/admin/autocare-provider-change-requests', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const query = validateQuery(adminProviderChangeRequestsQuerySchema, request.query)
         const result = await listAdminProviderChangeRequests(user, query.status, query.kind)
         await recordAuditLog({
@@ -368,7 +369,7 @@ export async function adminRoutes(
     })
 
     app.patch('/admin/autocare-provider-change-requests/:id/decision', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(adminProviderChangeRequestParamsSchema, request.params)
         const body = validateBody(decideAdminProviderChangeRequestSchema, request.body)
         const result = await decideAdminProviderChangeRequest(user, params.id, body.status as AutomotiveProviderChangeRequestStatus.Approved | AutomotiveProviderChangeRequestStatus.Rejected, body.reason)
@@ -384,7 +385,7 @@ export async function adminRoutes(
     })
 
     app.get('/admin/catalog-gap-requests', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const query = validateQuery(adminCatalogGapRequestsQuerySchema, request.query)
         const result = await listAdminCatalogGapRequests(user, query.status)
         await recordAuditLog({
@@ -398,7 +399,7 @@ export async function adminRoutes(
     })
 
     app.patch('/admin/catalog-gap-requests/:id/decision', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(adminCatalogGapRequestParamsSchema, request.params)
         const body = validateBody(decideAdminCatalogGapRequestSchema, request.body)
         const result = await decideAdminCatalogGapRequest(user, params.id, body.status as AutomotiveCatalogGapRequestStatus.Approved | AutomotiveCatalogGapRequestStatus.Rejected, body.reason)
@@ -414,7 +415,7 @@ export async function adminRoutes(
     })
 
     app.get('/admin/chat-reports', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const query = validateQuery(adminChatReportsQuerySchema, request.query)
         const result = await listAdminAutoCareChatReports(user, query)
         await recordAuditLog({
@@ -436,7 +437,7 @@ export async function adminRoutes(
     })
 
     app.patch('/admin/chat-reports/:id/decision', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(adminChatReportParamsSchema, request.params)
         const body = validateBody(decideAdminChatReportSchema, request.body)
         const result = await decideAdminAutoCareChatReport(user, params.id, body.status as AutoCareChatReportStatus.Resolved | AutoCareChatReportStatus.Dismissed, body.reason, body.blockUser, body.blockDurationDays)
@@ -452,25 +453,25 @@ export async function adminRoutes(
     })
 
     app.patch('/admin/chat-reports/:id/assignment', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(adminChatReportParamsSchema, request.params)
         const body = validateBody(assignAutoCareChatModeratorSchema, request.body)
         return assignAdminAutoCareChatModerator(user, params.id, body.moderatorId, body.reason, request)
     })
 
     app.post('/admin/chat-reports/:id/assignment/extend', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(adminChatReportParamsSchema, request.params)
         const body = validateBody(extendAutoCareChatModeratorAccessSchema, request.body)
         return extendAdminAutoCareChatModeratorAccess(user, params.id, body.reason, request)
     })
 
     app.get<{ Reply: SuperAdminPlatformOverview }>('/super-admin/platform-overview', async (request) => {
-        return getSuperAdminPlatformOverview(await requireAuth(request))
+        return getSuperAdminPlatformOverview(await requireRecentPrivilegedMfa(request))
     })
 
     app.patch('/super-admin/markets/:id', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(adminAutoCareMarketParamsSchema, request.params)
         const body = validateBody(updateSuperAdminAutoCareMarketSchema, request.body)
         const result = await updateSuperAdminAutoCareMarket(user, params.id, body)
@@ -495,14 +496,14 @@ export async function adminRoutes(
     })
 
     app.post('/super-admin/market-countries', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const result = await createSuperAdminMarketCountry(user, validateBody(createSuperAdminMarketCountrySchema, request.body))
         await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketCountryCreated, targetId: result.id, targetType: 'autocare_market_country', metadata: { code: result.code, active: result.active }, request })
         return result
     })
 
     app.patch('/super-admin/market-countries/:id', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(superAdminCountryParamsSchema, request.params)
         const result = await updateSuperAdminMarketCountry(user, params.id, validateBody(updateSuperAdminMarketCountrySchema, request.body))
         await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketCountryUpdated, targetId: result.id, targetType: 'autocare_market_country', metadata: { code: result.code, active: result.active, capabilities: Object.keys(result.capabilities), legalLinks: Object.keys(result.legalLinks) }, request })
@@ -510,7 +511,7 @@ export async function adminRoutes(
     })
 
     app.delete('/super-admin/market-countries/:id', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(superAdminCountryParamsSchema, request.params)
         const result = await deleteSuperAdminMarketCountry(user, params.id)
         await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketCountryDeleted, targetId: result.id, targetType: 'autocare_market_country', metadata: {}, request })
@@ -518,7 +519,7 @@ export async function adminRoutes(
     })
 
     app.post('/super-admin/market-countries/:id/cities', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(superAdminCountryParamsSchema, request.params)
         const result = await createSuperAdminAutoCareMarket(user, params.id, validateBody(createSuperAdminAutoCareMarketSchema, request.body))
         await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketCreated, targetId: result.id, targetType: 'autocare_market', metadata: { countryCode: result.countryCode, cityCode: result.cityCode, launchReady: result.launchReady }, request })
@@ -526,7 +527,7 @@ export async function adminRoutes(
     })
 
     app.patch('/super-admin/market-cities/:id', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(adminAutoCareMarketParamsSchema, request.params)
         const result = await updateSuperAdminAutoCareMarketHierarchy(user, params.id, validateBody(updateSuperAdminAutoCareMarketHierarchySchema, request.body))
         await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketUpdated, targetId: result.id, targetType: 'autocare_market', metadata: { cityCode: result.cityCode, launchReady: result.launchReady, capabilities: Object.keys(result.capabilities), legalLinks: Object.keys(result.legalLinks) }, request })
@@ -534,7 +535,7 @@ export async function adminRoutes(
     })
 
     app.delete('/super-admin/market-cities/:id', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(adminAutoCareMarketParamsSchema, request.params)
         const result = await deleteSuperAdminAutoCareMarket(user, params.id)
         await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketDeleted, targetId: result.id, targetType: 'autocare_market', metadata: {}, request })
@@ -542,7 +543,7 @@ export async function adminRoutes(
     })
 
     app.post('/super-admin/market-cities/:id/zones', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(adminAutoCareMarketParamsSchema, request.params)
         const result = await createSuperAdminAutoCareMarketZone(user, params.id, validateBody(createSuperAdminAutoCareMarketZoneSchema, request.body))
         await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketZoneCreated, targetId: result.id, targetType: 'autocare_location_zone', metadata: { marketId: result.marketId, slug: result.slug, zoneType: result.zoneType, active: result.active }, request })
@@ -550,7 +551,7 @@ export async function adminRoutes(
     })
 
     app.patch('/super-admin/market-zones/:id', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(superAdminMarketZoneParamsSchema, request.params)
         const result = await updateSuperAdminAutoCareMarketZone(user, params.id, validateBody(updateSuperAdminAutoCareMarketZoneSchema, request.body))
         await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketZoneUpdated, targetId: result.id, targetType: 'autocare_location_zone', metadata: { marketId: result.marketId, slug: result.slug, zoneType: result.zoneType, active: result.active }, request })
@@ -558,17 +559,17 @@ export async function adminRoutes(
     })
 
     app.delete('/super-admin/market-zones/:id', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(superAdminMarketZoneParamsSchema, request.params)
         const result = await deleteSuperAdminAutoCareMarketZone(user, params.id)
         await recordAuditLog({ actorId: user.id, action: AuditAction.AutoCareMarketZoneDeleted, targetId: result.id, targetType: 'autocare_location_zone', metadata: {}, request })
         return result
     })
 
-    app.get('/super-admin/trust-policy', async (request) => getSuperAdminTrustPolicy(await requireAuth(request)))
+    app.get('/super-admin/trust-policy', async (request) => getSuperAdminTrustPolicy(await requireRecentPrivilegedMfa(request)))
 
     app.patch('/super-admin/trust-policy', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const result = await updateSuperAdminTrustPolicy(user, validateBody(updateSuperAdminTrustPolicySchema, request.body))
         await recordAuditLog({
             actorId: user.id,
@@ -587,7 +588,7 @@ export async function adminRoutes(
     })
 
     app.patch('/admin/service-definitions/:id', async (request) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const params = validateParams(adminAutoCareServiceDefinitionParamsSchema, request.params)
         const result = await updateAdminAutoCareServiceDefinition(user, params.id, validateBody(updateAdminAutoCareServiceDefinitionSchema, request.body))
         await recordAuditLog({
@@ -604,7 +605,7 @@ export async function adminRoutes(
     app.get<{ Querystring: unknown; Reply: AdminUsersListResponse }>(
         '/admin/users',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const query = validateQuery(adminUsersQuerySchema, request.query)
 
             return getAdminUsers(user, query)
@@ -614,7 +615,7 @@ export async function adminRoutes(
     app.get<{ Querystring: unknown; Reply: AdminDeletionRequestsListResponse }>(
         '/admin/account-deletion-requests',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const query = validateQuery(adminDeletionRequestsQuerySchema, request.query)
 
             return getAdminDeletionRequests(user, query)
@@ -624,7 +625,7 @@ export async function adminRoutes(
     app.patch<{ Params: unknown; Body: unknown; Reply: AdminDeletionRequest }>(
         '/admin/account-deletion-requests/:id/status',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const params = validateParams(adminDeletionRequestParamsSchema, request.params)
             const body = validateBody(updateAdminDeletionRequestStatusSchema, request.body)
 
@@ -648,7 +649,7 @@ export async function adminRoutes(
     app.patch<{ Params: unknown; Body: unknown; Reply: AdminUserResponse }>(
         '/admin/users/:id/status',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const params = validateParams(adminUserParamsSchema, request.params)
             const body = validateBody(updateUserStatusSchema, request.body)
 
@@ -673,7 +674,7 @@ export async function adminRoutes(
     app.patch<{ Params: unknown; Body: unknown; Reply: AdminUserResponse }>(
         '/admin/users/:id/role',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const params = validateParams(adminUserParamsSchema, request.params)
             const body = validateBody(updateUserRoleSchema, request.body)
 
@@ -698,7 +699,7 @@ export async function adminRoutes(
     app.get<{ Reply: AdminCabinetsListResponse }>(
         '/admin/cabinets',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
 
             return getAdminCabinets(user)
         }
@@ -707,7 +708,7 @@ export async function adminRoutes(
     app.patch<{ Params: unknown; Body: unknown; Reply: AdminCabinetResponse }>(
         '/admin/cabinets/:id/status',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const params = validateParams(adminCabinetParamsSchema, request.params)
             const body = validateBody(updateCabinetStatusSchema, request.body)
 
@@ -732,7 +733,7 @@ export async function adminRoutes(
     app.post<{ Body: unknown; Reply: CreateAdminResponse }>(
         '/admin/admins',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const body = validateBody(createAdminSchema, request.body)
 
             const result = await createAdmin(
@@ -761,7 +762,7 @@ export async function adminRoutes(
     app.get<{ Querystring: unknown; Reply: AuditLogsListResponse }>(
         '/admin/audit-logs',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const query = validateQuery(adminAuditLogsQuerySchema, request.query)
             const logs = await getAuditLogs(user, query)
 
@@ -783,10 +784,18 @@ export async function adminRoutes(
     )
 
     app.get('/admin/audit-logs/export', async (request, reply) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         const query = validateQuery(auditLogsExportQuerySchema, request.query)
         const logs = await getAuditLogsForExport(user, query)
         const date = new Date().toISOString().slice(0, 10)
+
+        await recordAuditLog({
+            actorId: user.id,
+            action: AuditAction.AuditLogsExported,
+            targetType: 'audit_logs',
+            metadata: { rowCount: logs.length, filtered: Boolean(query.search || query.action || query.targetType || query.actorId) },
+            request,
+        })
 
         return reply
             .headers(getAuditLogExportHeaders(date))
@@ -797,7 +806,7 @@ export async function adminRoutes(
     app.get<{ Querystring: unknown; Reply: SystemIncidentsListResponse }>(
         '/admin/system-incidents',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const query = validateQuery(systemIncidentsQuerySchema, request.query)
             const incidents = await getSystemIncidents(user, query)
 
@@ -808,7 +817,7 @@ export async function adminRoutes(
     app.get<{ Reply: AdminOperationsOverview }>(
         '/admin/operations/overview',
         async (request, reply) => {
-            const overview = await getAdminOperationsOverview(await requireAuth(request))
+            const overview = await getAdminOperationsOverview(await requireRecentPrivilegedMfa(request))
             reply.header('cache-control', 'no-store')
             return overview
         },
@@ -817,7 +826,7 @@ export async function adminRoutes(
     app.get<{ Querystring: unknown; Reply: SecurityEventsListResponse }>(
         '/admin/security-events',
         async (request, reply) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const query = validateQuery(adminSecurityEventsQuerySchema, request.query)
             const events = await getSecurityEvents(user, query)
 
@@ -841,7 +850,7 @@ export async function adminRoutes(
     app.get<{ Querystring: unknown; Reply: SecurityCenterSummaryResponse }>(
         '/admin/security-center/summary',
         async (request, reply) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const query = validateQuery(securityCenterSummaryQuerySchema, request.query)
             const summary = await getSecurityCenterSummary(user, query)
 
@@ -861,7 +870,7 @@ export async function adminRoutes(
     app.get<{ Querystring: unknown; Reply: SecurityCenterEventsListResponse }>(
         '/admin/security-center/events',
         async (request, reply) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const query = validateQuery(securityCenterEventsQuerySchema, request.query)
             const events = await getSecurityCenterEvents(user, query)
 
@@ -879,7 +888,7 @@ export async function adminRoutes(
     )
 
     app.get('/admin/security-center/events/export', async (request, reply) => {
-        const user = await requireAuth(request)
+        const user = await requireRecentPrivilegedMfa(request)
         assertSecurityCenterExportAccess(user)
         const query = validateQuery(securityCenterExportQuerySchema, request.query)
         const result = await getSecurityCenterEvents(user, { ...query, limit: Math.min(query.limit, 100) })
@@ -903,7 +912,7 @@ export async function adminRoutes(
     app.get<{ Params: unknown; Reply: SecurityCenterEventResponse }>(
         '/admin/security-center/events/:id',
         async (request, reply) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const params = validateParams(securityCenterEventParamsSchema, request.params)
             const event = await getSecurityCenterEvent(user, params.id)
 
@@ -928,7 +937,7 @@ export async function adminRoutes(
     }>(
         '/admin/security-center/events/:id/status',
         async (request, reply) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const params = validateParams(securityCenterEventParamsSchema, request.params)
             const body = validateBody(updateSecurityCenterEventStatusSchema, request.body)
             const event = await updateSecurityCenterEventStatus(
@@ -960,7 +969,7 @@ export async function adminRoutes(
     app.post<{ Params: unknown; Reply: SecurityCenterSessionRevocationResponse }>(
         '/admin/security-center/users/:id/revoke-sessions',
         async (request, reply) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const params = validateParams(adminUserParamsSchema, request.params)
             const result = await revokeSecurityCenterUserSessions(user, params.id)
 
@@ -981,7 +990,7 @@ export async function adminRoutes(
     app.get<{ Querystring: unknown; Reply: SecurityMitigationResponse[] | CursorResponse<SecurityMitigationResponse> }>(
         '/admin/security-center/mitigations',
         async (request, reply) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const query = validateQuery(securityMitigationsQuerySchema, request.query)
             const mitigations = await getSecurityMitigations(user, query)
             reply.header('cache-control', 'no-store')
@@ -999,7 +1008,7 @@ export async function adminRoutes(
     app.post<{ Body: unknown; Reply: SecurityMitigationResponse }>(
         '/admin/security-center/mitigations',
         async (request, reply) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const body = validateBody(createSecurityMitigationSchema, request.body)
             const mitigation = await createSecurityMitigation(user, body)
             reply.header('cache-control', 'no-store')
@@ -1022,7 +1031,7 @@ export async function adminRoutes(
     app.delete<{ Params: unknown; Reply: SecurityMitigationResponse }>(
         '/admin/security-center/mitigations/:id',
         async (request, reply) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const params = validateParams(securityMitigationParamsSchema, request.params)
             const mitigation = await revokeSecurityMitigation(user, params.id)
             reply.header('cache-control', 'no-store')
@@ -1041,7 +1050,7 @@ export async function adminRoutes(
     app.patch<{ Params: unknown; Body: unknown; Reply: SecurityMitigationResponse }>(
         '/admin/security-center/mitigations/:id',
         async (request, reply) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const params = validateParams(securityMitigationParamsSchema, request.params)
             const body = validateBody(extendSecurityMitigationSchema, request.body)
             const mitigation = await extendSecurityMitigation(user, params.id, body.extensionMinutes)
@@ -1065,7 +1074,7 @@ export async function adminRoutes(
     app.get<{ Reply: OutboxHealthResponse }>(
         '/admin/outbox/health',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const health = await getOutboxHealth(user)
 
             return {
@@ -1091,7 +1100,7 @@ export async function adminRoutes(
     app.post<{ Params: unknown; Reply: { success: true; eventId: string; status: string } }>(
         '/admin/outbox/:id/dead-letter',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const params = validateParams(outboxEventParamsSchema, request.params)
             const event = await deadLetterOutboxEvent(user, params.id)
 
@@ -1118,7 +1127,7 @@ export async function adminRoutes(
     app.post<{ Params: unknown; Reply: { success: true; eventId: string; status: string } }>(
         '/admin/outbox/:id/retry',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const params = validateParams(outboxEventParamsSchema, request.params)
             const event = await retryOutboxEvent(user, params.id)
 
@@ -1149,7 +1158,7 @@ export async function adminRoutes(
     }>(
         '/admin/system-incidents/:id/status',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const params = validateParams(systemIncidentParamsSchema, request.params)
             const body = validateBody(updateSystemIncidentStatusSchema, request.body)
             const incident = await updateSystemIncidentStatus(user, params.id, body.status)

@@ -10,6 +10,7 @@ import { ThemeProvider } from '@/shared/lib/theme-provider'
 import { useTheme } from '@/shared/lib/useTheme'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { ScrollToTopButton } from '@/shared/ui/scroll-to-top'
+import { PrivilegedStepUpDialog } from '@/shared/ui/privileged-step-up/PrivilegedStepUpDialog'
 
 function AccountLocaleSync() {
     const { data: user } = useGetMeQuery()
@@ -40,6 +41,7 @@ function NextAppContent() {
         <I18nProvider>
             <AccountLocaleSync />
             <AppRouter />
+            <PrivilegedStepUpDialog />
             <ScrollToTopButton />
             <Toaster richColors position="top-right" theme={theme} />
         </I18nProvider>

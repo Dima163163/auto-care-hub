@@ -24,7 +24,9 @@ import {
     SystemIncidentType,
 } from '../../entities/system-incident/system-incident.entity.js'
 import { UserEntity, UserRole, UserStatus } from '../../entities/user/user.entity.js'
-import { createAuthTokens } from '../auth/auth.service.js'
+import { UserSessionEntity } from '../../entities/user-session/user-session.entity.js'
+import { createTestAccessToken } from '../../test-support/auth-session.js'
+import { verifyAccessToken } from '../auth/auth-token.js'
 
 describe('Admin and workspace authorization integration', () => {
     const suffix = `${Date.now()}`
@@ -207,8 +209,8 @@ describe('Admin and workspace authorization integration', () => {
     })
 
     it('enforces provider membership and schedule ownership at route boundaries', async () => {
-        const ownerToken = createAuthTokens(providerOwner).accessToken
-        const otherOwnerToken = createAuthTokens(otherOwner).accessToken
+        const ownerToken = await createTestAccessToken(providerOwner)
+        const otherOwnerToken = await createTestAccessToken(otherOwner)
 
         const forbiddenMemberships = await request(app.server)
             .get(`/owner/autocare-providers/${provider.id}/members`)
@@ -259,8 +261,8 @@ describe('Admin and workspace authorization integration', () => {
     })
 
     it('keeps platform overview super-admin scoped', async () => {
-        const adminToken = createAuthTokens(admin).accessToken
-        const superAdminToken = createAuthTokens(superAdmin).accessToken
+        const adminToken = await createTestAccessToken(admin)
+        const superAdminToken = await createTestAccessToken(superAdmin)
 
         const forbidden = await request(app.server)
             .get('/super-admin/platform-overview')
@@ -275,9 +277,9 @@ describe('Admin and workspace authorization integration', () => {
     })
 
     it('keeps market hierarchy and audit access separated by role', async () => {
-        const ownerToken = createAuthTokens(providerOwner).accessToken
-        const adminToken = createAuthTokens(admin).accessToken
-        const superAdminToken = createAuthTokens(superAdmin).accessToken
+        const ownerToken = await createTestAccessToken(providerOwner)
+        const adminToken = await createTestAccessToken(admin)
+        const superAdminToken = await createTestAccessToken(superAdmin)
 
         const ownerHierarchy = await request(app.server)
             .get('/super-admin/market-hierarchy')
@@ -309,8 +311,8 @@ describe('Admin and workspace authorization integration', () => {
     })
 
     it('provides an admin-only evidence decision with the related provider context', async () => {
-        const ownerToken = createAuthTokens(providerOwner).accessToken
-        const adminToken = createAuthTokens(admin).accessToken
+        const ownerToken = await createTestAccessToken(providerOwner)
+        const adminToken = await createTestAccessToken(admin)
 
         const forbidden = await request(app.server)
             .get('/admin/autocare-moderation-evidence')
@@ -369,7 +371,7 @@ describe('Admin and workspace authorization integration', () => {
     })
 
     it('audits sensitive moderation queue reads without copying private payloads', async () => {
-        const adminToken = createAuthTokens(admin).accessToken
+        const adminToken = await createTestAccessToken(admin)
         const requests = [
             ['/admin/autocare-appeals', AuditAction.AutoCareAppealsViewed, 'autocare_appeals'],
             ['/admin/autocare-moderation-evidence', AuditAction.AutoCareModerationQueueViewed, 'autocare_moderation_evidence'],
@@ -396,9 +398,316 @@ describe('Admin and workspace authorization integration', () => {
         }
     })
 
+    it.each(['admin', 'super_admin'] as const)('rejects stale MFA before returning chat reports to %s', async (role) => {
+        const actor = role === 'admin' ? admin : superAdmin
+        const token = await createTestAccessToken(actor)
+        const sessionId = verifyAccessToken(token).sessionId
+        if (!sessionId) throw new Error('Privileged test token has no session ID.')
+        await AppDataSource.getRepository(UserSessionEntity).update(sessionId, {
+            mfaVerifiedAt: new Date(Date.now() - 5 * 60_000 - 1_000),
+        })
+
+        const response = await request(app.server)
+            .get('/admin/chat-reports')
+            .set('Authorization', `Bearer ${token}`)
+        expect(response.status).toBe(403)
+        expect(response.body.code).toBe('MFA_STEP_UP_REQUIRED')
+        expect(response.body).not.toHaveProperty('items')
+    })
+
+    it.each(['admin', 'super_admin'] as const)('rejects stale MFA before listing chat subjects to %s', async (role) => {
+        const actor = role === 'admin' ? admin : superAdmin
+        const token = await createTestAccessToken(actor)
+        const sessionId = verifyAccessToken(token).sessionId
+        if (!sessionId) throw new Error('Privileged test token has no session ID.')
+        await AppDataSource.getRepository(UserSessionEntity).update(sessionId, {
+            mfaVerifiedAt: new Date(Date.now() - 5 * 60_000 - 1_000),
+        })
+
+        const response = await request(app.server)
+            .get('/v1/chats')
+            .set('Authorization', `Bearer ${token}`)
+        expect(response.status).toBe(403)
+        expect(response.body.code).toBe('MFA_STEP_UP_REQUIRED')
+        expect(response.body).not.toHaveProperty('items')
+    })
+
+    it.each(['admin', 'super_admin'] as const)('audits privileged chat index reads by %s without copying subjects', async (role) => {
+        const actor = role === 'admin' ? admin : superAdmin
+        const token = await createTestAccessToken(actor)
+        const response = await request(app.server)
+            .get('/v1/chats')
+            .set('Authorization', `Bearer ${token}`)
+        expect(response.status).toBe(200)
+        const audit = await AppDataSource.getRepository(AuditLogEntity).findOne({
+            where: { actorId: actor.id, action: AuditAction.AutoCareChatIndexViewed, targetType: 'autocare_chat_threads' },
+            order: { createdAt: 'DESC' },
+        })
+        expect(audit?.metadata).toEqual({ accessorRole: role, itemCount: response.body.length })
+        expect(audit?.metadata).not.toHaveProperty('subject')
+        expect(audit?.metadata).not.toHaveProperty('body')
+    })
+
+    it.each(['admin', 'super_admin'] as const)('rejects stale MFA before privileged chat actions by %s', async (role) => {
+        const actor = role === 'admin' ? admin : superAdmin
+        const token = await createTestAccessToken(actor)
+        const sessionId = verifyAccessToken(token).sessionId
+        if (!sessionId) throw new Error('Privileged test token has no session ID.')
+        await AppDataSource.getRepository(UserSessionEntity).update(sessionId, {
+            mfaVerifiedAt: new Date(Date.now() - 5 * 60_000 - 1_000),
+        })
+
+        const id = '11111111-1111-4111-8111-111111111111'
+        const actions = [
+            ['post', '/v1/chats'],
+            ['post', `/v1/chats/${id}/reports`],
+            ['delete', `/v1/chats/${id}/messages/${id}`],
+            ['delete', `/v1/chats/${id}/blocks/${id}`],
+            ['post', `/v1/chats/${id}/read`],
+            ['post', `/v1/chats/${id}/attachments`],
+            ['post', `/v1/chats/${id}/messages`],
+            ['post', `/v1/service-requests/${id}/read`],
+            ['post', `/v1/service-requests/${id}/attachments`],
+        ] as const
+        for (const [method, path] of actions) {
+            const response = await request(app.server)[method](path)
+                .set('Authorization', `Bearer ${token}`)
+            expect(response.status, `${method.toUpperCase()} ${path}`).toBe(403)
+            expect(response.body.code, `${method.toUpperCase()} ${path}`).toBe('MFA_STEP_UP_REQUIRED')
+        }
+    })
+
+    it.each(['admin', 'super_admin'] as const)('rejects stale MFA before private service request reads by %s', async (role) => {
+        const actor = role === 'admin' ? admin : superAdmin
+        const token = await createTestAccessToken(actor)
+        const sessionId = verifyAccessToken(token).sessionId
+        if (!sessionId) throw new Error('Privileged test token has no session ID.')
+        await AppDataSource.getRepository(UserSessionEntity).update(sessionId, {
+            mfaVerifiedAt: new Date(Date.now() - 5 * 60_000 - 1_000),
+        })
+
+        const id = '11111111-1111-4111-8111-111111111111'
+        const paths = [
+            `/v1/service-requests/${id}`,
+            `/v1/service-requests/${id}/timeline`,
+            '/owner/service-requests',
+        ]
+        for (const path of paths) {
+            const response = await request(app.server).get(path).set('Authorization', `Bearer ${token}`)
+            expect(response.status, path).toBe(403)
+            expect(response.body.code, path).toBe('MFA_STEP_UP_REQUIRED')
+        }
+    })
+
+    it.each(['admin', 'super_admin'] as const)('rejects stale MFA before private broadcast request reads by %s', async (role) => {
+        const actor = role === 'admin' ? admin : superAdmin
+        const token = await createTestAccessToken(actor)
+        const sessionId = verifyAccessToken(token).sessionId
+        if (!sessionId) throw new Error('Privileged test token has no session ID.')
+        await AppDataSource.getRepository(UserSessionEntity).update(sessionId, {
+            mfaVerifiedAt: new Date(Date.now() - 5 * 60_000 - 1_000),
+        })
+
+        const paths = [
+            '/v1/broadcast-requests/11111111-1111-4111-8111-111111111111',
+            '/owner/broadcast-requests',
+        ]
+        for (const path of paths) {
+            const response = await request(app.server).get(path).set('Authorization', `Bearer ${token}`)
+            expect(response.status, path).toBe(403)
+            expect(response.body.code, path).toBe('MFA_STEP_UP_REQUIRED')
+        }
+    })
+
+    it.each(['admin', 'super_admin'] as const)('rejects stale MFA before provider workspace reads by %s', async (role) => {
+        const actor = role === 'admin' ? admin : superAdmin
+        const token = await createTestAccessToken(actor)
+        const sessionId = verifyAccessToken(token).sessionId
+        if (!sessionId) throw new Error('Privileged test token has no session ID.')
+        await AppDataSource.getRepository(UserSessionEntity).update(sessionId, {
+            mfaVerifiedAt: new Date(Date.now() - 5 * 60_000 - 1_000),
+        })
+
+        const id = provider.id
+        const paths = [
+            '/owner/autocare-providers',
+            `/owner/autocare-providers/${id}/resources`,
+            `/owner/autocare-providers/${id}/resource-reservations`,
+            `/owner/autocare-providers/${id}/evidence`,
+            '/owner/workspace-access',
+            `/owner/autocare-providers/${id}/members`,
+            `/owner/autocare-providers/${id}/change-requests`,
+            `/owner/autocare-providers/${id}/analytics`,
+            `/owner/autocare-providers/${id}/bonus-program`,
+            `/owner/autocare-providers/${id}/bonus-liability`,
+            `/owner/autocare-providers/${id}/reviews`,
+            '/owner/autocare-reviews',
+        ]
+        for (const path of paths) {
+            const response = await request(app.server).get(path).set('Authorization', `Bearer ${token}`)
+            expect(response.status, path).toBe(403)
+            expect(response.body.code, path).toBe('MFA_STEP_UP_REQUIRED')
+        }
+    })
+
+    it.each(['admin', 'super_admin'] as const)('rejects stale MFA before provider workspace mutations by %s', async (role) => {
+        const actor = role === 'admin' ? admin : superAdmin
+        const token = await createTestAccessToken(actor)
+        const sessionId = verifyAccessToken(token).sessionId
+        if (!sessionId) throw new Error('Privileged test token has no session ID.')
+        await AppDataSource.getRepository(UserSessionEntity).update(sessionId, {
+            mfaVerifiedAt: new Date(Date.now() - 5 * 60_000 - 1_000),
+        })
+
+        const id = provider.id
+        const mutations = [
+            ['post', `/owner/autocare-providers/${id}/resources`],
+            ['patch', `/owner/autocare-providers/${id}/resources/${id}`],
+            ['patch', `/owner/autocare-providers/${id}/communication-settings`],
+            ['post', `/owner/autocare-providers/${id}/members/invitations`],
+            ['delete', `/owner/autocare-providers/${id}/members/invitations/${id}`],
+            ['delete', `/owner/autocare-providers/${id}/members/${id}`],
+            ['post', '/owner/autocare-provider-invitations/accept'],
+            ['post', `/owner/autocare-providers/${id}/change-requests`],
+            ['delete', `/owner/autocare-providers/${id}/change-requests/${id}`],
+            ['put', `/owner/autocare-providers/${id}/bonus-program`],
+            ['post', `/owner/autocare-providers/${id}/bonus-accounts/${id}/grants`],
+            ['patch', `/owner/autocare-providers/${id}/offers/${id}`],
+            ['post', `/owner/autocare-providers/${id}/reviews/${id}/promos`],
+            ['post', '/owner/autocare-providers/logo'],
+            ['post', '/owner/autocare-providers/media'],
+            ['post', '/owner/autocare-providers'],
+        ] as const
+        for (const [method, path] of mutations) {
+            const response = await request(app.server)[method](path)
+                .set('Authorization', `Bearer ${token}`)
+                .send({})
+            expect(response.status, `${method.toUpperCase()} ${path}`).toBe(403)
+            expect(response.body.code, `${method.toUpperCase()} ${path}`).toBe('MFA_STEP_UP_REQUIRED')
+        }
+    })
+
+    it.each(['admin', 'super_admin'] as const)('rejects stale MFA before service request transitions by %s', async (role) => {
+        const actor = role === 'admin' ? admin : superAdmin
+        const token = await createTestAccessToken(actor)
+        const sessionId = verifyAccessToken(token).sessionId
+        if (!sessionId) throw new Error('Privileged test token has no session ID.')
+        await AppDataSource.getRepository(UserSessionEntity).update(sessionId, {
+            mfaVerifiedAt: new Date(Date.now() - 5 * 60_000 - 1_000),
+        })
+
+        const id = provider.id
+        const paths = [
+            `/v1/service-requests/${id}/messages`,
+            `/owner/service-requests/${id}/offers`,
+            `/v1/service-requests/${id}/offers/${id}/decision`,
+            `/v1/service-requests/${id}/confirm`,
+            `/v1/service-requests/${id}/cancel`,
+            `/v1/service-requests/${id}/reschedule/decision`,
+            `/v1/service-requests/${id}/quote/accept`,
+            `/v1/service-requests/${id}/quote/decline`,
+            `/owner/broadcast-requests/${id}/offers`,
+            `/owner/service-requests/${id}/confirm`,
+            `/owner/service-requests/${id}/quote`,
+            `/owner/service-requests/${id}/reschedule`,
+            `/owner/service-requests/${id}/no-show`,
+            `/owner/service-requests/${id}/complete`,
+        ]
+        for (const path of paths) {
+            const response = await request(app.server).post(path)
+                .set('Authorization', `Bearer ${token}`)
+                .send({})
+            expect(response.status, path).toBe(403)
+            expect(response.body.code, path).toBe('MFA_STEP_UP_REQUIRED')
+        }
+    })
+
+    it('requires fresh MFA before every private administrative read', async () => {
+        const token = await createTestAccessToken(superAdmin)
+        const sessionId = verifyAccessToken(token).sessionId
+        if (!sessionId) throw new Error('Privileged test token has no session ID.')
+        await AppDataSource.getRepository(UserSessionEntity).update(sessionId, {
+            mfaVerifiedAt: new Date(Date.now() - 5 * 60_000 - 1_000),
+        })
+
+        const paths = [
+            '/admin/autocare-providers',
+            '/admin/autocare-quality-monitoring',
+            '/admin/autocare-appeals',
+            '/admin/autocare-moderation-evidence',
+            '/admin/autocare-reviews',
+            '/admin/autocare-provider-change-requests',
+            '/admin/catalog-gap-requests',
+            '/admin/chat-reports',
+            '/super-admin/platform-overview',
+            '/super-admin/trust-policy',
+            '/admin/users',
+            '/admin/account-deletion-requests',
+            '/admin/cabinets',
+            '/admin/audit-logs',
+            '/admin/system-incidents',
+            '/admin/operations/overview',
+            '/admin/security-events',
+            '/admin/security-center/summary',
+            '/admin/security-center/events',
+            '/admin/security-center/events/11111111-1111-4111-8111-111111111111',
+            '/admin/security-center/mitigations',
+            '/admin/outbox/health',
+            '/admin/platform-reviews',
+        ]
+        for (const path of paths) {
+            const response = await request(app.server).get(path).set('Authorization', `Bearer ${token}`)
+            expect(response.status, path).toBe(403)
+            expect(response.body.code, path).toBe('MFA_STEP_UP_REQUIRED')
+        }
+    })
+
+    it('requires fresh MFA before privileged moderation and governance mutations', async () => {
+        const token = await createTestAccessToken(superAdmin)
+        const sessionId = verifyAccessToken(token).sessionId
+        if (!sessionId) throw new Error('Privileged test token has no session ID.')
+        await AppDataSource.getRepository(UserSessionEntity).update(sessionId, {
+            mfaVerifiedAt: new Date(Date.now() - 5 * 60_000 - 1_000),
+        })
+
+        const id = '11111111-1111-4111-8111-111111111111'
+        const mutations = [
+            ['patch', `/admin/autocare-appeals/${id}/decision`],
+            ['patch', `/admin/autocare-reviews/${id}/status`],
+            ['patch', `/admin/autocare-moderation-evidence/${id}/decision`],
+            ['patch', `/admin/autocare-providers/${id}/status`],
+            ['patch', `/admin/autocare-provider-change-requests/${id}/decision`],
+            ['patch', `/admin/catalog-gap-requests/${id}/decision`],
+            ['patch', `/admin/chat-reports/${id}/decision`],
+            ['patch', `/admin/chat-reports/${id}/assignment`],
+            ['post', `/admin/chat-reports/${id}/assignment/extend`],
+            ['patch', `/super-admin/markets/${id}`],
+            ['post', '/super-admin/market-countries'],
+            ['patch', `/super-admin/market-countries/${id}`],
+            ['delete', `/super-admin/market-countries/${id}`],
+            ['post', `/super-admin/market-countries/${id}/cities`],
+            ['patch', `/super-admin/market-cities/${id}`],
+            ['delete', `/super-admin/market-cities/${id}`],
+            ['post', `/super-admin/market-cities/${id}/zones`],
+            ['patch', `/super-admin/market-zones/${id}`],
+            ['delete', `/super-admin/market-zones/${id}`],
+            ['patch', `/admin/service-definitions/${id}`],
+            ['patch', `/admin/cabinets/${id}/status`],
+            ['post', `/admin/platform-reviews/${id}/response`],
+            ['delete', `/super-admin/platform-reviews/${id}`],
+        ] as const
+        for (const [method, path] of mutations) {
+            const response = await request(app.server)[method](path)
+                .set('Authorization', `Bearer ${token}`)
+                .send({})
+            expect(response.status, `${method.toUpperCase()} ${path}`).toBe(403)
+            expect(response.body.code, `${method.toUpperCase()} ${path}`).toBe('MFA_STEP_UP_REQUIRED')
+        }
+    })
+
     it('completes the appeal lifecycle with a decision, audit event and notification outbox entry', async () => {
-        const ownerToken = createAuthTokens(providerOwner).accessToken
-        const adminToken = createAuthTokens(admin).accessToken
+        const ownerToken = await createTestAccessToken(providerOwner)
+        const adminToken = await createTestAccessToken(admin)
         const reason = 'The provider profile is complete and the suspension should be reviewed again.'
 
         const created = await request(app.server)
@@ -450,8 +759,8 @@ describe('Admin and workspace authorization integration', () => {
     })
 
     it('keeps aggregate data-quality queues restricted to administrators', async () => {
-        const ownerToken = createAuthTokens(providerOwner).accessToken
-        const adminToken = createAuthTokens(admin).accessToken
+        const ownerToken = await createTestAccessToken(providerOwner)
+        const adminToken = await createTestAccessToken(admin)
 
         const forbidden = await request(app.server)
             .get('/admin/autocare-quality-monitoring')
@@ -469,8 +778,8 @@ describe('Admin and workspace authorization integration', () => {
     })
 
     it('allows only super-admins to update incidents and records an immutable audit trail', async () => {
-        const adminToken = createAuthTokens(admin).accessToken
-        const superAdminToken = createAuthTokens(superAdmin).accessToken
+        const adminToken = await createTestAccessToken(admin)
+        const superAdminToken = await createTestAccessToken(superAdmin)
 
         const forbidden = await request(app.server)
             .patch(`/admin/system-incidents/${incident.id}/status`)

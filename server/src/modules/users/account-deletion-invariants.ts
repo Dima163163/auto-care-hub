@@ -23,6 +23,8 @@ export type AccountDeletionInvariantResult = AccountDeletionInvariant & {
  * retention check instead of silently introducing a new PII leak.
  */
 export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] = [
+    { name: 'MFA factor is removed', sql: 'SELECT COUNT(*)::int AS count FROM "user_mfa_factors" WHERE "user_id" = $1' },
+    { name: 'MFA recovery codes are removed', sql: 'SELECT COUNT(*)::int AS count FROM "user_mfa_recovery_codes" WHERE "user_id" = $1' },
     { name: 'user secondary fields are removed', sql: 'SELECT COUNT(*)::int AS count FROM "users" WHERE "id" = $1 AND ("avatarUrl" IS NOT NULL OR "avatarUrlBinding" IS NOT NULL OR "communityDisplayName" IS NOT NULL OR "communityDisplayNameBinding" IS NOT NULL OR "preferredCity" IS NOT NULL OR "preferredCityBinding" IS NOT NULL)' },
     { name: 'owned providers are detached', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_providers" WHERE "ownerId" = $1' },
     { name: 'legacy cabinets are blocked and images removed', sql: 'SELECT COUNT(*)::int AS count FROM "cabinets" WHERE "ownerId" = $1 AND ("status" <> \'blocked\' OR cardinality("photos") > 0)' },
@@ -74,7 +76,7 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
                 OR "estimateSnapshot" IS NOT NULL OR "estimateSnapshotBinding" IS NOT NULL
                 OR "acceptedQuoteSnapshot" IS NOT NULL OR "acceptedQuoteSnapshotBinding" IS NOT NULL
                 OR "bookingSnapshot" IS NOT NULL OR "bookingSnapshotBinding" IS NOT NULL
-                OR "cancellationReason" IS NOT NULL OR "noShowReason" IS NOT NULL OR "completionNote" IS NOT NULL
+                OR "cancellationReason" IS NOT NULL OR "cancellationReasonBinding" IS NOT NULL OR "noShowReason" IS NOT NULL OR "noShowReasonBinding" IS NOT NULL OR "completionNote" IS NOT NULL OR "completionNoteBinding" IS NOT NULL
                 OR "cancelledById" = $1 OR "noShowById" = $1 OR "completedById" = $1)`,
     },
     {
@@ -83,7 +85,7 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
             FROM "autocare_service_quotes" quote
             JOIN "autocare_service_requests" request ON request."id" = quote."requestId"
             WHERE request."clientId" = $1
-              AND COALESCE(quote."snapshot" ->> 'redacted', 'false') <> 'true'`,
+              AND (COALESCE(quote."snapshot" ->> 'redacted', 'false') <> 'true' OR quote."snapshotBinding" IS NULL)`,
     },
     {
         name: 'broadcast requests are redacted',
@@ -104,12 +106,12 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
               AND ("symptoms" NOT LIKE '%"redacted":true%' OR "vehicleSnapshot" IS NOT NULL OR "answer" IS NOT NULL OR "answeredById" = $1)`,
     },
     {
-        name: 'fleet notes and vehicles are redacted',
+        name: 'fleet names, notes and vehicles are redacted',
         sql: `SELECT COUNT(*)::int AS count
             FROM "autocare_fleet_accounts" fleet
             LEFT JOIN "autocare_fleet_vehicles" vehicle ON vehicle."fleetId" = fleet."id"
             WHERE fleet."ownerId" = $1
-              AND (fleet."notes" IS NOT NULL OR vehicle."label" NOT LIKE '%"redacted":true%' OR COALESCE(vehicle."vehicleSnapshot" ->> 'redacted', 'false') <> 'true' OR vehicle."approvalPolicy" IS NOT NULL)`,
+              AND (fleet."name" NOT LIKE '%"redacted":true%' OR fleet."notes" IS NOT NULL OR vehicle."label" NOT LIKE '%"redacted":true%' OR COALESCE(vehicle."vehicleSnapshot" ->> 'redacted', 'false') <> 'true' OR vehicle."approvalPolicy" IS NOT NULL)`,
     },
     {
         name: 'account-related service message bodies and offers are redacted',
@@ -122,6 +124,7 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
     },
     { name: 'repair event payloads are redacted', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_repair_events" event JOIN "autocare_service_requests" request ON request."id" = event."requestId" WHERE request."clientId" = $1 AND (event."title" NOT LIKE \'%"redacted":true%\' OR event."notes" IS NOT NULL OR COALESCE(event."metadata" ->> \'redacted\', \'false\') <> \'true\')' },
     { name: 'repair event actor references are detached', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_repair_events" WHERE "actorId" = $1' },
+    { name: 'broadcast offer snapshots are redacted', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_broadcast_offers" offer JOIN "autocare_broadcast_requests" request ON request."id" = offer."broadcastRequestId" WHERE request."clientId" = $1 AND COALESCE(offer."offerSnapshot" ->> \'redacted\', \'false\') <> \'true\'' },
     { name: 'provider change reviewers are detached', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_provider_change_requests" WHERE "reviewedById" = $1' },
     { name: 'provider change request payloads are redacted', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_provider_change_requests" WHERE "requestedById" = $1 AND (COALESCE("payload" ->> \'redacted\', \'false\') <> \'true\' OR "reviewedById" = $1 OR "reviewReason" IS NOT NULL)' },
     {
@@ -139,7 +142,7 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
             FROM "autocare_reschedule_requests" reschedule
             LEFT JOIN "autocare_service_requests" request ON request."id" = reschedule."requestId"
             WHERE (reschedule."requestedById" = $1 OR reschedule."resolvedById" = $1 OR request."clientId" = $1)
-              AND (reschedule."reason" IS NOT NULL OR reschedule."resolvedById" = $1 OR reschedule."resolutionReason" IS NOT NULL)`,
+              AND (reschedule."reason" IS NOT NULL OR reschedule."reasonBinding" IS NOT NULL OR reschedule."resolvedById" = $1 OR reschedule."resolutionReason" IS NOT NULL OR reschedule."resolutionReasonBinding" IS NOT NULL)`,
     },
     {
         name: 'legacy booking status references are detached',
@@ -147,13 +150,13 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
             FROM "booking_status_history" history
             LEFT JOIN "bookings" booking ON booking."id" = history."bookingId"
             WHERE history."changedById" = $1
-               OR (booking."clientId" = $1 AND history."reason" IS NOT NULL)`,
+               OR (booking."clientId" = $1 AND (history."reason" IS NOT NULL OR history."reasonBinding" IS NOT NULL))`,
     },
     {
         name: 'legacy booking free text is redacted',
         sql: `SELECT COUNT(*)::int AS count FROM "bookings"
             WHERE "clientId" = $1
-              AND ("comment" IS NOT NULL OR "cancellationReason" IS NOT NULL OR "ownerNote" IS NOT NULL)`,
+              AND ("comment" IS NOT NULL OR "commentBinding" IS NOT NULL OR "cancellationReason" IS NOT NULL OR "cancellationReasonBinding" IS NOT NULL OR "ownerNote" IS NOT NULL OR "ownerNoteBinding" IS NOT NULL)`,
     },
     {
         name: 'legacy booking reschedule references are detached',
@@ -161,7 +164,7 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
             FROM "booking_reschedule_requests" reschedule
             LEFT JOIN "bookings" booking ON booking."id" = reschedule."bookingId"
             WHERE (reschedule."requestedById" = $1 OR reschedule."resolvedById" = $1 OR booking."clientId" = $1)
-              AND (reschedule."resolvedById" = $1 OR reschedule."resolutionReason" IS NOT NULL)`,
+              AND (reschedule."resolvedById" = $1 OR reschedule."resolutionReason" IS NOT NULL OR reschedule."resolutionReasonBinding" IS NOT NULL)`,
     },
     {
         name: 'account-related chat report descriptions are redacted',
@@ -169,7 +172,7 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
             FROM "autocare_chat_reports" report
             LEFT JOIN "autocare_chat_threads" thread ON thread."id" = report."threadId"
             WHERE (report."reporterId" = $1 OR report."reportedUserId" = $1 OR thread."clientId" = $1 OR thread."createdById" = $1)
-              AND (report."description" IS NOT NULL OR report."reportedUserId" = $1 OR report."reviewedById" = $1 OR report."resolutionReason" IS NOT NULL)`,
+              AND (report."description" IS NOT NULL OR report."descriptionBinding" IS NOT NULL OR report."reportedUserId" = $1 OR report."reviewedById" = $1 OR report."resolutionReason" IS NOT NULL OR report."resolutionReasonBinding" IS NOT NULL OR report."assignmentReason" IS NOT NULL OR report."assignmentReasonBinding" IS NOT NULL OR report."extensionReason" IS NOT NULL OR report."extensionReasonBinding" IS NOT NULL)`,
     },
     { name: 'chat report reviewers are detached', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_chat_reports" WHERE "reviewedById" = $1' },
     {
@@ -178,7 +181,7 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
             FROM "autocare_chat_blocks" block
             LEFT JOIN "autocare_chat_threads" thread ON thread."id" = block."threadId"
             WHERE (block."blockerId" = $1 OR block."blockedUserId" = $1 OR thread."clientId" = $1 OR thread."createdById" = $1)
-              AND block."reason" IS NOT NULL`,
+              AND (block."reason" IS NOT NULL OR block."reasonBinding" IS NOT NULL)`,
     },
     { name: 'guarantee claim resolvers are detached', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_guarantee_claims" WHERE "resolvedById" = $1' },
     { name: 'expert question answerers are detached', sql: 'SELECT COUNT(*)::int AS count FROM "autocare_expert_questions" WHERE "answeredById" = $1' },
@@ -205,7 +208,7 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
             FROM "autocare_chat_reports" report
             JOIN "autocare_chat_threads" thread ON thread."id" = report."threadId"
             WHERE thread."subject" LIKE '%"redacted":true%'
-              AND (report."description" IS NOT NULL OR report."reportedUserId" IS NOT NULL OR report."reviewedById" IS NOT NULL OR report."resolutionReason" IS NOT NULL)`,
+              AND (report."description" IS NOT NULL OR report."descriptionBinding" IS NOT NULL OR report."reportedUserId" IS NOT NULL OR report."reviewedById" IS NOT NULL OR report."resolutionReason" IS NOT NULL OR report."resolutionReasonBinding" IS NOT NULL OR report."assignmentReason" IS NOT NULL OR report."assignmentReasonBinding" IS NOT NULL OR report."extensionReason" IS NOT NULL OR report."extensionReasonBinding" IS NOT NULL)`,
         parameterMode: 'none',
     },
     {
@@ -214,7 +217,7 @@ export const AUTOCARE_DELETION_INVARIANTS: readonly AccountDeletionInvariant[] =
             FROM "autocare_chat_blocks" block
             JOIN "autocare_chat_threads" thread ON thread."id" = block."threadId"
             WHERE thread."subject" LIKE '%"redacted":true%'
-              AND block."reason" IS NOT NULL`,
+              AND (block."reason" IS NOT NULL OR block."reasonBinding" IS NOT NULL)`,
         parameterMode: 'none',
     },
 ]

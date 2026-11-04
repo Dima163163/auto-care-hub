@@ -451,6 +451,7 @@
     "post:/auth/refresh",
     "post:/auth/register",
     "post:/auth/sessions/revoke-all",
+    "post:/auth/step-up",
     "post:/auth/yandex/mock",
     "post:/bookings",
     "post:/bookings/:id/reschedule",

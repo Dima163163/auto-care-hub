@@ -1,5 +1,101 @@
 # Дополнительный полный аудит AutoCare Hub — 3 октября 2026
 
+## U02 — привязка автомобилей автопарка, 28 октября 2026
+
+Два зашифрованных поля `autocare_fleet_vehicles` получают HMAC по vehicle/fleet UUID. Migration 178680, bounded compare-write, полный verify и opt-in strict reader подготовлены; удаление владельца переподписывает оба обезличенных поля каждой строки. PostgreSQL CI, staging KMS/restore и strict cutover ещё открыты. **U02 открыт; pilot NO-GO.**
+
+
+## U02 — привязка автопарков, 28 октября 2026
+
+Два зашифрованных поля `autocare_fleet_accounts` получают HMAC по fleet/owner UUID. Migration 178679, bounded compare-write, полный verify и opt-in strict reader подготовлены; удаление владельца переподписывает обезличенное название каждой строки и очищает notes/binding. PostgreSQL CI, staging KMS/restore и strict cutover ещё открыты. **U02 открыт; pilot NO-GO.**
+
+
+## U02 — привязка вопросов эксперту, 28 октября 2026
+
+Три зашифрованных поля `autocare_expert_questions` получают HMAC по question/client UUID. Migration 178678, bounded compare-write, полный verify и opt-in strict reader подготовлены; удаление клиента переподписывает redacted symptoms каждой строки и очищает snapshot/answer с bindings. PostgreSQL CI, staging KMS/restore и strict cutover ещё открыты. **U02 открыт; pilot NO-GO.**
+
+
+## U02 — привязка гарантийных обращений, 28 октября 2026
+
+Два зашифрованных поля `autocare_guarantee_claims` получают HMAC по claim/request/client/provider UUID и claimType. Migration 178677, bounded compare-write, полный verify и opt-in strict reader подготовлены; удаление клиента переподписывает redacted summary отдельно для каждой строки и очищает resolution/binding. PostgreSQL CI, staging KMS/restore и strict cutover ещё открыты. **U02 открыт; pilot NO-GO.**
+
+
+## U02 — привязка предложения по рассылке, 28 октября 2026
+
+Зашифрованный `autocare_broadcast_offers.offerSnapshot` получает HMAC по offer/broadcast/provider/location UUID. Migration 178676, bounded compare-write, полный verify и opt-in strict reader подготовлены; удаление клиента переподписывает redacted snapshot каждой строки и проверяет invariant. PostgreSQL CI, staging KMS/restore и strict cutover ещё открыты. **U02 открыт; pilot NO-GO.**
+
+
+## U02 — привязка рассылки заявки, 28 октября 2026
+
+Два зашифрованных поля `autocare_broadcast_requests` получают HMAC по broadcast/client/definition UUID. Migration 178675, bounded compare-write, полный verify и opt-in strict reader подготовлены; удаление аккаунта переподписывает redacted issue отдельно для каждой строки и очищает vehicleSnapshot/binding. PostgreSQL CI, staging KMS/restore и strict cutover ещё открыты. **U02 открыт; pilot NO-GO.**
+
+
+## U02 — привязка журнала работ, 28 октября 2026
+
+Три зашифрованных поля `autocare_repair_events` получают HMAC по event/request UUID и eventType. Migration 178674, bounded compare-write, полный verify и opt-in strict reader подготовлены; удаление аккаунта переподписывает redacted title/metadata отдельно для каждой строки и очищает notes/binding. PostgreSQL CI, staging KMS/restore и strict cutover ещё открыты. **U02 открыт; pilot NO-GO.**
+
+
+## U02 — привязка материалов доверия, 28 октября 2026
+
+`autocare_trust_evidence.reference` и `notes` получили HMAC по evidence/
+provider UUID и kind. Reference сверяется с blind index, backfill удаляет
+старые индексы после null redaction. Обновление отзыва сохраняет evidence
+после загрузки под блокировкой. Migration 178670, bounded compare-write,
+полный verify и opt-in strict reader подготовлены локально. Staging KMS/restore,
+PostgreSQL CI и strict cutover не подтверждены. **U02 открыт; pilot NO-GO.**
+
+## U02 — привязка причины блокировки чата, 28 октября 2026
+
+`autocare_chat_blocks.reason` получила HMAC по block/thread/blocker/blocked
+UUID. Migration 178669, bounded compare-write backfill, полный verify и opt-in
+strict reader подготовлены локально. Удаление аккаунта очищает причину и
+подпись. Staging KMS/restore, PostgreSQL CI и strict cutover не подтверждены.
+**U02 открыт; pilot NO-GO.**
+
+## U02 — привязка текстов жалобы на чат, 28 октября 2026
+
+Четыре зашифрованных текста в `autocare_chat_reports` получили отдельные HMAC
+по report/thread/reporter UUID. Migration 178668, bounded compare-write
+backfill, полный verify и opt-in strict reader подготовлены локально. Удаление
+аккаунта очищает тексты и подписи. Staging KMS/restore, PostgreSQL CI и strict
+cutover не подтверждены. **U02 открыт; pilot NO-GO.**
+
+## U02 — привязка снимка сметы, 28 октября 2026
+
+`autocare_service_quotes.snapshot` получил HMAC по JSON, quote/request/provider
+UUID и version. Migration 178667, bounded compare-write backfill, полный
+verify и opt-in strict reader подготовлены локально. Удаление аккаунта
+переписывает каждую смету отдельным encrypted redaction и HMAC. Staging
+KMS/restore, PostgreSQL CI и strict cutover не подтверждены. **U02 открыт;
+pilot NO-GO.**
+
+## U02 — привязка причин переноса сервисной заявки, 28 октября 2026
+
+`autocare_reschedule_requests.reason` получила HMAC по reschedule/request/
+requester UUID; `resolutionReason` дополнительно по resolver UUID и status.
+Migration 178666, bounded compare-write backfill, полный verify и opt-in
+strict reader подготовлены локально. Удаление аккаунта очищает оба текста
+и подписи. Staging KMS/restore, PostgreSQL CI и strict cutover не подтверждены.
+**U02 открыт; pilot NO-GO.**
+
+## U02 — привязка причины переноса бронирования, 28 октября 2026
+
+`booking_reschedule_requests.resolutionReason` получила HMAC по тексту,
+UUID записи, бронирования, инициатора и решающего, а также status. Migration
+178665, bounded compare-write backfill, полный verify и opt-in strict reader
+подготовлены локально. Удаление аккаунта очищает причину и подпись.
+Staging KMS/restore, PostgreSQL CI и strict cutover не подтверждены.
+**U02 открыт; pilot NO-GO.**
+
+## U02 — привязка текста legacy booking, 28 октября 2026
+
+`bookings.comment`, `cancellationReason` и `ownerNote` получили отдельные
+HMAC по расшифрованному тексту, booking UUID и client/cabinet/service UUID.
+Migration 178664, bounded compare-write backfill, полный verify и opt-in
+strict reader подготовлены локально. Ответ API скрывает bindings; удаление
+аккаунта очищает текст и подписи. Staging KMS/restore, PostgreSQL CI и strict
+cutover не подтверждены. **U02 открыт; pilot NO-GO.**
+
 ## U02 — вторичные поля пользователя, 28 октября 2026
 
 Новые `users.avatarUrl`, `communityDisplayName` и `preferredCity` получают HMAC
@@ -556,7 +652,172 @@ strict reader. PR #21 прошёл PostgreSQL/browser CI и объединён �
 согласованной пары между событиями и `recipientName` остаётся уязвимым
 для сценария DB write attacker до row/owner AAD.
 
+**Локальный шаг 28.10:** provider change request payload/reviewReason получают
+HMAC по request/provider/requester UUID и kind. Migration 178671, bounded
+compare-write, полный verify и opt-in strict reader подготовлены; удаление
+аккаунта переподписывает redacted payload по каждой строке. PostgreSQL CI,
+staging KMS/restore, strict cutover и остальные поля U02 остаются открытыми.
+
+**Локальный шаг 28.10, апелляции:** reason/decisionReason получают HMAC по
+appeal/subject/submitter UUID, subject и nullable provider UUID. Migration
+178672, bounded compare-write, полный verify и opt-in strict reader
+подготовлены; удаление аккаунта переподписывает redacted reason по каждой
+строке. PostgreSQL CI, staging KMS/restore и strict cutover ещё открыты.
+
+**Локальный шаг 28.10, каталог:** labels/comparisonAttributes/rationale/
+reviewReason получают HMAC по gap/requester UUID, nullable provider UUID,
+двум slug и priceType. Migration 178673, bounded compare-write, полный verify
+и opt-in strict reader подготовлены; удаление аккаунта переподписывает
+redacted поля по каждой строке. PostgreSQL CI, staging KMS/restore и strict
+cutover ещё открыты.
+
+### Интеграционная проверка schema parity
+
+**Локальный шаг 29.10, integration setup:** README ранее пропускал
+обязательные seeds при запуске full integration на новой disposable DB,
+а название route test неверно обещало данные до seed. Пример теперь включает
+миграции и оба seeds; test profile объясняет зависимость и unit coverage
+empty-table fallback. Последний seeded integration 30 файлов / 144 PASS /
+1 skip.
+
+**Локальный шаг 29.10, broadcast photoUrls schema:** миграция определяла
+`autocare_broadcast_requests.photoUrls` как `text[]`, entity ошибочно
+указывала `jsonb`; сохранение даже пустого массива падало на PostgreSQL.
+Entity приведена к `text[]`, fixture содержит непустой массив и проверяет
+очистку при удалении аккаунта. Isolated integration 1/1 PASS, полный
+seeded PostgreSQL/Redis прогон 30 файлов / 144 PASS / 1 skip; staging открыт.
+
 ### U03 · P1 · Закончить MFA/step-up для привилегированных ролей
+
+**Локальный шаг 29.10, chat conflict PostgreSQL:** отдельный integration
+1 файл / 6 тестов PASS на isolated DB: admin список исключает конфликтный
+чат, super-admin не решает соседнюю жалобу и не получает описание своего
+дела. Сторона жалобы не получает назначение, чтение и продление, а
+независимый назначенный admin сохраняет доступ. Staging остаётся открытым.
+
+**Локальный шаг 29.10, MFA integration cleanup:** полный backend unit
+463/1722 PASS; отдельный PostgreSQL/Redis integration выявил teardown,
+который пытался удалять append-only security events вне transaction flag.
+Оба MFA fixture теперь удаляют только свои события с ограниченным
+`app.security_event_retention_cleanup` внутри транзакции. Targeted
+integration 2 файла / 5 тестов PASS. После исправления `photoUrls` и
+обязательных seeds полный прогон 30 файлов / 144 PASS / 1 skip;
+chat conflict сценарии проверены отдельно на DB, pilot NO-GO.
+
+**Локальный шаг 29.10, соседние chat reports:** super-admin мог решить
+другую pending жалобу в той же переписке, где сам является стороной дела.
+Под thread row lock решение теперь проверяет все pending жалобы чата до
+изменения статуса, блока и уведомления. Boundary unit 38 PASS,
+build/lint PASS; PostgreSQL/staging replay открыт. U03/pilot NO-GO.
+
+**Локальный шаг 29.10, chat report conflict:** после смены роли участник
+жалобы мог попасть в назначенные модераторы, читать приватный request-чат и
+решить дело. Назначение, доступ, продление и решение теперь проверяют обе
+стороны жалобы; критические изменения повторяют проверку под row lock.
+Admin список исключает конфликтные переписки. Собственное дело super-admin
+скрывает приватное описание. Boundary unit 37 PASS, build/lint PASS;
+PostgreSQL/staging replay открыт. U03/pilot NO-GO.
+
+**Локальный шаг 29.10, appeal self-review:** admin мог подать апелляцию на
+собственное chat restriction и принять её сам, что отменяло бы блокировку.
+Теперь автор не может решать свою appeal под row lock; изменение статуса,
+отзыв блока и уведомление не выполняются. Boundary unit 6 PASS;
+PostgreSQL/staging replay открыт. U03/pilot NO-GO.
+
+**Локальный шаг 29.10, provider change self-review:** после перехода owner →
+admin/super-admin автор мог сам решить ранее созданную заявку на изменение
+сервиса. Теперь проверка автора выполняется под row lock до изменения provider
+и уведомления. Boundary unit 6 PASS; PostgreSQL/staging replay открыт.
+U03/pilot NO-GO.
+
+**Локальный шаг 29.10, catalog-gap self-review:** admin мог подать заявку
+на новую услугу и сам принять решение, включая создание service definition.
+Теперь решение автора запрещено под row lock до любых изменений; другой
+admin сохраняет право решения. Boundary unit 7 PASS; PostgreSQL/staging
+replay открыт. U03/pilot NO-GO.
+
+**Локальный шаг 29.10, request transitions:** четырнадцать маршрутов
+изменения service/broadcast requests теперь требуют fresh MFA для
+admin/super-admin до валидации и записи. Негативная PostgreSQL матрица
+охватывает обе роли; локальный DB/Redis replay и staging acceptance открыты.
+U03/pilot NO-GO.
+
+**Локальный шаг 29.10, provider workspace mutations:** шестнадцать
+маршрутов изменения ресурсов, доступа, каталога, бонусов, отзывов и медиа
+теперь требуют fresh MFA для admin/super-admin до записи. Добавлена
+негативная PostgreSQL матрица для обеих ролей; локальный DB/Redis replay и
+staging acceptance открыты. U03/pilot NO-GO.
+
+**Локальный шаг 29.10, provider workspace reads:** двенадцать GET маршрутов
+внутреннего кабинета сервиса теперь требуют fresh MFA для admin/super-admin.
+Email verification сохранена. Добавлена негативная PostgreSQL матрица для
+обеих ролей; локальный DB/Redis replay и staging acceptance открыты.
+U03/pilot NO-GO.
+
+**Локальный шаг 29.10, broadcast reads:** admin/super-admin с provider
+membership теперь проходят fresh MFA перед broadcast detail и owner inbox.
+Добавлена негативная PostgreSQL матрица на две роли и два маршрута;
+локальный DB/Redis replay и staging acceptance открыты. U03/pilot NO-GO.
+
+**Локальный шаг 29.10, приватные чтения заявок:** admin/super-admin теперь
+проходят fresh MFA перед detail, timeline и owner списком service requests.
+Добавлена негативная PostgreSQL матрица на обе роли и три маршрута;
+локальный DB/Redis replay и staging acceptance открыты. U03 и pilot NO-GO.
+
+**Локальный шаг 29.10, legacy request chat:** admin с provider membership
+мог обойти модерационный chat route через legacy conversation/attachment и
+WebSocket заявки. Теперь оба privileged role получают отказ до выдачи
+содержимого; read receipt не меняет состояние. Request boundary unit 12 PASS,
+backend build/lint PASS; PostgreSQL/browser/staging replay ещё открыт.
+
+**Локальный шаг 29.10, обход через provider membership:** admin после отказа
+по назначенной жалобе мог продолжить проверку доступа к private request-чату
+как участник сервиса. Теперь этот путь закрыт, а быстрый
+`GET /v1/service-requests/:id/chat-thread` отказывает admin/super-admin до
+чтения темы. Unit boundary suite 30 PASS, backend build/lint PASS;
+PostgreSQL/staging replay остаётся открытым. U03 открыт.
+
+**Локальный шаг 29.10, аудит списка чатов:** admin/super-admin чтение
+`GET /v1/chats` теперь записывает actor/role/itemCount после MFA и до ответа,
+не копируя темы или сообщения. Добавлен PostgreSQL позитивный сценарий;
+локально без стенда не запускался. U03 открыт.
+
+**Локальный шаг 29.10, граница списка чатов:** super-admin индекс ранее
+отдавал темы всех private request-чатов сразу; наличие provider membership
+могло расширять индекс admin/super-admin. Теперь индекс super-admin ограничен
+support/admin escalation, а admin — support/escalation и назначенными
+жалобами. Приватный просмотр по ID остаётся с причиной, MFA и аудитом.
+Mock-список синхронизирован; SQL и mock unit-тесты добавлены. PostgreSQL и
+staging replay открыты. U03 открыт.
+
+**Локальный шаг 29.10, действия с чатами:** admin/super-admin создание чата,
+подача жалобы, сообщения, вложения, удаление своих сообщений, отзыв блокировки
+и отметки прочтения проходят fresh MFA до изменения состояния. Client/provider
+путь не изменён. Добавлена негативная PostgreSQL матрица; локально без БД не
+запускалась. U03 открыт.
+
+**Локальный шаг 29.10, список чатов:** `GET /v1/chats` раскрывал admin/super-admin
+темы приватных чатов без свежего MFA. Теперь перед чтением списка обе роли
+проходят step-up; client/provider остаются под ресурсными правами. Добавлены
+негативные PostgreSQL сценарии, локально без БД не запускались. U03 открыт.
+
+**Локальный шаг 29.10, admin mutations:** модерация, provider/catalog/market
+governance, кабинеты и platform reviews требуют свежий MFA до записи.
+Backend build/lint и полный unit suite **1704 PASS**; PostgreSQL negative
+matrix добавлена, локально не запускалась. Другие модули/staging открыты.
+
+**Локальный шаг 29.10, admin reads:** admin dashboard routes с персональными
+и служебными данными, а также очередь отзывов платформы требуют свежий MFA.
+Публичная иерархия рынков остаётся под role authorization. Backend build и
+targeted lint PASS; negative PostgreSQL matrix добавлена, но не запускалась.
+Другие модули/staging остаются открытыми; U03/pilot NO-GO не меняются.
+
+**Локальный шаг 29.10, exceptional reads:** admin/super-admin чтение жалоб,
+приватного чата и вложений, подключение и live authorization chat WebSocket, а также
+super-admin просмотр заявки требуют MFA не старше пяти минут до выдачи
+содержимого. Unit, backend build и targeted lint PASS; PostgreSQL negative case
+добавлен, но не запускался. Browser/staging replay и
+другие sensitive reads ещё открыты. U03 и pilot NO-GO сохраняются.
 
 **Подтверждение:** текущие auth/OAuth/session modules не содержат обязательного второго фактора и проверки свежей step-up аутентификации для admin/super-admin. Проблема остаётся в `docs/operations/MVP_PILOT_IMPROVEMENT_PLAN_2026-09-23.md:26`.
 
@@ -565,6 +826,11 @@ strict reader. PR #21 прошёл PostgreSQL/browser CI и объединён �
 **Улучшение:** выбрать IdP/SSO или MFA, обязательную политику для обеих ролей, recovery и повторную проверку перед чувствительным чтением/экспортом/изменением полномочий.
 
 **Приёмка:** пароль без второго фактора не даёт привилегированной сессии; step-up expiry, recovery, отзыв и аудит проходят негативные сценарии. Статус: открыто, повтор security audit 26.09, V2-SEC-02.
+
+**Локальный шаг 28.10:** access и refresh теперь отвергают sessionless JWT для
+текущих admin/super-admin по роли из БД; targeted tests и полный unit suite
+прошли. Это устраняет только legacy sessionless путь. Парольная сессия всё ещё
+не требует второго фактора, поэтому U03 и V2-SEC-02 остаются открытыми.
 
 ### U04 · P1 · Аутентифицировать backup до передачи SQL на исполнение
 

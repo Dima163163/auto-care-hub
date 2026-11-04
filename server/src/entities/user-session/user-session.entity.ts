@@ -33,6 +33,9 @@ export class UserSessionEntity {
     @Column({ type: 'timestamptz' })
     expiresAt!: Date
 
+    @Column({ type: 'timestamptz', name: 'mfa_verified_at', nullable: true })
+    mfaVerifiedAt!: Date | null
+
     @Column({ type: 'timestamptz', name: 'revoked_at', nullable: true })
     revokedAt!: Date | null
 

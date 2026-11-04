@@ -29,6 +29,7 @@ import {
 import { parseApiErrorData } from './api-error-shape'
 import { clearIdentityScopedPwaCaches } from '@/shared/pwa/identity-cache'
 import { markSessionExpired } from '@/shared/lib/auth-session-state'
+import { requestPrivilegedStepUpCode } from '@/shared/lib/privileged-step-up'
 
 const AUTH_SECURITY_ERROR_CODES = new Set([
     'CSRF_ORIGIN_MISMATCH',
@@ -39,6 +40,7 @@ const CSRF_PROTECTED_PATHS = new Set([
     '/auth/register',
     '/auth/login',
     '/auth/refresh',
+    '/auth/step-up',
     '/auth/logout',
     '/auth/password/setup/complete',
     '/auth/password/reset/request',
@@ -59,6 +61,7 @@ const CSRF_PROTECTED_PATHS = new Set([
 
 let csrfTokenRequest: Promise<string | null> | null = null
 let authRefreshBlocked = false
+let privilegedStepUpRequest: Promise<boolean> | null = null
 
 function getRequestPath(args: string | FetchArgs) {
     const requestUrl = typeof args === 'string' ? args : args.url
@@ -305,6 +308,49 @@ async function baseQueryWithCsrf(
     return result
 }
 
+async function completePrivilegedStepUp(
+    api: Parameters<typeof rawBaseQuery>[1],
+    extraOptions: Parameters<typeof rawBaseQuery>[2],
+) {
+    privilegedStepUpRequest ??= (async () => {
+        let previousCodeRejected = false
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+            const code = await requestPrivilegedStepUpCode(previousCodeRejected)
+            if (!code) return false
+            const result = await baseQueryWithCsrf({
+                url: '/auth/step-up',
+                method: 'POST',
+                body: { mfaCode: code },
+            }, api, extraOptions)
+            if (!result.error) return true
+            if (result.error.status !== 403 || getApiErrorCode(result.error) !== 'MFA_STEP_UP_REQUIRED') return false
+            previousCodeRejected = true
+        }
+        return false
+    })().finally(() => {
+        privilegedStepUpRequest = null
+    })
+    return privilegedStepUpRequest
+}
+
+async function baseQueryWithStepUp(
+    args: string | FetchArgs,
+    api: Parameters<typeof rawBaseQuery>[1],
+    extraOptions: Parameters<typeof rawBaseQuery>[2],
+) {
+    let result = await baseQueryWithCsrf(args, api, extraOptions)
+    if (!IS_REAL_API || result.error?.status !== 403 || getApiErrorCode(result.error) !== 'MFA_STEP_UP_REQUIRED') {
+        return result
+    }
+    const generation = getAuthGeneration()
+    const token = getAccessToken()
+    const confirmed = await completePrivilegedStepUp(api, extraOptions)
+    if (confirmed && generation === getAuthGeneration() && token === getAccessToken()) {
+        result = await baseQueryWithCsrf(args, api, extraOptions)
+    }
+    return result
+}
+
 const baseQueryWithReauth: BaseQueryFn<
     string | FetchArgs,
     unknown,
@@ -315,7 +361,7 @@ const baseQueryWithReauth: BaseQueryFn<
     }
 
     const accessTokenAtStart = getAccessToken()
-    let result = await baseQueryWithCsrf(args, api, extraOptions)
+    let result = await baseQueryWithStepUp(args, api, extraOptions)
 
     logAuthSecurityError(args, result.error, 'base-query')
 
@@ -375,7 +421,7 @@ const baseQueryWithReauth: BaseQueryFn<
     setAccessToken(refreshedAccessToken)
     authRefreshBlocked = false
 
-    result = await baseQueryWithCsrf(args, api, extraOptions)
+    result = await baseQueryWithStepUp(args, api, extraOptions)
 
     return result
 }

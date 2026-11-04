@@ -26,8 +26,10 @@ export class AutoCareRescheduleRequestEntity {
     @Column({ type: 'timestamptz' }) proposedAt!: Date
     @Column({ type: 'enum', enum: AutoCareRescheduleStatus, enumName: 'autocare_reschedule_status', default: AutoCareRescheduleStatus.Pending }) status!: AutoCareRescheduleStatus
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_reschedule_requests', 'reason', 'text') }) reason!: string | null
+    @Column({ type: 'text', nullable: true }) reasonBinding!: string | null
     @Column({ type: 'uuid', nullable: true }) resolvedById!: string | null
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('autocare_reschedule_requests', 'resolutionReason', 'text') }) resolutionReason!: string | null
+    @Column({ type: 'text', nullable: true }) resolutionReasonBinding!: string | null
     @CreateDateColumn({ type: 'timestamptz' }) createdAt!: Date
     @Column({ type: 'timestamptz', nullable: true }) resolvedAt!: Date | null
 }

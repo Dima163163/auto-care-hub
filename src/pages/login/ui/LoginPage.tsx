@@ -123,6 +123,25 @@ export function LoginPage() {
                                 </Link>
                             </div>
                         </div>
+
+                        {!IS_MOCK_API && (
+                            <div>
+                                <FloatingInput
+                                    id="mfaCode"
+                                    type="text"
+                                    autoComplete="one-time-code"
+                                    label={t('auth.mfaCodeLabel')}
+                                    aria-invalid={Boolean(errors.mfaCode)}
+                                    aria-describedby={errors.mfaCode ? 'login-mfa-error' : undefined}
+                                    {...register('mfaCode')}
+                                />
+                                {errors.mfaCode && (
+                                    <p id="login-mfa-error" role="alert" className="mt-2 text-sm text-destructive">
+                                        {errors.mfaCode.message}
+                                    </p>
+                                )}
+                            </div>
+                        )}
                     </div>
 
                     <Button type="submit" loading={isSubmitting || isLoading} className="mt-6 w-full">

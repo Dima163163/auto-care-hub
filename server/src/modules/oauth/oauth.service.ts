@@ -27,6 +27,7 @@ import type { OAuthProvider } from './oauth.types.js'
 import { normalizeOAuthProfile } from './oauth-profile.js'
 import { normalizeOAuthProviderSubject } from './oauth-identity-policy.js'
 import { normalizeOAuthCallbackCode } from './oauth-callback-policy.js'
+import { assertOAuthLoginRoleAllowed } from './oauth-privileged-login-policy.js'
 import { getOAuthLinkRequestDecision } from './oauth-link-request-policy.js'
 import { readJsonResponse } from '../../shared/http/read-json-response.js'
 import {
@@ -246,6 +247,7 @@ export async function processOAuthCallback(
                 })
             }
 
+            assertOAuthLoginRoleAllowed(linkedUser.role)
             updateUserFromOAuthProfile(linkedUser, oauthProfile)
 
             return userRepository.save(linkedUser)
@@ -379,6 +381,7 @@ export async function processOAuthLinkCallback(
             })
         }
 
+        assertOAuthLoginRoleAllowed(user.role)
         updateUserFromOAuthProfile(user, oauthProfile)
 
         const existingIdentity = await identityRepository.findOne({

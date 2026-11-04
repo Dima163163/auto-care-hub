@@ -5,7 +5,7 @@ import type { FastifyInstance } from 'fastify'
 import { buildApp } from '../app.js'
 import { AppDataSource } from '../database/data-source.js'
 import { UserEntity, UserRole, UserStatus } from '../entities/user/user.entity.js'
-import { createAuthTokens } from '../modules/auth/auth.service.js'
+import { createTestAccessToken } from '../test-support/auth-session.js'
 
 describe('Request observability', () => {
     const apps: FastifyInstance[] = []
@@ -57,8 +57,8 @@ describe('Request observability', () => {
             status: UserStatus.Active,
             emailVerifiedAt: new Date(),
         }))
-        const superAdminToken = createAuthTokens(superAdmin).accessToken
-        const adminToken = createAuthTokens(admin).accessToken
+        const superAdminToken = await createTestAccessToken(superAdmin)
+        const adminToken = await createTestAccessToken(admin)
 
         await app.ready()
 
