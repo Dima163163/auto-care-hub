@@ -1,5 +1,16 @@
 # AutoCare Hub Project Context
 
+## Exact-candidate local quality replay, 4 ноября 2026
+
+Два root quality guard обновлены после MFA: маршруты owner/admin проверяются
+с учётом новых auth/MFA обёрток и порядка до validation; threat surface
+требует MFA на служебной очереди. Негативные сценарии PASS.
+Frontend 204/671 PASS, полный lint и Next production build PASS.
+`quality:backend` с тестовым env PASS, backend unit 463/1723 PASS;
+seeded isolated PostgreSQL/Redis integration 30 файлов / 149 PASS / 1 skip.
+Тестовые контейнеры удалены. Exact-SHA CI, staging KMS/restore,
+MFA/recovery/browser и реальные pilot evidence открыты; pilot NO-GO.
+
 ## U03 — служебные чаты admin в mock, 4 ноября 2026
 
 Mock admin читает support/admin_escalation чат и вложения без назначения

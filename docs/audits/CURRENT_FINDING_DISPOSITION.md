@@ -1,5 +1,13 @@
 # Current finding disposition — 2026-10-04
 
+**Локальный replay 04.11, candidate quality:** root route-auth и
+threat-surface contracts приведены к текущему MFA guard с отрицательными
+тестами. Frontend 204/671, lint, Next build, `quality:backend` и unit
+463/1723 PASS. Изолированный seeded PostgreSQL/Redis integration:
+30 файлов / 149 PASS / 1 skip; временные контейнеры удалены.
+Exact-SHA CI, staging, KMS/restore, MFA/recovery и pilot evidence открыты;
+pilot NO-GO.
+
 **Локальный шаг 04.11, U03 mock operational chat access:** admin читает
 support/escalation историю и вложения без назначения на приватную жалобу;
 request chat остаётся назначаемым. Mock regression 8/8 PASS,

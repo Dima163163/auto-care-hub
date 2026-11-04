@@ -1,5 +1,20 @@
 # AutoCare Hub — Project Plan
 
+## Exact-candidate local quality replay — 2026-11-04
+
+- [x] Обновить два source-level quality guard после внедрения MFA:
+  owner/admin route-auth checker распознаёт проверенные обёртки,
+  проверяет auth до валидации и verified email для owner mutations;
+  threat-surface checker требует MFA на admin moderation queue.
+  Негативные контрактные сценарии и проверка реализации обёрток PASS.
+- [x] Повторить локальные проверки кандидата: frontend 204 файла / 671 тест,
+  полный lint, Next production build; `quality:backend` с тестовой конфигурацией
+  PASS, backend unit 463 файла / 1723 теста; isolated seeded PostgreSQL/Redis
+  integration 30 файлов / 149 PASS / 1 skip. Временные контейнеры удалены.
+- [ ] Получить exact-SHA CI, опубликованный staging/browser replay, KMS/restore,
+  MFA/recovery и pilot evidence. Локальные PASS не закрывают U01–U03 и pilot
+  остаётся NO-GO.
+
 ## U03 — служебные чаты admin в mock, 2026-11-04
 
 - [x] Согласовать mock с backend: admin читает историю support/escalation

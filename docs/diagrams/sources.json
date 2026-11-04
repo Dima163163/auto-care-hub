@@ -742,7 +742,7 @@
     },
     {
       "path": "scripts/check-threat-surface.test.mjs",
-      "sha256": "11ec2c10af8e321cf951de8ca5f1f5ec18eedacf226f831028311b7a38d3fa41",
+      "sha256": "7d2f6345a8dc6d6a1771851ba55b690e0e9fa6b0492d89047a388b1fb687635d",
       "scopes": [
         "runtime"
       ]
