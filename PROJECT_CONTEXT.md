@@ -1,5 +1,16 @@
 # AutoCare Hub Project Context
 
+## PR #43 CI follow-up, 4 ноября 2026
+
+Первый PR Quality выявил пропуск существующей
+`autocare_reschedule_text_binding_backfill_checkpoints` в обязательном
+манифесте release integrity; таблица уже была в migration/PlantUML.
+Два Gitleaks finding относятся к публичному RFC 6238 TOTP test vector
+в историческом commit; исключены только точные fingerprints. Новый exact-SHA
+CI и продвижение dev → main ещё ожидаются.
+Локальный `release:migrate` на disposable PostgreSQL 17 PASS: 179 миграций,
+44 критические таблицы, 30 constraints validated; контейнер удалён.
+
 ## Exact-candidate local quality replay, 4 ноября 2026
 
 Два root quality guard обновлены после MFA: маршруты owner/admin проверяются

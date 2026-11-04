@@ -1,5 +1,13 @@
 # Current finding disposition — 2026-10-04
 
+**PR #43 CI follow-up, 04.11:** release integrity manifest дополнен уже
+существующей reschedule checkpoint таблицей; миграция и схема были актуальны.
+Gitleaks исключает два точных исторических fingerprint публичного RFC 6238
+TOTP test vector. Новый exact-SHA Quality и merge dev → main ожидаются;
+pilot NO-GO не меняется.
+Локальный `release:migrate` PASS на disposable PostgreSQL 17:
+179 миграций, 44 таблицы, 30 constraints validated; контейнер удалён.
+
 **Локальный replay 04.11, candidate quality:** root route-auth и
 threat-surface contracts приведены к текущему MFA guard с отрицательными
 тестами. Frontend 204/671, lint, Next build, `quality:backend` и unit

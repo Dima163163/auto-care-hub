@@ -1,5 +1,17 @@
 # AutoCare Hub — Project Plan
 
+## PR #43 CI follow-up — 2026-11-04
+
+- [x] Добавить существующую таблицу reschedule text-binding checkpoint в
+  обязательный AutoCare integrity manifest; миграция и PlantUML уже отражают её.
+- [x] Ограничить два ложных срабатывания Gitleaks публичного RFC 6238 TOTP
+  вектора точными историческими fingerprint; другие секреты не исключать.
+- [x] Повторить локальный release integrity gate: 179 миграций,
+  44 таблицы в manifest, 30 pending constraints validated на disposable PostgreSQL.
+- [ ] Получить зелёный exact-SHA Quality CI PR #43; затем merge в dev,
+  дождаться dev push Quality и провести
+  защищённый dev → main PR по обязательным проверкам и review.
+
 ## Exact-candidate local quality replay — 2026-11-04
 
 - [x] Обновить два source-level quality guard после внедрения MFA:
