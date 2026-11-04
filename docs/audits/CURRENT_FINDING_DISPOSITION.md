@@ -1,5 +1,11 @@
 # Current finding disposition — 2026-10-04
 
+**Локальный шаг 04.11, U03 mock parity:** independent super-admin direct
+emergency read доступен по ID и причине, private request chat не появляется
+в индексе; сторона жалобы исключена из чтения, списка и решения после
+закрытия дела. Shortcut закрыт для privileged ролей. Mock 9/9 PASS,
+TypeScript noEmit/targeted lint PASS. Опубликованный browser/staging replay открыт.
+
 **Локальный шаг 04.11, U03 direct emergency read:** super-admin сторона
 жалобы не может открыть приватную переписку по ID даже с аварийной причиной;
 общая проверка защищает историю, вложения и live WebSocket. Независимый

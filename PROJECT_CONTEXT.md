@@ -1,5 +1,14 @@
 # AutoCare Hub Project Context
 
+## U03 — mock parity приватных чатов, 4 ноября 2026
+
+Mock super-admin список сохраняет только support/escalation; независимый
+direct emergency read приватного request-чата работает по ID с причиной,
+сторона жалобы получает 403 даже после закрытия дела. Служебный список,
+назначение и решение повторяют конфликт по всей истории, shortcut
+request → chat-thread закрыт для privileged ролей. Mock 9/9 PASS и
+TypeScript noEmit/targeted lint PASS; опубликованный browser/staging replay открыт.
+
 ## U03 — аварийный доступ к собственному делу, 4 ноября 2026
 
 После смены роли сторона любой жалобы переписки не может открыть её

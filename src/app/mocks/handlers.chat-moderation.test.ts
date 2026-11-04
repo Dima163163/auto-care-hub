@@ -3,6 +3,7 @@ import { setupServer } from 'msw/node'
 
 import { handlers } from './handlers'
 import { clearMockSession, setMockSession } from './session'
+import { mockAutoCareChatReports } from './autocare/mock-fixtures'
 
 const server = setupServer(...handlers)
 server.listen({ onUnhandledRequest: 'error' })
@@ -14,6 +15,32 @@ async function fetchJson(path: string, init?: RequestInit) {
 }
 
 describe('mock chat report moderation contract', () => {
+    it('allows independent super-admin emergency read without listing private chats or exposing a party case', async () => {
+        const chatId = 'chat-request-owner-request-1'
+        const reason = encodeURIComponent('Independent urgent review of a private report')
+        setMockSession({ currentUserId: 'user-admin-1', currentRole: 'super_admin' })
+        expect((await fetchJson(`/api/v1/chats/${chatId}?emergencyReason=${reason}`)).status).toBe(200)
+        expect((await fetchJson('/api/v1/service-requests/owner-request-1/chat-thread')).status).toBe(403)
+        const index = await (await fetchJson('/api/v1/chats')).json() as Array<{ id: string }>
+        expect(index.some((thread) => thread.id === chatId)).toBe(false)
+
+        const historicalReport = { ...mockAutoCareChatReports[0]!, id: 'mock-conflicted-emergency-read', threadId: chatId, reporterId: 'user-admin-1', status: 'dismissed' as const }
+        mockAutoCareChatReports.unshift(historicalReport)
+        try {
+            expect((await fetchJson(`/api/v1/chats/${chatId}?emergencyReason=${reason}`)).status).toBe(403)
+            const queue = await (await fetchJson('/api/admin/chat-reports?scope=active')).json() as { items: Array<{ threadId: string }> }
+            expect(queue.items.some((report) => report.threadId === chatId)).toBe(false)
+            expect((await fetchJson('/api/admin/chat-reports/chat-report-demo-1/decision', {
+                method: 'PATCH',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ status: 'dismissed', reason: 'Independent reviewer is required.' }),
+            })).status).toBe(403)
+        } finally {
+            const index = mockAutoCareChatReports.findIndex((report) => report.id === historicalReport.id)
+            if (index >= 0) mockAutoCareChatReports.splice(index, 1)
+        }
+    })
+
     it('filters the admin queue before cursor pagination and returns only the requester history page', async () => {
         setMockSession({ currentUserId: 'user-admin-1', currentRole: 'super_admin' })
         const firstResponse = await fetchJson('/api/admin/chat-reports?scope=active&assignedModeratorId=unassigned&limit=1')

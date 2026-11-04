@@ -2,7 +2,7 @@ import { http, HttpResponse } from "msw"
 import { mockUsers } from ".././data"
 import { clearMockChatReportAssignment, persistMockChatReportAssignment } from ".././mock-chat-report-assignment"
 import { currentMockUser } from './mock-access'
-import { mockChatMessages, mockChatThreadFromRequest } from './mock-chat'
+import { isMockChatReportParty, mockChatMessages, mockChatThreadFromRequest } from './mock-chat'
 import { mockAutoCareChatBlocks, mockAutoCareChatReports, mockAutoCareChatThreads, mockAutoCareServiceRequests } from './mock-fixtures'
 import { invalidMockBodyResponse, parseMockOffset } from './mock-validation'
 
@@ -19,6 +19,7 @@ export const chatModerationHandlers = [
         const limit = Math.max(1, Math.min(100, Number(query.get('limit')) || 50))
         const offset = parseMockOffset(query.get('cursor'))
         const filtered = mockAutoCareChatReports.filter((report) => {
+            if (isMockChatReportParty(user.id, report.threadId)) return false
             if (status && report.status !== status) return false
             if (scope === 'active' && report.status !== 'pending') return false
             if (scope === 'archive' && report.status === 'pending') return false
@@ -39,6 +40,7 @@ export const chatModerationHandlers = [
         if (!user || !['admin', 'super_admin'].includes(user.role)) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
         const report = mockAutoCareChatReports.find((candidate) => candidate.id === params.id)
         if (!report) return HttpResponse.json({ message: 'Chat report not found.' }, { status: 404 })
+        if (isMockChatReportParty(user.id, report.threadId)) return HttpResponse.json({ message: 'Independent review is required.' }, { status: 403 })
         if (user.role === 'admin' && (report.assignedModeratorId !== user.id || !report.accessExpiresAt || Date.parse(report.accessExpiresAt) <= Date.now() || report.status !== 'pending')) return HttpResponse.json({ message: 'Only the assigned moderator with active access can decide this report.' }, { status: 403 })
         const body = await request.json() as { status?: 'resolved' | 'dismissed'; reason?: string | null; blockUser?: boolean; blockDurationDays?: 1 | 7 | 30 }
         if (!body.status || !['resolved', 'dismissed'].includes(body.status)) return HttpResponse.json({ message: 'Invalid decision.' }, { status: 400 })
@@ -72,12 +74,14 @@ export const chatModerationHandlers = [
         if (!user || user.role !== 'super_admin') return HttpResponse.json({ message: 'Only a super administrator can assign moderators.' }, { status: 403 })
         const report = mockAutoCareChatReports.find((candidate) => candidate.id === params.id)
         if (!report) return HttpResponse.json({ message: 'Chat report not found.' }, { status: 404 })
+        if (isMockChatReportParty(user.id, report.threadId)) return HttpResponse.json({ message: 'Independent assignment is required.' }, { status: 403 })
         if (report.status !== 'pending') return HttpResponse.json({ message: 'Only an active report can be assigned.' }, { status: 409 })
         const targetThread = [...mockAutoCareChatThreads, ...mockAutoCareServiceRequests.map(mockChatThreadFromRequest)].find((thread) => thread.id === report.threadId)
         if (!report.messageId || !targetThread || !mockChatMessages(targetThread).some((message) => message.id === report.messageId)) return HttpResponse.json({ message: 'A report without anchored message evidence cannot be assigned.' }, { status: 409 })
         const body = await request.json() as { moderatorId?: unknown; reason?: unknown }
         if ((body.moderatorId !== null && typeof body.moderatorId !== 'string') || typeof body.reason !== 'string' || body.reason.trim().length < 10) return invalidMockBodyResponse()
         if (typeof body.moderatorId === 'string' && !mockUsers.some((candidate) => candidate.id === body.moderatorId && candidate.role === 'admin' && candidate.status === 'active')) return HttpResponse.json({ message: 'An active administrator moderator is required.' }, { status: 400 })
+        if (typeof body.moderatorId === 'string' && isMockChatReportParty(body.moderatorId, report.threadId)) return HttpResponse.json({ message: 'A report party cannot moderate this thread.' }, { status: 403 })
         report.assignedModeratorId = typeof body.moderatorId === 'string' ? body.moderatorId : null
         report.accessExpiresAt = report.assignedModeratorId ? new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() : null
         report.extensionUsed = false
@@ -89,6 +93,7 @@ export const chatModerationHandlers = [
         if (!user || user.role !== 'admin') return HttpResponse.json({ message: 'Only the assigned moderator can extend access.' }, { status: 403 })
         const report = mockAutoCareChatReports.find((candidate) => candidate.id === params.id)
         if (!report || report.status !== 'pending' || report.assignedModeratorId !== user.id || !report.accessExpiresAt || Date.parse(report.accessExpiresAt) <= Date.now()) return HttpResponse.json({ message: 'Active moderator access not found.' }, { status: 403 })
+        if (isMockChatReportParty(user.id, report.threadId)) return HttpResponse.json({ message: 'Independent moderation is required.' }, { status: 403 })
         if (report.extensionUsed) return HttpResponse.json({ message: 'Moderator access has already been extended.' }, { status: 409 })
         const body = await request.json() as { reason?: unknown }
         if (typeof body.reason !== 'string' || body.reason.trim().length < 10) return invalidMockBodyResponse()

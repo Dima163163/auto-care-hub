@@ -1,5 +1,11 @@
 # Карта проекта AutoCare Hub
 
+**U03, mock emergency chat parity 2026-11-04:**
+`03-frontend.puml` и SVG показывают, что mock скрывает приватные request
+переписки из super-admin списка, но разрешает независимый direct read по ID
+с причиной. Сторона любой жалобы получает отказ в direct read и служебной
+очереди; быстрый request → chat-thread маршрут закрыт. Mock 9/9 PASS.
+
 **U03, direct emergency chat access 2026-11-04:**
 `09-access-privacy.puml` и SVG показывают, что сторона жалобы после смены
 роли на super-admin не открывает приватную переписку по ID даже с аварийной
