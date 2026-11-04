@@ -1,5 +1,15 @@
 # AutoCare Hub Project Context
 
+## U03 — исторический конфликт жалоб на чат, 4 ноября 2026
+
+Сторона закрытой жалобы не может получить доступ к новой pending жалобе
+той же переписки через служебный список, назначение, admin чтение,
+продление или решение. Проверка назначения и решения идёт под thread lock
+по всей истории; доступ независимого модератора требует текущей pending
+жалобы. Boundary 38 PASS, seeded isolated PostgreSQL integration 8/8 PASS,
+backend build и targeted lint PASS. Staging acceptance и pilot evidence
+остаются открытыми; pilot NO-GO.
+
 ## Local gate replay, 29 октября 2026
 
 Полный backend unit 463/1722 PASS, isolated seeded integration

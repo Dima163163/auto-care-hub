@@ -52,11 +52,11 @@ note right of StepUp
   Catalog gap reviewer cannot decide own proposal under the request row lock.
   Provider change reviewer cannot decide a request authored before role change.
   Appeal reviewer cannot decide own appeal or revoke own chat restriction.
-  A chat report party cannot be assigned moderator, read the private thread,
-  extend access or decide the case after role change. Admin report index
-  excludes conflicted threads; critical assignment/decision recheck under lock.
-  The decision scans all pending reports under the thread lock, including
-  neighboring cases involving the super-admin reviewer.
+  A party of any historical chat report cannot be assigned moderator, read
+  the private thread as admin, extend access or decide another case after
+  role change. Admin and super-admin report indexes exclude conflicted threads.
+  Assignment and decision scan all thread reports under the thread lock;
+  only pending reports can grant time-limited moderator access.
   Other modules' sensitive reads and staging replay remain open.
 end note
 note right of Provider

@@ -1,5 +1,16 @@
 # AutoCare Hub — Project Plan
 
+## U03 — исторический конфликт при модерации чата, 2026-11-04
+
+- [x] Распространить запрет модерации на стороны закрытых жалоб той же
+  переписки. Admin и super-admin не получают конфликтную переписку в
+  служебном списке; назначение, чтение admin, продление и решение проверяют
+  всю историю. Только текущая pending жалоба даёт ограниченный доступ
+  независимому модератору. Boundary 38 PASS, isolated seeded PostgreSQL
+  integration 8/8 PASS, backend build и targeted lint PASS.
+- [ ] Проверить правило в staging с действительными ролями, сессиями и
+  журналом аудита. U03 и pilot NO-GO сохраняются.
+
 ## Local gate replay — 2026-10-29
 
 - [x] Backend unit 463 файла / 1722 PASS, isolated seeded integration

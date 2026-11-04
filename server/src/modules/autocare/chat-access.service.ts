@@ -43,10 +43,11 @@ export async function assertThreadAccess(user: UserEntity, thread: AutoCareChatT
     if (user.role === UserRole.Admin) {
         if (thread.type !== AutoCareChatThreadType.ServiceRequest || !thread.requestId) fail(403, 'Moderation access is limited to an assigned service-request case.')
         const reports = await AppDataSource.getRepository(AutoCareChatReportEntity).find({
-            where: { threadId: thread.id, status: AutoCareChatReportStatus.Pending },
+            where: { threadId: thread.id },
+            select: { reporterId: true, reportedUserId: true, status: true, assignedModeratorId: true, reportedMessageId: true, acknowledgedAt: true, policyVersion: true, accessExpiresAt: true },
         })
         if (reports.some((report) => isAutoCareChatReportParty(report, user.id))) fail(403, 'A chat report party cannot moderate this thread.')
-        if (reports.some((report) => report.assignedModeratorId === user.id && report.reportedMessageId && report.acknowledgedAt && report.policyVersion && report.accessExpiresAt && report.accessExpiresAt.getTime() > Date.now())) return 'pending_report_moderation'
+        if (reports.some((report) => report.status === AutoCareChatReportStatus.Pending && report.assignedModeratorId === user.id && report.reportedMessageId && report.acknowledgedAt && report.policyVersion && report.accessExpiresAt && report.accessExpiresAt.getTime() > Date.now())) return 'pending_report_moderation'
         fail(403, 'Moderation access is limited to an assigned service-request case.')
     }
     if (thread.clientId === user.id) return 'client_or_creator'

@@ -12,6 +12,7 @@ describe('chat report conflict on PostgreSQL', () => {
     let client: UserEntity
     let admin: UserEntity
     let independentAdmin: UserEntity
+    let independentSuperAdmin: UserEntity
     let superAdmin: UserEntity
     let serviceRequest: ServiceRequestEntity
     let thread: AutoCareChatThreadEntity
@@ -19,12 +20,20 @@ describe('chat report conflict on PostgreSQL', () => {
     let targetReport: AutoCareChatReportEntity
     let neighboringReport: AutoCareChatReportEntity
 
+    async function changeReport(id: string, changes: Partial<AutoCareChatReportEntity>) {
+        const reports = AppDataSource.getRepository(AutoCareChatReportEntity)
+        const report = await reports.findOneByOrFail({ id })
+        Object.assign(report, changes)
+        await reports.save(report)
+    }
+
     beforeAll(async () => {
         const users = AppDataSource.getRepository(UserEntity)
-        ;[client, admin, independentAdmin, superAdmin] = await users.save([
+        ;[client, admin, independentAdmin, independentSuperAdmin, superAdmin] = await users.save([
             users.create({ name: 'Report client', email: `report-client-${suffix}@example.com`, passwordHash: 'hash', role: UserRole.Client, status: UserStatus.Active, emailVerifiedAt: new Date() }),
             users.create({ name: 'Report admin', email: `report-admin-${suffix}@example.com`, passwordHash: 'hash', role: UserRole.Admin, status: UserStatus.Active, emailVerifiedAt: new Date() }),
             users.create({ name: 'Independent admin', email: `report-independent-${suffix}@example.com`, passwordHash: 'hash', role: UserRole.Admin, status: UserStatus.Active, emailVerifiedAt: new Date() }),
+            users.create({ name: 'Independent super-admin', email: `report-independent-super-${suffix}@example.com`, passwordHash: 'hash', role: UserRole.SuperAdmin, status: UserStatus.Active, emailVerifiedAt: new Date() }),
             users.create({ name: 'Report super-admin', email: `report-super-${suffix}@example.com`, passwordHash: 'hash', role: UserRole.SuperAdmin, status: UserStatus.Active, emailVerifiedAt: new Date() }),
         ])
         const location = (await AppDataSource.getRepository(AutomotiveServiceLocationEntity).find({ take: 1 }))[0]
@@ -88,7 +97,7 @@ describe('chat report conflict on PostgreSQL', () => {
         if (message) await AppDataSource.getRepository(ServiceMessageEntity).delete({ id: message.id })
         if (thread) await AppDataSource.getRepository(AutoCareChatThreadEntity).delete({ id: thread.id })
         if (serviceRequest) await AppDataSource.getRepository(ServiceRequestEntity).delete({ id: serviceRequest.id })
-        const ids = [client?.id, admin?.id, independentAdmin?.id, superAdmin?.id].filter((id): id is string => Boolean(id))
+        const ids = [client?.id, admin?.id, independentAdmin?.id, independentSuperAdmin?.id, superAdmin?.id].filter((id): id is string => Boolean(id))
         if (ids.length) await AppDataSource.getRepository(UserEntity).delete(ids)
     })
 
@@ -104,9 +113,9 @@ describe('chat report conflict on PostgreSQL', () => {
             .toMatchObject({ status: AutoCareChatReportStatus.Pending, reviewedById: null })
     })
 
-    it('keeps private details of the super-admin party report redacted in the list', async () => {
+    it('excludes a super-admin party thread from the privileged report list', async () => {
         const page = await listAdminAutoCareChatReports(superAdmin, { status: AutoCareChatReportStatus.Pending })
-        expect(page.items.find((item) => item.id === neighboringReport.id)?.description).toBeNull()
+        expect(page.items.some((item) => item.threadId === thread.id)).toBe(false)
     })
 
     it('denies the report party private thread access despite a live assignment', async () => {
@@ -130,6 +139,52 @@ describe('chat report conflict on PostgreSQL', () => {
             await expect(assertThreadAccess(independentAdmin, thread)).resolves.toBe('pending_report_moderation')
         } finally {
             await reports.update({ id: targetReport.id }, { assignedModeratorId: admin.id })
+        }
+    })
+
+    it('keeps a closed report party out of a later pending case in the same thread', async () => {
+        await changeReport(targetReport.id, { status: AutoCareChatReportStatus.Resolved })
+        try {
+            await changeReport(neighboringReport.id, {
+                reportedMessageId: message.id,
+                acknowledgedAt: new Date(),
+                policyVersion: 'v1',
+                assignedModeratorId: admin.id,
+                assignedById: superAdmin.id,
+                assignmentReason: 'Historical assignment before conflict check',
+                assignedAt: new Date(),
+                accessExpiresAt: new Date(Date.now() + 300_000),
+            })
+            const page = await listAdminAutoCareChatReports(admin, { status: AutoCareChatReportStatus.Pending })
+            expect(page.items.some((item) => item.threadId === thread.id)).toBe(false)
+            await expect(assertThreadAccess(admin, thread)).rejects.toMatchObject({ statusCode: 403 })
+            await expect(assignAdminAutoCareChatModerator(independentSuperAdmin, neighboringReport.id, admin.id, 'Assign independent reviewer'))
+                .rejects.toMatchObject({ statusCode: 403 })
+            await expect(extendAdminAutoCareChatModeratorAccess(admin, neighboringReport.id, 'Extend current review access'))
+                .rejects.toMatchObject({ statusCode: 403 })
+            await expect(decideAdminAutoCareChatReport(admin, neighboringReport.id, AutoCareChatReportStatus.Dismissed, 'Independent reviewer required'))
+                .rejects.toMatchObject({ statusCode: 403 })
+        } finally {
+            await changeReport(neighboringReport.id, {
+                reportedMessageId: null, acknowledgedAt: null, policyVersion: null,
+                assignedModeratorId: null, assignedById: null, assignmentReason: null,
+                assignedAt: null, accessExpiresAt: null,
+            })
+            await changeReport(targetReport.id, { status: AutoCareChatReportStatus.Pending })
+        }
+    })
+
+    it('denies a super-admin party assignment and decision after their own report closes', async () => {
+        const reports = AppDataSource.getRepository(AutoCareChatReportEntity)
+        await changeReport(neighboringReport.id, { status: AutoCareChatReportStatus.Dismissed })
+        try {
+            await expect(assignAdminAutoCareChatModerator(superAdmin, targetReport.id, independentAdmin.id, 'Assign an independent moderator'))
+                .rejects.toMatchObject({ statusCode: 403 })
+            await expect(decideAdminAutoCareChatReport(superAdmin, targetReport.id, AutoCareChatReportStatus.Dismissed, 'Independent reviewer required'))
+                .rejects.toMatchObject({ statusCode: 403 })
+            expect(await reports.findOneByOrFail({ id: targetReport.id })).toMatchObject({ status: AutoCareChatReportStatus.Pending })
+        } finally {
+            await changeReport(neighboringReport.id, { status: AutoCareChatReportStatus.Pending })
         }
     })
 })

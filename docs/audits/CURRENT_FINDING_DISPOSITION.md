@@ -1,5 +1,13 @@
 # Current finding disposition — 2026-10-04
 
+**Локальный шаг 04.11, U03 historical chat conflict:** стороны закрытых
+жалоб той же переписки не могут модерировать новую pending жалобу после
+смены роли. Admin/super-admin служебный список исключает конфликтную
+переписку; admin чтение, назначение, продление и решение проверяют всю
+историю. Boundary 38 PASS, isolated seeded PostgreSQL integration 8/8 PASS,
+backend build и targeted lint PASS. Staging acceptance и pilot evidence
+открыты; pilot NO-GO.
+
 **Локальный replay 29.10:** полный backend unit **463 файла / 1722 теста PASS**,
 seeded isolated PostgreSQL/Redis integration **30 файлов / 144 PASS / 1 skip**,
 build, targeted lint, семь static security checks и 179 migration filenames

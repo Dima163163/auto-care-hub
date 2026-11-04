@@ -165,13 +165,11 @@ export async function listAdminAutoCareChatReports(user: UserEntity, input: {
             { search: normalizedSearch },
         )
     }
-    if (user.role === UserRole.Admin) {
-        query.andWhere(`NOT EXISTS (
+    query.andWhere(`NOT EXISTS (
             SELECT 1 FROM autocare_chat_reports conflicting_report
-            WHERE conflicting_report."threadId" = report."threadId" AND conflicting_report.status = :pendingConflictStatus
+            WHERE conflicting_report."threadId" = report."threadId"
               AND (conflicting_report."reporterId" = :reviewerId OR conflicting_report."reportedUserId" = :reviewerId)
-        )`, { pendingConflictStatus: AutoCareChatReportStatus.Pending, reviewerId: user.id })
-    }
+        )`, { reviewerId: user.id })
     const totalCount = await query.clone().getCount()
     if (input.cursor) {
         const cursor = decodeCursor(input.cursor, ['createdAt', 'id'])
@@ -227,8 +225,8 @@ export async function decideAdminAutoCareChatReport(user: UserEntity, reportId: 
         if (!lockedReport) fail(404, 'Chat report not found.')
         if (isAutoCareChatReportParty(lockedReport, user.id)) fail(403, 'A chat report party cannot decide the case.')
         if (lockedReport.status !== AutoCareChatReportStatus.Pending) return lockedReport
-        const pendingThreadReports = await lockedReports.find({ where: { threadId: lockedThread.id, status: AutoCareChatReportStatus.Pending } })
-        if (pendingThreadReports.some((item) => isAutoCareChatReportParty(item, user.id))) fail(403, 'A chat report party cannot moderate another case in the same thread.')
+        const threadReports = await lockedReports.find({ where: { threadId: lockedThread.id }, select: { reporterId: true, reportedUserId: true } })
+        if (threadReports.some((item) => isAutoCareChatReportParty(item, user.id))) fail(403, 'A chat report party cannot moderate another case in the same thread.')
         if ((!lockedReport.reportedMessageId || !lockedReport.acknowledgedAt || !lockedReport.policyVersion) && user.role === UserRole.SuperAdmin && (normalizedInput.reason?.length ?? 0) < 10) {
             fail(400, 'A reason of at least 10 characters is required to close a legacy report without consent metadata.')
         }

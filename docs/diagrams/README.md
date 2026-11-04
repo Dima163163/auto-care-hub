@@ -1,5 +1,13 @@
 # Карта проекта AutoCare Hub
 
+**U03, historical chat report conflict 2026-11-04:**
+`09-access-privacy.puml` и SVG показывают, что конфликт стороны жалобы
+сохраняется после закрытия дела: admin/super-admin не видят эту переписку в
+служебном списке, admin не читает и не продлевает модерацию, назначение и
+решение по новой жалобе отклоняются под thread lock. Доступ независимого
+модератора по текущей pending жалобе сохранён. PostgreSQL 8/8 PASS;
+staging acceptance открыта.
+
 **U03, chat conflict DB replay 2026-10-29:** схема
 `09-access-privacy.puml` дополнена integration anchor:
 `chat-report-conflict.integration.test.ts`. PostgreSQL 6/6 PASS для

@@ -269,7 +269,6 @@ describe('AutoCare chat service boundaries', () => {
             totalCount: 1,
         })
         expect(reportQuery.andWhere).toHaveBeenCalledWith(expect.stringContaining('NOT EXISTS'), {
-            pendingConflictStatus: AutoCareChatReportStatus.Pending,
             reviewerId: admin.id,
         })
     })
@@ -304,11 +303,12 @@ describe('AutoCare chat service boundaries', () => {
             limit: 20,
         })).resolves.toMatchObject({ items: [], nextCursor: null, totalCount: 0 })
 
-        expect(filterCalls).toHaveLength(4)
+        expect(filterCalls).toHaveLength(5)
         expect(filterCalls[0]).toEqual(['report.status = :activeStatus', { activeStatus: AutoCareChatReportStatus.Pending }])
         expect(filterCalls[1]).toEqual(['report.category = :category', { category: AutoCareChatReportCategory.Threat }])
         expect(filterCalls[2]?.[0]).toBe('report.assignedModeratorId IS NULL')
         expect(filterCalls[3]?.[1]).toEqual({ search: 'case-42' })
+        expect(filterCalls[4]).toEqual([expect.stringContaining('NOT EXISTS'), { reviewerId: superAdmin.id }])
         expect(count).toHaveBeenCalledOnce()
         expect(query.take).toHaveBeenCalledWith(21)
     })

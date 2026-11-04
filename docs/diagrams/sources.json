@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "baseline": "0b6a548c2787ff9c3a3f9e5a8985021714a74fe7",
-  "verifiedOn": "2026-10-29",
+  "verifiedOn": "2026-11-04",
   "description": "Selected source anchors and directory names; not exhaustive architecture correctness evidence.",
   "diagrams": [
     {
@@ -314,7 +314,7 @@
     },
     {
       "path": "server/src/modules/autocare/chat-access.service.ts",
-      "sha256": "0bd92ea17cee34607fabbc84198777ebe98d9d9e76db684bfbde78e023054b58",
+      "sha256": "cec825af7e624f525c14f3ba1b021b0924f8e2ca05e983fc5ba276379ca7b7cc",
       "scopes": [
         "security"
       ]
@@ -2790,28 +2790,28 @@
     },
     {
       "path": "server/src/modules/autocare/chat-moderator-assignment.service.ts",
-      "sha256": "0099a7f96333a11749ab63e857dc0d5232cecd108234a31b4fb9faa873ecd593",
+      "sha256": "feb28130912fd6a433402ff0ade105b4f82db4dacf15487d7491cfb376ab5f73",
       "scopes": [
         "security"
       ]
     },
     {
       "path": "server/src/modules/autocare/chat-report.service.ts",
-      "sha256": "d54224ca392be5be24d6f5009ed7746d2df9b80f1f35af530a655b1122dd17e3",
+      "sha256": "8d577e88962513dc3f22b41a4cc71467d761dca9d006f54649a3685f58a6f998",
       "scopes": [
         "security"
       ]
     },
     {
       "path": "server/src/modules/autocare/autocare-chat.service-boundary.test.ts",
-      "sha256": "087e0183da0a79c89a2a493b7be5a6cce8af2502f4493952f2ec1d7ff9778045",
+      "sha256": "5acd6eb68b1f90a0e132fb5693e9e56d6b1aed7658c32cdd1cfa46d6a8950614",
       "scopes": [
         "security"
       ]
     },
     {
       "path": "server/src/modules/autocare/chat-report-conflict.integration.test.ts",
-      "sha256": "4abcd666635c7e1dba11bb2964450c5704456d15b14f98ec3fb9462c7887663b",
+      "sha256": "4a4938604121f28dd58318bf6d93fae4fa30c9e41fabb7d77cf82eeb14bf3be3",
       "scopes": [
         "security"
       ]

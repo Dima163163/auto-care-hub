@@ -34,9 +34,11 @@ export async function assignAdminAutoCareChatModerator(user: UserEntity, reportI
             const moderator = await manager.getRepository(UserEntity).findOneBy({ id: normalizedInput.moderatorId })
             if (!moderator || moderator.role !== UserRole.Admin || moderator.status !== UserStatus.Active) fail(400, 'The moderator must be an active administrator.')
         }
-        const pending = await reports.find({ where: { threadId: lockedThread.id, status: AutoCareChatReportStatus.Pending } })
+        const threadReports = await reports.find({ where: { threadId: lockedThread.id } })
+        if (threadReports.some((item) => isAutoCareChatReportParty(item, user.id))) fail(403, 'A chat report party cannot assign a moderator for this thread.')
+        const pending = threadReports.filter((item) => item.status === AutoCareChatReportStatus.Pending)
         const targetModeratorId = normalizedInput.moderatorId
-        if (targetModeratorId && pending.some((item) => isAutoCareChatReportParty(item, targetModeratorId))) fail(403, 'A chat report party cannot be assigned as moderator.')
+        if (targetModeratorId && threadReports.some((item) => isAutoCareChatReportParty(item, targetModeratorId))) fail(403, 'A chat report party cannot be assigned as moderator.')
         const now = new Date()
         if (normalizedInput.moderatorId
             && lockedReport.assignedModeratorId === normalizedInput.moderatorId
@@ -113,9 +115,9 @@ export async function extendAdminAutoCareChatModeratorAccess(user: UserEntity, r
         if (lockedReport.status !== AutoCareChatReportStatus.Pending || !lockedReport.assignedModeratorId) fail(409, 'Only an assigned pending report can be extended.')
         if (!lockedReport.reportedMessageId || !lockedReport.acknowledgedAt || !lockedReport.policyVersion) fail(409, 'This report has no message-level consent for moderator access.')
         if (user.role === UserRole.Admin && lockedReport.assignedModeratorId !== user.id) fail(403, 'Only the assigned moderator can extend this access.')
-        const allPendingReports = await manager.getRepository(AutoCareChatReportEntity).find({ where: { threadId: lockedThread.id, status: AutoCareChatReportStatus.Pending } })
-        if (allPendingReports.some((active) => isAutoCareChatReportParty(active, user.id))) fail(403, 'A chat report party cannot extend moderation access.')
-        const pendingReports = allPendingReports.filter((active) => active.reportedMessageId && active.acknowledgedAt && active.policyVersion && active.assignedModeratorId)
+        const threadReports = await manager.getRepository(AutoCareChatReportEntity).find({ where: { threadId: lockedThread.id } })
+        if (threadReports.some((active) => isAutoCareChatReportParty(active, user.id))) fail(403, 'A chat report party cannot extend moderation access.')
+        const pendingReports = threadReports.filter((active) => active.status === AutoCareChatReportStatus.Pending && active.reportedMessageId && active.acknowledgedAt && active.policyVersion && active.assignedModeratorId)
         if (pendingReports.some((active) => active.extensionUsed)) fail(409, 'Moderation access can only be extended once for this service request.')
         if (pendingReports.some((active) => !active.accessExpiresAt || active.accessExpiresAt.getTime() <= Date.now())) fail(409, 'Expired moderation access cannot be extended.')
         if (pendingReports.some((active) => active.assignedModeratorId !== lockedReport.assignedModeratorId)) fail(409, 'Moderator assignment is inconsistent for this service request.')
