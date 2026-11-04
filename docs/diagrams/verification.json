@@ -828,6 +828,18 @@
       "svgRender": "PASS",
       "svgXmlParse": "PASS",
       "pngVisualInspection": "PASS: 03-frontend"
+    },
+    {
+      "date": "2026-11-04",
+      "branch": "fix/pilot-remaining-local-2026-10-28",
+      "scope": "frontend,security",
+      "change": "U03 allow admin operational support chat history and attachment reads in mock without private report assignment",
+      "sourceAnchorCount": 370,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS",
+      "pngVisualInspection": "PASS: 03-frontend"
     }
   ],
   "limitations": [

@@ -1,5 +1,10 @@
 # Карта проекта AutoCare Hub
 
+**U03, mock operational chat access 2026-11-04:** `03-frontend.puml` и SVG
+показывают обычное чтение support/escalation чатов и вложений admin без
+назначения на приватную жалобу. Приватный request chat по-прежнему требует
+назначения; mock regression 8/8 PASS, staging acceptance открыта.
+
 **U03, mock participant block scope 2026-11-04:** `03-frontend.puml` и SVG
 показывают запрет обычной блокировки для admin/super-admin и чужого
 пользователя вне участников переписки. Mock regression 7/7 PASS,

@@ -34,9 +34,10 @@ export function isMockChatReportParty(userId: string, threadId: string) {
     return mockAutoCareChatReports.some((report) => report.threadId === threadId && (report.reporterId === userId || report.reportedUserId === userId))
 }
 
-export function getMockChatReportAccess(user: User, threadId: string) {
-    const reports = mockAutoCareChatReports.filter((report) => report.threadId === threadId && report.messageId !== null && report.status === 'pending')
-    if (isMockChatReportParty(user.id, threadId)) return { allowed: false, reports: [] }
+export function getMockChatReportAccess(user: User, thread: MockAutoCareChatThread) {
+    if (thread.type === 'support' || thread.type === 'admin_escalation') return { allowed: user.role === 'admin' || user.role === 'super_admin', reports: [] }
+    const reports = mockAutoCareChatReports.filter((report) => report.threadId === thread.id && report.messageId !== null && report.status === 'pending')
+    if (isMockChatReportParty(user.id, thread.id)) return { allowed: false, reports: [] }
     if (user.role === 'super_admin') return { allowed: true, reports }
     const assigned = reports.filter((report) => report.assignedModeratorId === user.id && report.accessExpiresAt !== null && Date.parse(report.accessExpiresAt) > Date.now())
     return { allowed: user.role === 'admin' && assigned.length > 0, reports: assigned }

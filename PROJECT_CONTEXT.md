@@ -1,5 +1,12 @@
 # AutoCare Hub Project Context
 
+## U03 — служебные чаты admin в mock, 4 ноября 2026
+
+Mock admin читает support/admin_escalation чат и вложения без назначения
+модератором: ограничение назначения относится к приватному request chat.
+Mock regression 8/8 PASS, TypeScript noEmit/targeted lint PASS.
+Staging acceptance открыта; pilot NO-GO.
+
 ## U03 — область обычной блокировки в mock, 4 ноября 2026
 
 Admin/super-admin не создают обычную participant block через mock POST.

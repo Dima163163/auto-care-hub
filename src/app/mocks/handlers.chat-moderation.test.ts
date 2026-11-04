@@ -3,7 +3,7 @@ import { setupServer } from 'msw/node'
 
 import { handlers } from './handlers'
 import { clearMockSession, setMockSession } from './session'
-import { mockAutoCareChatBlocks, mockAutoCareChatReports } from './autocare/mock-fixtures'
+import { mockAutoCareChatAttachments, mockAutoCareChatBlocks, mockAutoCareChatReports } from './autocare/mock-fixtures'
 
 const server = setupServer(...handlers)
 server.listen({ onUnhandledRequest: 'error' })
@@ -15,6 +15,28 @@ async function fetchJson(path: string, init?: RequestInit) {
 }
 
 describe('mock chat report moderation contract', () => {
+    it('allows admin operational support history and attachments without a report assignment', async () => {
+        const chatId = 'chat-support-owner'
+        const previous = mockAutoCareChatAttachments.get(chatId)
+        mockAutoCareChatAttachments.set(chatId, [{
+            id: 'synthetic-support-attachment', uploadedById: 'user-owner-1',
+            contentType: 'image/png', bytes: 1, status: 'ready',
+            url: `/api/v1/chats/${chatId}/attachments/synthetic-support-attachment`,
+            createdAt: new Date().toISOString(), contentBase64: 'AA==',
+        }])
+        try {
+            setMockSession({ currentUserId: 'user-admin-moderator-1', currentRole: 'admin' })
+            expect((await fetchJson(`/api/v1/chats/${chatId}`)).status).toBe(200)
+            expect((await fetchJson('/api/v1/chats/chat-escalation-admin')).status).toBe(200)
+            const attachment = await fetchJson(`/api/v1/chats/${chatId}/attachments/synthetic-support-attachment`)
+            expect(attachment.status).toBe(200)
+            expect(attachment.headers.get('content-type')).toContain('image/png')
+        } finally {
+            if (previous) mockAutoCareChatAttachments.set(chatId, previous)
+            else mockAutoCareChatAttachments.delete(chatId)
+        }
+    })
+
     it('limits ordinary blocks to chat participants and rejects privileged creation', async () => {
         const chatId = 'chat-request-owner-request-2'
         let blockId: string | null = null

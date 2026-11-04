@@ -144,7 +144,7 @@ export const chatHandlers = [
         const thread = user ? getMockDirectChatThread(user, String(params.chatId)) : undefined
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
         if (!thread) return HttpResponse.json({ message: 'Chat not found.' }, { status: 404 })
-        const access = getMockChatReportAccess(user, thread.id)
+        const access = getMockChatReportAccess(user, thread)
         if ((user.role === 'admin' || user.role === 'super_admin') && !access.allowed) return HttpResponse.json({ message: 'Independent moderation access is required.' }, { status: 403 })
         const url = new URL(request.url)
         const emergencyReason = url.searchParams.get('emergencyReason')?.trim() ?? ''
@@ -239,7 +239,7 @@ export const chatHandlers = [
         const user = currentMockUser()
         const thread = user ? getMockDirectChatThread(user, String(params.chatId)) : undefined
         if (!user || !thread) return HttpResponse.json({ message: 'Attachment not found.' }, { status: 404 })
-        const access = getMockChatReportAccess(user, thread.id)
+        const access = getMockChatReportAccess(user, thread)
         if ((user.role === 'admin' || user.role === 'super_admin') && !access.allowed) return HttpResponse.json({ message: 'Independent moderation access is required.' }, { status: 403 })
         if (user.role === 'super_admin' && (new URL(request.url).searchParams.get('emergencyReason')?.trim().length ?? 0) < 10) return HttpResponse.json({ message: 'A documented emergency reason is required to read chat attachments.' }, { status: 403 })
         const attachment = mockChatAttachments(thread).find((candidate) => candidate.id === params.attachmentId)

@@ -1,5 +1,14 @@
 # AutoCare Hub — Project Plan
 
+## U03 — служебные чаты admin в mock, 2026-11-04
+
+- [x] Согласовать mock с backend: admin читает историю support/escalation
+  и вложения служебного чата без назначения на приватную жалобу. Доступ к
+  request chat остаётся ограниченным назначением. Mock regression 8/8
+  PASS, TypeScript noEmit и targeted lint PASS.
+- [ ] Проверить опубликованный browser/staging сценарий;
+  U03 и pilot NO-GO сохраняются.
+
 ## U03 — область обычной блокировки в mock, 2026-11-04
 
 - [x] Запретить admin/super-admin создавать participant block через обычный

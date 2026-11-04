@@ -2722,7 +2722,7 @@
     },
     {
       "path": "src/app/mocks/autocare/mock-chat.ts",
-      "sha256": "96d8e48d7f66c071ed1141bb360ab5b0f4f65d90e0b76c05780f330533bd7d31",
+      "sha256": "a03a64288efb9e8a4835eee07bc064f3ece4aa1412d84c9bc06b3d41f0ecdf0d",
       "scopes": [
         "frontend",
         "security"
@@ -2825,7 +2825,7 @@
     },
     {
       "path": "src/app/mocks/autocare/chat.handlers.ts",
-      "sha256": "f27fc60a8f15f0551d825be792b924235790d30d8ec99375cd1c3a5302566641",
+      "sha256": "20acb9e48ba24d53a2d0bca6466802232e6fcb1b7161023740e8aba078645f27",
       "scopes": [
         "frontend",
         "security"
@@ -2833,7 +2833,7 @@
     },
     {
       "path": "src/app/mocks/handlers.chat-moderation.test.ts",
-      "sha256": "e9346bf703dc2b3776df297e430abde5e658fe046f0a2565f5580c8d240472a0",
+      "sha256": "e49375390b27dbc6919640593af0d282cecb0bc07d3390fae7edd8499b2ad400",
       "scopes": [
         "frontend",
         "security"
