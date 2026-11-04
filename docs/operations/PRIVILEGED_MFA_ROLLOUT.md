@@ -48,8 +48,9 @@ account-deletion mutations plus audit/security CSV exports after five minutes.
 Admin and super-admin chat reports, private chat history, attachment reads and chat WebSocket
 access require the same fresh proof. Their `/v1/chats` subject index also
 requires it before listing threads. Creating support/escalation chats, reporting,
-sending or deleting messages, uploading attachments, overriding blocks and
-marking reads also require fresh proof for admin/super-admin. Live WebSocket
+sending or deleting messages, uploading attachments, revoking their own
+participant blocks and marking reads also require fresh proof for
+admin/super-admin. Live WebSocket
 authorization rechecks it before each delivery and every 30 seconds; an
 expired proof closes the socket at the next check. The super-admin index lists
 only support/escalation chats; private request chats use per-thread audited
@@ -58,6 +59,9 @@ without provider membership widening. Admin and super-admin service-request
 detail, repair timeline and owner request list also require fresh proof before
 returning private data. Broadcast request detail and the provider inbox use
 the same proof for admin and super-admin.
+Moderation restrictions created from a chat report cannot be removed through
+`DELETE /v1/chats/:chatId/blocks/:blockId`, including by a super-admin. Only an
+accepted independent chat-restriction appeal revokes them.
 Twelve provider workspace GET routes also require fresh proof for privileged
 roles while retaining the verified-email requirement.
 Sixteen provider workspace mutations require the same proof before payload

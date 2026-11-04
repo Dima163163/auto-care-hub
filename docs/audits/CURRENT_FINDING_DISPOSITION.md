@@ -1,5 +1,12 @@
 # Current finding disposition — 2026-10-04
 
+**Локальный шаг 04.11, U03 block revocation:** обычный DELETE может снять
+только собственную participant block. Ограничение по жалобе с
+`sourceReportId` требует принятой независимой апелляции; super-admin не
+обходит её через DELETE. Boundary 38 PASS, mock 4 PASS, isolated PostgreSQL
+integration 10/10 PASS, build/targeted lint PASS. Staging acceptance и pilot evidence
+открыты; pilot NO-GO.
+
 **Локальный шаг 04.11, U03 historical chat conflict:** стороны закрытых
 жалоб той же переписки не могут модерировать новую pending жалобу после
 смены роли. Admin/super-admin служебный список исключает конфликтную

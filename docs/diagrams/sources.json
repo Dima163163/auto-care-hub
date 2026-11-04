@@ -959,7 +959,7 @@
     },
     {
       "path": "server/src/routes/openapi.route.ts",
-      "sha256": "1ef39cb47fd9209861f8391739d35c48bd2705357c4234a55bd8cd7fe6c75347",
+      "sha256": "8e02e9adad892ed6a96537982dac139199705294187fd27265983d84f8d541c8",
       "scopes": [
         "backend"
       ]
@@ -2811,8 +2811,31 @@
     },
     {
       "path": "server/src/modules/autocare/chat-report-conflict.integration.test.ts",
-      "sha256": "4a4938604121f28dd58318bf6d93fae4fa30c9e41fabb7d77cf82eeb14bf3be3",
+      "sha256": "067c42d88aaa407fe63a42cc9d3860040ae8cd70c047a916ade5897420ea3380",
       "scopes": [
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/modules/autocare/chat-block.service.ts",
+      "sha256": "503a2c2c845b19e18b7dc647f955a8a19aa056796bbec2a6e8f1280e612f6937",
+      "scopes": [
+        "security"
+      ]
+    },
+    {
+      "path": "src/app/mocks/autocare/chat.handlers.ts",
+      "sha256": "888d886d5336a9d905b7fda4e93b77cedff88225c75fae0f0ccf30284b798720",
+      "scopes": [
+        "frontend",
+        "security"
+      ]
+    },
+    {
+      "path": "src/app/mocks/handlers.chat-moderation.test.ts",
+      "sha256": "b8f7a9838f7881904350850d65ac8571477ab27c20aef5579e54a9c3c94c7615",
+      "scopes": [
+        "frontend",
         "security"
       ]
     }

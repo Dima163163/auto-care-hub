@@ -616,7 +616,7 @@ export function getOpenApiDocument() {
                 post: { operationId: 'createAutoCareChatBlock', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: false, content: { 'application/json': { schema: { type: 'object', properties: { blockedUserId: { type: 'string', format: 'uuid' }, reason: { type: ['string', 'null'], maxLength: 1000 } }, additionalProperties: false } } } }, responses: { '201': { description: 'Blocked another participant in the chat.' } } },
             },
             '/v1/chats/{chatId}/blocks/{blockId}': {
-                delete: { operationId: 'revokeAutoCareChatBlock', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'blockId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Revoked a participant or moderation block.' } } },
+                delete: { operationId: 'revokeAutoCareChatBlock', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'blockId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Revoked the caller’s own participant block. Moderation restrictions require an accepted appeal.' } } },
             },
             '/v1/chats/{chatId}/read': {
                 post: { operationId: 'markAutoCareChatRead', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Marked chat messages as read.' } } },

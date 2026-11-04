@@ -167,6 +167,11 @@ describe('mock chat report moderation contract', () => {
             setMockSession({ currentUserId: 'user-owner-1', currentRole: 'owner' })
             const blockedThread = await (await fetchJson('/api/v1/service-requests/owner-request-2/chat-thread')).json() as { moderationRestriction?: { id: string; state: string; appealStatus: string | null } }
             expect(blockedThread.moderationRestriction).toMatchObject({ state: 'active', appealStatus: null })
+            setMockSession({ currentUserId: 'user-admin-1', currentRole: 'super_admin' })
+            expect((await fetchJson(`/api/v1/chats/chat-request-owner-request-2/blocks/${blockedThread.moderationRestriction!.id}`, { method: 'DELETE' })).status).toBe(403)
+            setMockSession({ currentUserId: 'user-admin-moderator-1', currentRole: 'admin' })
+            expect((await fetchJson(`/api/v1/chats/chat-request-owner-request-2/blocks/${blockedThread.moderationRestriction!.id}`, { method: 'DELETE' })).status).toBe(403)
+            setMockSession({ currentUserId: 'user-owner-1', currentRole: 'owner' })
             expect((await fetchJson('/api/v1/service-requests/owner-request-2/messages', {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },

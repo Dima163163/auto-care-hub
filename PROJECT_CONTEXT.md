@@ -1,5 +1,14 @@
 # AutoCare Hub Project Context
 
+## U03 — снятие блокировки только через апелляцию, 4 ноября 2026
+
+Обычный DELETE блокировки теперь снимает только participant block,
+созданную самим пользователем. Блокировка с `sourceReportId` недоступна
+этому пути даже super-admin; её снимает только принятое независимое решение
+по апелляции. Mock/OpenAPI обновлены. Boundary 38 PASS, mock 4 PASS,
+isolated seeded PostgreSQL integration 10/10 PASS, backend build/targeted lint PASS.
+Staging acceptance и pilot evidence открыты; pilot NO-GO.
+
 ## U03 — исторический конфликт жалоб на чат, 4 ноября 2026
 
 Сторона закрытой жалобы не может получить доступ к новой pending жалобе

@@ -1,5 +1,11 @@
 # Карта проекта AutoCare Hub
 
+**U03, chat restriction revocation 2026-11-04:** `09-access-privacy.puml`
+и SVG показывают, что DELETE блокировки доступен только автору обычного
+participant block. Модерационное ограничение с `sourceReportId` снимается
+только решением по апелляции; super-admin не обходит этот путь. Mock и
+OpenAPI согласованы; isolated PostgreSQL 10/10 PASS, staging открыт.
+
 **U03, historical chat report conflict 2026-11-04:**
 `09-access-privacy.puml` и SVG показывают, что конфликт стороны жалобы
 сохраняется после закрытия дела: admin/super-admin не видят эту переписку в

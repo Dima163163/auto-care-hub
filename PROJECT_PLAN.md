@@ -1,5 +1,15 @@
 # AutoCare Hub — Project Plan
 
+## U03 — снятие блокировки через обычный маршрут, 2026-11-04
+
+- [x] Убрать обход апелляции: `DELETE /v1/chats/:chatId/blocks/:blockId`
+  снимает только собственную participant block; ограничение от жалобы
+  (`sourceReportId`) отвергается для всех ролей, включая super-admin.
+  Mock и OpenAPI согласованы. Boundary 38 PASS, mock 4 PASS, isolated
+  seeded PostgreSQL integration 10/10 PASS, backend build и targeted lint PASS.
+- [ ] Проверить реальное решение апелляции, отзыв блокировки и аудит на
+  staging; U03 и pilot NO-GO сохраняются.
+
 ## U03 — исторический конфликт при модерации чата, 2026-11-04
 
 - [x] Распространить запрет модерации на стороны закрытых жалоб той же

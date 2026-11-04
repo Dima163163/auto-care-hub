@@ -127,10 +127,10 @@ export const chatHandlers = [
     }) },
 { order: 106, handler: http.delete('/api/v1/chats/:chatId/blocks/:blockId', ({ params }) => {
         const user = currentMockUser()
-        const block = mockAutoCareChatBlocks.find((candidate) => candidate.id === params.blockId && candidate.threadId === params.chatId)
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        const block = mockAutoCareChatBlocks.find((candidate) => candidate.id === params.blockId && candidate.threadId === params.chatId)
         if (!block) return HttpResponse.json({ message: 'Chat block not found.' }, { status: 404 })
-        if (block.blockerId !== user.id && !['admin', 'super_admin'].includes(user.role)) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        if (block.sourceReportId || block.blockerId !== user.id) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
         block.status = 'revoked'
         block.revokedAt = new Date().toISOString()
         return HttpResponse.json(block)

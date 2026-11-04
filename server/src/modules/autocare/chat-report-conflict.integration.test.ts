@@ -1,9 +1,10 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
 import { AppDataSource } from '../../database/data-source.js'
-import { AutoCareChatReportCategory, AutoCareChatReportEntity, AutoCareChatReportStatus, AutoCareChatThreadEntity, AutoCareChatThreadType, AutomotiveServiceDefinitionEntity, AutomotiveServiceLocationEntity, ServiceMessageEntity, ServiceMessageKind, ServiceRequestEntity, ServiceRequestStatus } from '../../entities/index.js'
+import { AutoCareChatBlockEntity, AutoCareChatBlockStatus, AutoCareChatReportCategory, AutoCareChatReportEntity, AutoCareChatReportStatus, AutoCareChatThreadEntity, AutoCareChatThreadType, AutomotiveServiceDefinitionEntity, AutomotiveServiceLocationEntity, ServiceMessageEntity, ServiceMessageKind, ServiceRequestEntity, ServiceRequestStatus } from '../../entities/index.js'
 import { UserEntity, UserRole, UserStatus } from '../../entities/user/user.entity.js'
 import { assertThreadAccess, getAutoCareChatAccessContext } from './chat-access.service.js'
+import { revokeAutoCareChatBlock } from './chat-block.service.js'
 import { assignAdminAutoCareChatModerator, extendAdminAutoCareChatModeratorAccess } from './chat-moderator-assignment.service.js'
 import { decideAdminAutoCareChatReport, listAdminAutoCareChatReports } from './chat-report.service.js'
 
@@ -185,6 +186,44 @@ describe('chat report conflict on PostgreSQL', () => {
             expect(await reports.findOneByOrFail({ id: targetReport.id })).toMatchObject({ status: AutoCareChatReportStatus.Pending })
         } finally {
             await changeReport(neighboringReport.id, { status: AutoCareChatReportStatus.Pending })
+        }
+    })
+
+    it('does not let a privileged user revoke a report restriction outside appeal review', async () => {
+        const blocks = AppDataSource.getRepository(AutoCareChatBlockEntity)
+        const restriction = await blocks.save(blocks.create({
+            threadId: thread.id,
+            blockerId: independentAdmin.id,
+            blockedUserId: admin.id,
+            status: AutoCareChatBlockStatus.Active,
+            sourceReportId: targetReport.id,
+            reason: 'Decision on a reported message',
+        }))
+        try {
+            await expect(revokeAutoCareChatBlock(superAdmin, thread.id, restriction.id)).rejects.toMatchObject({ statusCode: 403 })
+            await expect(revokeAutoCareChatBlock(independentAdmin, thread.id, restriction.id)).rejects.toMatchObject({ statusCode: 403 })
+            expect(await blocks.findOneByOrFail({ id: restriction.id })).toMatchObject({ status: AutoCareChatBlockStatus.Active, revokedAt: null })
+        } finally {
+            await blocks.delete({ id: restriction.id })
+        }
+    })
+
+    it('limits participant block removal to its original blocker', async () => {
+        const blocks = AppDataSource.getRepository(AutoCareChatBlockEntity)
+        const block = await blocks.save(blocks.create({
+            threadId: thread.id,
+            blockerId: client.id,
+            blockedUserId: admin.id,
+            status: AutoCareChatBlockStatus.Active,
+            sourceReportId: null,
+            reason: 'Participant block',
+        }))
+        try {
+            await expect(revokeAutoCareChatBlock(superAdmin, thread.id, block.id)).rejects.toMatchObject({ statusCode: 403 })
+            expect(await blocks.findOneByOrFail({ id: block.id })).toMatchObject({ status: AutoCareChatBlockStatus.Active, revokedAt: null })
+            await expect(revokeAutoCareChatBlock(client, thread.id, block.id)).resolves.toMatchObject({ status: AutoCareChatBlockStatus.Revoked })
+        } finally {
+            await blocks.delete({ id: block.id })
         }
     })
 })
