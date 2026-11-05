@@ -23,7 +23,7 @@ export async function waitRequiredPromotionChecks({ repository, prNumber, source
     const currentPrQualityPassed = async () => {
         const runs = JSON.parse(await runGh(['api', `repos/${repository}/actions/workflows/quality.yml/runs?event=pull_request&head_sha=${sourceSha}&per_page=100`]))
         if (!Array.isArray(runs.workflow_runs)) throw new Error('Invalid pull-request Quality run response.')
-        const matchingRuns = runs.workflow_runs.filter((run) => run.name === 'Quality' && run.event === 'pull_request' && run.head_branch === 'dev' && run.head_sha === sourceSha && run.display_title === currentPrRunName)
+        const matchingRuns = runs.workflow_runs.filter((run) => run.name === currentPrRunName && run.event === 'pull_request' && run.head_branch === 'dev' && run.head_sha === sourceSha && run.display_title === currentPrRunName)
         const latestRun = matchingRuns.sort((left, right) => right.id - left.id)[0]
         if (!latestRun) return false
         if (latestRun.status !== 'completed') return false

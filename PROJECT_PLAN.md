@@ -1,5 +1,17 @@
 # AutoCare Hub — Project Plan
 
+## Promotion run-name follow-up — 2026-11-05
+
+- [x] PR #47 merge commit `38cc855` вошёл в `dev`; exact-SHA push Quality
+  (`Quality PR-push`) и `Application CI` завершились PASS.
+- [x] Исправить выявленное в опубликованном запуске несоответствие: GitHub
+  возвращает `run.name = Quality PR-push` / `Quality PR-<номер>`, а promotion
+  workflow и PR waiter искали старое `Quality`. Точный push selector проверен
+  на реальном формате ответа; локальные negative/positive tests 23/23 и
+  полный root tooling 188/188 PASS.
+- [ ] Повторить опубликованный `dev` push и защищённый PR Quality с этим fix,
+  затем code-owner review и auto-merge в `main`.
+
 ## Локальная проверка кандидата и U02, 2026-11-05
 
 - [x] Повторить полный локальный gate после CI/MFA изменений: frontend

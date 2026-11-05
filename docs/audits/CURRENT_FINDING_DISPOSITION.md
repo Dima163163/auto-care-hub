@@ -1,5 +1,12 @@
 # Current finding disposition — 2026-10-04
 
+**Promotion run-name follow-up, 05.11:** PR #47 merged в `dev` как `38cc855`,
+его push Quality/Application CI PASS. Workflow не нашёл успешный run, потому
+что GitHub REST `name` теперь `Quality PR-push`, а selector ожидал `Quality`;
+PR waiter имел аналогичный дефект. Точные имена исправлены, jq/PR/policy
+tests 23/23 и root tooling 188/188 PASS. Публикация исправления и защищённый
+PR в `main` открыты.
+
 **Локальный U02 verify 05.11:** все 35 read-only binding verify команд
 завершились; пять прочли 68 строк, остальные 30 таблиц пусты. Полный
 frontend 204/671, lint/Next build, backend unit 463/1723, build,

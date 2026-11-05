@@ -1,5 +1,10 @@
 # Карта проекта AutoCare Hub
 
+**Release CI follow-up, 2026-11-05:** push/PR promotion selectors теперь
+сопоставляют фактические GitHub `name` и `display_title` с `Quality PR-push`
+или номером текущего PR. Это CI orchestration; `.puml`/SVG runtime не менялись.
+Опубликованная проверка исправления ещё открыта.
+
 **U03, legacy admin reviews 2026-11-05:** `09-access-privacy.puml` и SVG
 отражают свежий MFA перед списком, сменой статуса и удалением старых отзывов.
 Полная authorization integration 33/33 PASS на disposable PostgreSQL/Redis;
