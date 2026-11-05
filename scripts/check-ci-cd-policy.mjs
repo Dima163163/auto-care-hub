@@ -22,6 +22,11 @@ export function validateCiCdPolicy({ quality, promotion, promotionWait, protecti
         ['Promotion selects a push Quality run', /\.event\s*==\s*"push"/.test(promotion)],
         ['Promotion requires successful CI', /conclusion.*success/.test(promotion) && /'pr', 'checks'/.test(promotionWait ?? '')],
         ['Promotion waits only for required checks and both Quality events', /'--required'/.test(promotionWait ?? '') && /\['push', 'pull_request'\]/.test(promotionWait ?? '') && /maxAttempts = 270/.test(promotionWait ?? '')],
+        ['Promotion binds the pull-request Quality run to the current PR',
+            quality.includes('run-name: "Quality PR-${{ github.event.pull_request.number || \'push\' }}"')
+            && promotionWait.includes('run.display_title === currentPrRunName')
+            && promotionWait.includes('/actions/workflows/quality.yml/runs?event=pull_request&head_sha=')
+            && promotionWait.includes("job.name === 'Application CI'")],
         ['Promotion pins merge to the verified head', /--match-head-commit "\$SOURCE_SHA"/.test(promotion) && !/--admin(?:\s|$)/.test(promotion)],
         ['Promotion preserves dev ancestry', /gh pr merge "\$PR_NUMBER"[^\n]*--merge(?:\s|$)/.test(promotion) && !/gh pr merge "\$PR_NUMBER"[^\n]*--squash(?:\s|$)/.test(promotion)],
         ['Promotion targets main through a protected pull request', /--base main/.test(promotion) && /--head dev/.test(promotion) && /gh pr merge/.test(promotion) && /pull request/.test(promotion) && !/mode=direct/.test(promotion)],

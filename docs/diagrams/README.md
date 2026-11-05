@@ -1,5 +1,15 @@
 # Карта проекта AutoCare Hub
 
+**U03, legacy admin reviews 2026-11-05:** `09-access-privacy.puml` и SVG
+отражают свежий MFA перед списком, сменой статуса и удалением старых отзывов.
+Полная authorization integration 33/33 PASS на disposable PostgreSQL/Redis;
+staging replay остаётся открытым.
+
+**Release CI, 2026-11-05:** fingerprint `quality.yml` обновлён после
+PR-numbered run-name для проверки продвижения. Схемы runtime и доступа не
+описывают GitHub Actions; их `.puml` и SVG не менялись. Опубликованная
+проверка нового promotion gate ещё ожидается.
+
 **U03, mock operational chat access 2026-11-04:** `03-frontend.puml` и SVG
 показывают обычное чтение support/escalation чатов и вложений admin без
 назначения на приватную жалобу. Приватный request chat по-прежнему требует

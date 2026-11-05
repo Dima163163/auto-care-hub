@@ -1,8 +1,42 @@
 # AutoCare Hub Project Context
 
+## Локальный кандидат и U02 verify, 5 ноября 2026
+
+После CI/MFA исправлений frontend 204/671, lint и Next build PASS; backend
+unit 463/1723, build и `quality:backend` PASS; disposable PostgreSQL/Redis
+integration 30 файлов / 153 PASS / 1 skip. Все 35 read-only binding `verify`
+команд завершились `exhausted:true`; пять прочли 68 строк суммарно, остальные
+30 прошли по пустым таблицам. Это не проверка legacy backfill, нагрузки,
+KMS/restore или strict cutover. U02/N09 и pilot NO-GO остаются открытыми.
+
+## U03 — legacy admin reviews, 5 ноября 2026
+
+Три старых admin review маршрута (список, смена статуса, удаление) теперь
+проверяют свежий privileged MFA до валидации и доступа к данным. Отрицательные
+и положительные сценарии для admin/super-admin прошли на disposable
+PostgreSQL/Redis: полный authorization integration 33/33 PASS; backend build
+PASS. Общий integration replay: 30 файлов, 153 PASS / 1 skip; первый прогон
+дал один неповторившийся 404 вместо 403 в существующей MFA mutation matrix,
+изолированный повтор 33/33 и второй полный прогон прошли. Причина разового
+сбоя не установлена. Frontend step-up/CSV/attachment unit 5/5 PASS.
+Browser/staging replay с реальными аккаунтами остаётся открытым; U03/pilot NO-GO.
+
+## PR-specific promotion gate, 5 ноября 2026
+
+PR #46 от GitHub Actions получил одобрение code owner и вошёл в `main` как
+`1c57fe0`; его parent — проверенный `dev` `4c969e4`, tree совпадает.
+Повторный Quality PR #46 завершился PASS, но auto-merge сработал раньше,
+потому что `gh pr checks` учитывал успешный PR #30 для того же head SHA.
+Локальное исправление именует Quality run номером PR и перед auto-merge
+требует успешный run и `Application CI` именно текущего PR; 19/19 focused
+tests PASS. Публикация и exact-candidate CI исправления ещё открыты.
+GitHub по общему check name может принять старый результат при ручном
+включении auto-merge; использовать только защищённый promotion workflow.
+
 ## PR #30 promotion scan, 4 ноября 2026
 
-PR #44 вошёл в dev как `045d2c5`; PR #30 проверяет этот head. Gitleaks
+Исторический снимок до исправления: PR #44 вошёл в dev как `045d2c5`;
+PR #30 проверял этот head. Gitleaks
 нашёл два публичных RFC 6238 TOTP test vector fingerprint в squash commit
 `78ba6a0` (PR #43), которых не было в исходном commit `aabffbc`.
 Добавлены только два точных исторических исключения. Новый dev push Quality,
