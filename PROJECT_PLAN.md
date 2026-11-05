@@ -1,5 +1,14 @@
 # AutoCare Hub — Project Plan
 
+## U03 — старые административные отзывы, 2026-11-05
+
+- [x] Потребовать свежий MFA перед списком, сменой статуса и удалением старых
+  отзывов. Положительные и отрицательные сценарии для admin/super-admin на
+  disposable PostgreSQL/Redis прошли (полный authorization suite 33/33);
+  backend build и targeted lint PASS.
+- [ ] Повторить защищённые маршруты с реальными учётными записями на staging.
+  Локальное исправление само по себе не закрывает U03 и pilot acceptance.
+
 ## PR-specific promotion Quality gate — 2026-11-05
 
 - [x] PR #46 вошёл в `main` как `1c57fe0` с проверенным `dev` `4c969e4`;

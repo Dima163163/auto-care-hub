@@ -1,5 +1,13 @@
 # AutoCare Hub Project Context
 
+## U03 — legacy admin reviews, 5 ноября 2026
+
+Три старых admin review маршрута (список, смена статуса, удаление) теперь
+проверяют свежий privileged MFA до валидации и доступа к данным. Отрицательные
+и положительные сценарии для admin/super-admin прошли на disposable
+PostgreSQL/Redis: полный authorization integration 33/33 PASS; backend build
+PASS. Staging replay с реальными аккаунтами остаётся открытым; U03/pilot NO-GO.
+
 ## PR-specific promotion gate, 5 ноября 2026
 
 PR #46 от GitHub Actions получил одобрение code owner и вошёл в `main` как
