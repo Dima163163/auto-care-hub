@@ -1,5 +1,18 @@
 # AutoCare Hub — Project Plan
 
+## Локальная проверка кандидата и U02, 2026-11-05
+
+- [x] Повторить полный локальный gate после CI/MFA изменений: frontend
+  204 файла / 671 тест PASS, lint и Next build PASS; backend unit
+  463 файла / 1723 теста, build и `quality:backend` PASS; disposable
+  PostgreSQL/Redis integration 30 файлов / 153 PASS / 1 skip.
+- [x] Выполнить все 35 read-only `encryption:backfill-* --mode verify`
+  вариантов на disposable БД: все завершились `exhausted:true`.
+  Только пять проверок прочли строки (14 user email, 14 user profile,
+  14 user secondary, 20 outbox, 6 trust evidence); остальные 30 таблиц пусты.
+- [ ] Проверить старые строки, объём и restore на подготовленном staging перед
+  U02/N09 cutover. Эти локальные команды не доказывают готовность реальных данных.
+
 ## U03 — старые административные отзывы, 2026-11-05
 
 - [x] Потребовать свежий MFA перед списком, сменой статуса и удалением старых

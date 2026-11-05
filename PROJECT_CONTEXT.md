@@ -1,5 +1,14 @@
 # AutoCare Hub Project Context
 
+## Локальный кандидат и U02 verify, 5 ноября 2026
+
+После CI/MFA исправлений frontend 204/671, lint и Next build PASS; backend
+unit 463/1723, build и `quality:backend` PASS; disposable PostgreSQL/Redis
+integration 30 файлов / 153 PASS / 1 skip. Все 35 read-only binding `verify`
+команд завершились `exhausted:true`; пять прочли 68 строк суммарно, остальные
+30 прошли по пустым таблицам. Это не проверка legacy backfill, нагрузки,
+KMS/restore или strict cutover. U02/N09 и pilot NO-GO остаются открытыми.
+
 ## U03 — legacy admin reviews, 5 ноября 2026
 
 Три старых admin review маршрута (список, смена статуса, удаление) теперь

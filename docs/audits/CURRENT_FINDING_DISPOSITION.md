@@ -1,5 +1,11 @@
 # Current finding disposition — 2026-10-04
 
+**Локальный U02 verify 05.11:** все 35 read-only binding verify команд
+завершились; пять прочли 68 строк, остальные 30 таблиц пусты. Полный
+frontend 204/671, lint/Next build, backend unit 463/1723, build,
+`quality:backend` и integration 30 файлов / 153 PASS / 1 skip.
+Legacy backfill, объём, KMS/restore и strict cutover остаются открытыми.
+
 **Локальный шаг 05.11, U03 legacy reviews:** три admin review маршрута
 проверяют свежий MFA до чтения, валидации и изменения. Полный authorization
 integration на disposable PostgreSQL/Redis 33/33 PASS для admin и super-admin;
