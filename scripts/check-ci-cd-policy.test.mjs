@@ -22,6 +22,26 @@ test('rejects a promotion workflow without an explicit CI wait', async () => {
     assert.ok(checks.some(({ name, passed }) => name === 'Promotion requires successful CI' && !passed))
 })
 
+test('rejects promotion that could reuse another PR run for the same commit', async () => {
+    const sources = await readCiCdPolicySources()
+    const checks = validateCiCdPolicy({
+        ...sources,
+        promotionWait: sources.promotionWait.replace('run.display_title === currentPrRunName', 'run.head_sha === sourceSha'),
+    })
+
+    assert.ok(checks.some(({ name, passed }) => name === 'Promotion binds the pull-request Quality run to the current PR' && !passed))
+})
+
+test('requires Quality to expose the PR number in its run name', async () => {
+    const sources = await readCiCdPolicySources()
+    const checks = validateCiCdPolicy({
+        ...sources,
+        quality: sources.quality.replace('github.event.pull_request.number', 'github.ref'),
+    })
+
+    assert.ok(checks.some(({ name, passed }) => name === 'Promotion binds the pull-request Quality run to the current PR' && !passed))
+})
+
 test('rejects promotion that does not bind Quality to the exact dev commit', async () => {
     const sources = await readCiCdPolicySources()
     const checks = validateCiCdPolicy({

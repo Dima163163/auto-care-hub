@@ -1,5 +1,10 @@
 # Карта проекта AutoCare Hub
 
+**Release CI, 2026-11-05:** fingerprint `quality.yml` обновлён после
+PR-numbered run-name для проверки продвижения. Схемы runtime и доступа не
+описывают GitHub Actions; их `.puml` и SVG не менялись. Опубликованная
+проверка нового promotion gate ещё ожидается.
+
 **U03, mock operational chat access 2026-11-04:** `03-frontend.puml` и SVG
 показывают обычное чтение support/escalation чатов и вложений admin без
 назначения на приватную жалобу. Приватный request chat по-прежнему требует

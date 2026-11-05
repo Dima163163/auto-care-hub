@@ -1,13 +1,27 @@
 # AutoCare Hub — Project Plan
 
+## PR-specific promotion Quality gate — 2026-11-05
+
+- [x] PR #46 вошёл в `main` как `1c57fe0` с проверенным `dev` `4c969e4`;
+  его собственный Quality завершился PASS позднее. Зафиксирован release gap:
+  workflow принимал успешный `Application CI` старого PR #30 для того же SHA.
+- [x] Дать каждому PR Quality run имя с номером PR и до включения auto-merge
+  требовать успешный Quality run и `Application CI` именно текущего PR.
+  Отрицательные тесты старого PASS/нового pending и failure проходят локально:
+  19/19 promotion/policy tests PASS.
+- [ ] Проверить исправленный workflow на опубликованном кандидате. Защита
+  GitHub по общему check name всё ещё допускает ручное включение auto-merge
+  до свежего PR CI; владелец не должен включать его вне promotion workflow.
+
 ## PR #30 promotion scan follow-up — 2026-11-04
 
 - [x] Определить два Gitleaks finding релизного PR #30: публичный RFC 6238
   TOTP vector получил новые fingerprints после squash PR #43 в `78ba6a0`.
 - [x] Добавить только эти два fingerprint в `.gitleaksignore`; исторический
   commit/path/rule/line указан полностью, другие секреты не игнорируются.
-- [ ] Получить Quality на новом dev commit и обоих событиях push/PR для
-  dev → main; защищённый main требует отдельного code-owner review.
+- [x] Quality для `dev` push и PR #30 прошёл; затем PR #46 от GitHub Actions
+  получил code-owner approval и вошёл в `main` merge commit `1c57fe0`.
+  Повторный PR #46 Quality также завершился PASS.
 
 ## PR #43 CI follow-up — 2026-11-04
 
@@ -23,9 +37,8 @@
   44 таблицы в manifest, 30 pending constraints validated на disposable PostgreSQL.
 - [x] Зафиксировать, что PR #43 уже squash-merged в dev как `78ba6a0`
   до завершения Quality; dev push Quality упал, main не продвинут.
-- [ ] Провести отдельный PR с оставшимся CI fix в dev после зелёного
-  exact-SHA Quality; затем дождаться dev push Quality и провести
-  защищённый dev → main PR по обязательным проверкам и review.
+- [x] Остаточный CI fix вошёл через PR #44 и #45; exact-SHA `dev` push
+  Quality и protected PR Quality прошли, PR #46 вошёл в `main` с review.
 
 ## Exact-candidate local quality replay — 2026-11-04
 

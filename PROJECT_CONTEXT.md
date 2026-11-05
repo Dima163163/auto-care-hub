@@ -1,8 +1,21 @@
 # AutoCare Hub Project Context
 
+## PR-specific promotion gate, 5 ноября 2026
+
+PR #46 от GitHub Actions получил одобрение code owner и вошёл в `main` как
+`1c57fe0`; его parent — проверенный `dev` `4c969e4`, tree совпадает.
+Повторный Quality PR #46 завершился PASS, но auto-merge сработал раньше,
+потому что `gh pr checks` учитывал успешный PR #30 для того же head SHA.
+Локальное исправление именует Quality run номером PR и перед auto-merge
+требует успешный run и `Application CI` именно текущего PR; 19/19 focused
+tests PASS. Публикация и exact-candidate CI исправления ещё открыты.
+GitHub по общему check name может принять старый результат при ручном
+включении auto-merge; использовать только защищённый promotion workflow.
+
 ## PR #30 promotion scan, 4 ноября 2026
 
-PR #44 вошёл в dev как `045d2c5`; PR #30 проверяет этот head. Gitleaks
+Исторический снимок до исправления: PR #44 вошёл в dev как `045d2c5`;
+PR #30 проверял этот head. Gitleaks
 нашёл два публичных RFC 6238 TOTP test vector fingerprint в squash commit
 `78ba6a0` (PR #43), которых не было в исходном commit `aabffbc`.
 Добавлены только два точных исторических исключения. Новый dev push Quality,

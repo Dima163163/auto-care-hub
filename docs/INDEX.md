@@ -1,5 +1,9 @@
 # Индекс документации AutoCare Hub
 
+Релиз PR #46 вошёл в `main` 5 ноября; локальный PR-specific promotion gate
+описан в [политике репозитория](REPOSITORY_PROTECTION.md) и
+[плане](../PROJECT_PLAN.md). Опубликованный CI этой поправки ещё открыт.
+
 U03 local step-up от 29 октября расширен на оставшиеся административные
 изменения; PostgreSQL/staging приёмка открыта. См.
 [реестр](audits/CURRENT_FINDING_DISPOSITION.md).
@@ -84,7 +88,7 @@ text/spec документ, PlantUML и SVG/HTML reference; статус ука�
 | [docs/PRODUCTION_READINESS.md](PRODUCTION_READINESS.md) — Production Readiness Checklist | текущий документ / статус реализации не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [docs/PROVIDER_CONFIGURATION.md](PROVIDER_CONFIGURATION.md) — Provider Configuration Handoff | текущий документ / статус реализации не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [docs/RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) — Release Checklist | текущий документ / статус реализации не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
-| [docs/REPOSITORY_PROTECTION.md](REPOSITORY_PROTECTION.md) — Repository protection policy | текущая политика | remote main проверен 2026-10-23 | GitHub branch protection / promotion workflow; PR #15 исторически без review |
+| [docs/REPOSITORY_PROTECTION.md](REPOSITORY_PROTECTION.md) — Repository protection policy | текущая политика | remote main проверен 2026-10-23; PR-specific waiter и его локальные тесты сверены 2026-11-05, опубликованный CI открыт | GitHub branch protection / promotion workflow; PR #15 исторически без review |
 | [docs/SEO_PRERENDER_MEDIA_BUDGET.md](SEO_PRERENDER_MEDIA_BUDGET.md) — SEO, prerender and media budget gate | текущий документ / статус реализации не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [docs/archive/bookly/commission-removal-2026-08-27.md](archive/bookly/commission-removal-2026-08-27.md) — Legacy commission module removal | исторический архив | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [docs/archive/bookly/e2e/README.md](archive/bookly/e2e/README.md) — Archived Bookly browser checks | исторический архив | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |

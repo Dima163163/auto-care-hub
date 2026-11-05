@@ -714,7 +714,7 @@
     },
     {
       "path": ".github/workflows/quality.yml",
-      "sha256": "7fb8dc4deb7a5393c6dc761b3dd364c031cd4e345a016aeab9a1064ce72e2c54",
+      "sha256": "d4be440de000e590fab8379aa99906d1eaadeb3764caff427e62f2c358befc5e",
       "scopes": [
         "frontend"
       ]

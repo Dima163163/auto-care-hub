@@ -1,6 +1,13 @@
 # Current finding disposition — 2026-10-04
 
-**PR #30 promotion scan, 04.11:** после squash PR #43 два публичных RFC
+**Promotion gate, 05.11:** PR #46 вошёл в `main` как `1c57fe0` с parent
+`dev` `4c969e4`; его повторный Quality завершился PASS после merge.
+Workflow преждевременно включил auto-merge, приняв старый успешный PR #30
+Quality для того же SHA. Локальный fix требует run-name с номером текущего
+PR и успешный `Application CI` внутри именно этого run; 19/19 focused
+tests PASS. Опубликованный exact-candidate CI исправления ещё открыт.
+
+**PR #30 promotion scan, 04.11 (исторический снимок):** после squash PR #43 два публичных RFC
 6238 TOTP test vector получили новые fingerprints в `78ba6a0`.
 Добавлены только эти точные исторические исключения. Новый dev push/PR
 Quality и code-owner review остаются открыты; main не продвинут.
