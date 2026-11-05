@@ -6,8 +6,11 @@ PR #48 вошёл в `dev` как `20c578a`; push Quality/Application CI PASS.
 GitHub Actions создал bot PR #49 на тот же SHA. Его workflow потребовал
 разрешения maintainer и после него собственный `Quality PR-49`/Application CI
 PASS. Promotion job ждал PR CI с лимитом шага 45 минут и завершился по timeout
-до конца браузерного задания. Для текущего PR #49 нужны повторный запуск
-failed promotion job и независимый code-owner review; auto-merge ещё не включён.
+до конца браузерного задания. Повторный failed promotion job PASS, code-owner
+`Dima163163` одобрил PR, auto-merge создал `main` merge commit `2dfa294`:
+второй родитель `20c578a`, tree main/dev совпадает. GitHub не запустил
+отдельный main push Quality после bot merge через `GITHUB_TOKEN`; такой run
+не следует считать выполненным.
 В отдельной локальной ветке лимиты увеличены: step 110 минут, job 160 минут,
 bounded waiter 540 попыток по 10 секунд. Exact-candidate и required-check
 условия сохранены. Исправление требует публикации и проверки в GitHub.
@@ -21,9 +24,8 @@ PR #47 вошёл в `dev` merge commit `38cc855`; exact-SHA push Quality и
 тот же дефект для `Quality PR-<номер>`. Оба фильтра исправлены на точные
 run-name; добавлены jq-contract и отрицательные policy/PR tests, 23/23 PASS,
 полный root tooling 188/188 PASS.
-Нужны новый опубликованный dev push Quality, PR в main, его собственный CI,
-независимое review и защищённый merge. Старый promotion run будет отменён
-новым dev push из-за concurrency; main пока `1c57fe0`.
+Новый опубликованный dev push Quality и собственный PR #49 CI прошли;
+code-owner review и защищённый merge завершены. Main `2dfa294`.
 
 ## Локальный кандидат и U02 verify, 5 ноября 2026
 

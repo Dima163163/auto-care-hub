@@ -65,8 +65,14 @@ PR workflow. The promotion step's 45-minute timeout then expired before PR #49's
 browser CI finished. The follow-up increases the bounded PR wait to 540 polls
 and allows 110 minutes for that step within a 160-minute job. The exact commit,
 PR identity, required checks, and human code-owner approval remain mandatory.
-PR #49 still requires a rerun of the failed promotion job and review; the
-timeout change itself requires a separate published CI cycle.
+PR #49 passed its own Quality and Application CI after maintainer workflow
+approval. The rerun promotion job passed, the code owner approved, and GitHub
+auto-merged it as `2dfa294` with the verified `dev` as its second parent and
+the same tree. No separate main push Quality run appeared after the bot merge:
+GitHub suppresses most workflow events caused by `GITHUB_TOKEN`, including the
+resulting push. The timeout change itself requires a separate published CI
+cycle. A main push CI run must not be claimed for this release. See
+[GitHub's `GITHUB_TOKEN` event semantics](https://docs.github.com/en/actions/concepts/security/github_token).
 
 The checked-in `.github/CODEOWNERS`, `Quality` workflow, aggregate
 `Application CI` job, and promotion workflow provide the review, status-check,

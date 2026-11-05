@@ -4,12 +4,14 @@
 ручного разрешения GitHub, и старый 45-минутный шаг ожидания истёк до конца
 браузерного CI. Локально увеличены bounded wait и лимиты job/step; это
 оркестрация CI, поэтому runtime `.puml`/SVG не менялись. Исправление требует
-отдельной опубликованной проверки.
+отдельной опубликованной проверки. PR #49 после rerun и code-owner review
+вошёл в `main` как `2dfa294`; tree совпадает с проверенным `dev`. Отдельного
+main push Quality после bot merge не было.
 
 **Release CI follow-up, 2026-11-05:** push/PR promotion selectors теперь
 сопоставляют фактические GitHub `name` и `display_title` с `Quality PR-push`
 или номером текущего PR. Это CI orchestration; `.puml`/SVG runtime не менялись.
-Опубликованная проверка исправления ещё открыта.
+Опубликованная проверка завершена через PR #48 и релизный PR #49.
 
 **U03, legacy admin reviews 2026-11-05:** `09-access-privacy.puml` и SVG
 отражают свежий MFA перед списком, сменой статуса и удалением старых отзывов.
@@ -19,7 +21,7 @@ staging replay остаётся открытым.
 **Release CI, 2026-11-05:** fingerprint `quality.yml` обновлён после
 PR-numbered run-name для проверки продвижения. Схемы runtime и доступа не
 описывают GitHub Actions; их `.puml` и SVG не менялись. Опубликованная
-проверка нового promotion gate ещё ожидается.
+проверка нового promotion gate прошла в PR #49.
 
 **U03, mock operational chat access 2026-11-04:** `03-frontend.puml` и SVG
 показывают обычное чтение support/escalation чатов и вложений admin без

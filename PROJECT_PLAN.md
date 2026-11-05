@@ -11,8 +11,11 @@
   ожидания проверки до 110 минут, общий лимит job до 160 минут и число
   bounded polling attempts до 540. Проверка не ослабляет exact-SHA, PR-number,
   required-check и code-owner gates; policy/PR tests PASS.
-- [ ] Повторно запустить неуспешный promotion job для PR #49, получить
-  независимый code-owner review и проверить merge в `main`.
+- [x] Повторный promotion job PASS; code-owner `Dima163163` одобрил PR #49,
+  auto-merge создал `main` merge commit `2dfa294` с проверенным `dev`
+  `20c578a` вторым родителем. Trees совпадают. Отдельный main push Quality
+  не запустился после bot merge через `GITHUB_TOKEN`; это свойство GitHub,
+  а не пройденный post-merge check.
 - [ ] Опубликовать увеличение лимита через отдельный PR в `dev` и повторить
   защищённое продвижение в `main`; локальная проверка не доказывает работу CI.
 
@@ -25,8 +28,9 @@
   workflow и PR waiter искали старое `Quality`. Точный push selector проверен
   на реальном формате ответа; локальные negative/positive tests 23/23 и
   полный root tooling 188/188 PASS.
-- [ ] Повторить опубликованный `dev` push и защищённый PR Quality с этим fix,
-  затем code-owner review и auto-merge в `main`.
+- [x] Повторить опубликованный `dev` push и защищённый PR Quality с этим fix:
+  push `Quality PR-push`, собственный `Quality PR-49` и оба `Application CI`
+  PASS; code-owner review и auto-merge в `main` завершены.
 
 ## Локальная проверка кандидата и U02, 2026-11-05
 
@@ -59,9 +63,11 @@
   требовать успешный Quality run и `Application CI` именно текущего PR.
   Отрицательные тесты старого PASS/нового pending и failure проходят локально:
   19/19 promotion/policy tests PASS.
-- [ ] Проверить исправленный workflow на опубликованном кандидате. Защита
-  GitHub по общему check name всё ещё допускает ручное включение auto-merge
-  до свежего PR CI; владелец не должен включать его вне promotion workflow.
+- [x] Проверить исправленный workflow на опубликованном кандидате PR #49:
+  auto-merge был включён только после его собственного `Quality PR-49` /
+  `Application CI` PASS. Защита GitHub по общему check name всё ещё может
+  принять старый результат для того же SHA при ручном включении auto-merge;
+  включать его следует только через promotion workflow.
 
 ## PR #30 promotion scan follow-up — 2026-11-04
 
