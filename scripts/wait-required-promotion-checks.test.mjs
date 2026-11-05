@@ -5,8 +5,8 @@ import { waitRequiredPromotionChecks } from './wait-required-promotion-checks.mj
 const sourceSha = 'a'.repeat(40)
 const candidate = { headRefOid: sourceSha, baseRefName: 'main', headRefName: 'dev', state: 'OPEN' }
 const success = ['push', 'pull_request'].map((event) => ({ name: 'Application CI', workflow: 'Quality', event, bucket: 'pass' }))
-const currentRun = { id: 46, name: 'Quality', display_title: 'Quality PR-1', event: 'pull_request', head_branch: 'dev', head_sha: sourceSha, status: 'completed', conclusion: 'success' }
-const oldRun = { ...currentRun, id: 30, display_title: 'Quality PR-30' }
+const currentRun = { id: 46, name: 'Quality PR-1', display_title: 'Quality PR-1', event: 'pull_request', head_branch: 'dev', head_sha: sourceSha, status: 'completed', conclusion: 'success' }
+const oldRun = { ...currentRun, id: 30, name: 'Quality PR-30', display_title: 'Quality PR-30' }
 const successfulJobs = [{ name: 'Application CI', status: 'completed', conclusion: 'success' }]
 
 function runner({ checks = [success], runs = [[currentRun]], jobs = successfulJobs, candidateResponse = () => candidate } = {}) {
