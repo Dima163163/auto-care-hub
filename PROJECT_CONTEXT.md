@@ -1,5 +1,17 @@
 # AutoCare Hub Project Context
 
+## Promotion PR approval window, 5 ноября 2026
+
+PR #48 вошёл в `dev` как `20c578a`; push Quality/Application CI PASS.
+GitHub Actions создал bot PR #49 на тот же SHA. Его workflow потребовал
+разрешения maintainer и после него собственный `Quality PR-49`/Application CI
+PASS. Promotion job ждал PR CI с лимитом шага 45 минут и завершился по timeout
+до конца браузерного задания. Для текущего PR #49 нужны повторный запуск
+failed promotion job и независимый code-owner review; auto-merge ещё не включён.
+В отдельной локальной ветке лимиты увеличены: step 110 минут, job 160 минут,
+bounded waiter 540 попыток по 10 секунд. Exact-candidate и required-check
+условия сохранены. Исправление требует публикации и проверки в GitHub.
+
 ## Promotion run-name follow-up, 5 ноября 2026
 
 PR #47 вошёл в `dev` merge commit `38cc855`; exact-SHA push Quality и

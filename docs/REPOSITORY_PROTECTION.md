@@ -59,6 +59,15 @@ successful run. The follow-up filters `Quality PR-push` for dev pushes and the
 exact `Quality PR-<number>` for the promotion PR. Published CI and protected
 promotion remain required before this follow-up is accepted.
 
+PR #48 entered `dev` as `20c578a`; its push Quality and PR #49's own Quality
+both passed. GitHub required a maintainer to approve running the bot-created
+PR workflow. The promotion step's 45-minute timeout then expired before PR #49's
+browser CI finished. The follow-up increases the bounded PR wait to 540 polls
+and allows 110 minutes for that step within a 160-minute job. The exact commit,
+PR identity, required checks, and human code-owner approval remain mandatory.
+PR #49 still requires a rerun of the failed promotion job and review; the
+timeout change itself requires a separate published CI cycle.
+
 The checked-in `.github/CODEOWNERS`, `Quality` workflow, aggregate
 `Application CI` job, and promotion workflow provide the review, status-check,
 and promotion contract. They do not replace the administrator's remote

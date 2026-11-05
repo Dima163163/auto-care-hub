@@ -1,5 +1,13 @@
 # Current finding disposition — 2026-10-04
 
+**Promotion wait, 05.11:** PR #48 вошёл в `dev` как `20c578a`; его push
+Quality/Application CI и собственный PR #49 Quality/Application CI PASS.
+Bot PR #49 потребовал ручного разрешения запуска. Promotion job завершился
+по 45-минутному лимиту шага ещё до окончания PR browser CI. Локально лимиты
+увеличены до 110 минут для шага, 160 минут для job и 540 bounded attempts;
+exact-SHA/PR/check guards сохранены, focused tests PASS. Текущему PR #49
+нужны rerun promotion job и code-owner review; локальный fix ещё не опубликован.
+
 **Promotion run-name follow-up, 05.11:** PR #47 merged в `dev` как `38cc855`,
 его push Quality/Application CI PASS. Workflow не нашёл успешный run, потому
 что GitHub REST `name` теперь `Quality PR-push`, а selector ожидал `Quality`;

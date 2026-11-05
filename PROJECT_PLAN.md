@@ -1,5 +1,21 @@
 # AutoCare Hub — Project Plan
 
+## Promotion PR approval window — 2026-11-05
+
+- [x] PR #48 вошёл в `dev` как `20c578a`; `Quality PR-push` и
+  `Application CI` на этом коммите прошли. Bot создал PR #49 с тем же SHA;
+  после ручного разрешения workflow его собственный `Quality PR-49` и
+  `Application CI` тоже прошли.
+- [x] Исправить локально выявленный лимит: promotion job ждал PR CI только
+  45 минут и завершился до конца браузерного теста PR #49. Увеличить время
+  ожидания проверки до 110 минут, общий лимит job до 160 минут и число
+  bounded polling attempts до 540. Проверка не ослабляет exact-SHA, PR-number,
+  required-check и code-owner gates; policy/PR tests PASS.
+- [ ] Повторно запустить неуспешный promotion job для PR #49, получить
+  независимый code-owner review и проверить merge в `main`.
+- [ ] Опубликовать увеличение лимита через отдельный PR в `dev` и повторить
+  защищённое продвижение в `main`; локальная проверка не доказывает работу CI.
+
 ## Promotion run-name follow-up — 2026-11-05
 
 - [x] PR #47 merge commit `38cc855` вошёл в `dev`; exact-SHA push Quality

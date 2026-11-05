@@ -1,5 +1,11 @@
 # Карта проекта AutoCare Hub
 
+**Release CI approval window, 2026-11-05:** promotion PR #49 потребовал
+ручного разрешения GitHub, и старый 45-минутный шаг ожидания истёк до конца
+браузерного CI. Локально увеличены bounded wait и лимиты job/step; это
+оркестрация CI, поэтому runtime `.puml`/SVG не менялись. Исправление требует
+отдельной опубликованной проверки.
+
 **Release CI follow-up, 2026-11-05:** push/PR promotion selectors теперь
 сопоставляют фактические GitHub `name` и `display_title` с `Quality PR-push`
 или номером текущего PR. Это CI orchestration; `.puml`/SVG runtime не менялись.
