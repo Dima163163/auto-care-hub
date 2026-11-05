@@ -1,5 +1,539 @@
 # AutoCare Hub Project Context
 
+## PR #30 promotion scan, 4 ноября 2026
+
+PR #44 вошёл в dev как `045d2c5`; PR #30 проверяет этот head. Gitleaks
+нашёл два публичных RFC 6238 TOTP test vector fingerprint в squash commit
+`78ba6a0` (PR #43), которых не было в исходном commit `aabffbc`.
+Добавлены только два точных исторических исключения. Новый dev push Quality,
+PR Quality и обязательное независимое review ещё ожидаются; main не менялся.
+
+## PR #43 CI follow-up, 4 ноября 2026
+
+Первый PR Quality выявил пропуск существующей
+`autocare_reschedule_text_binding_backfill_checkpoints` в обязательном
+манифесте release integrity; таблица уже была в migration/PlantUML.
+Два Gitleaks finding относятся к публичному RFC 6238 TOTP test vector
+в историческом commit; исключены только точные fingerprints. Новый exact-SHA
+CI и продвижение dev → main ещё ожидаются.
+Локальный `release:migrate` на disposable PostgreSQL 17 PASS: 179 миграций,
+44 критические таблицы, 30 constraints validated; контейнер удалён.
+Первый CI также показал 3 frontend test failures из-за разных `Blob` realm
+в Node 22/jsdom и real E2E admin login без MFA. Тесты теперь проверяют
+содержимое Blob без привязки к realm, а disposable real E2E БД получает
+privileged MFA с одноразовыми кодами в приватном runner temp файле.
+PR #43 был squash-merged в dev как `78ba6a0` до завершения Quality;
+dev push Quality упал. Оставшийся fix вынесен в чистую ветку от dev,
+поэтому защищённое продвижение в main ждёт нового PR и зелёного CI.
+
+## Exact-candidate local quality replay, 4 ноября 2026
+
+Два root quality guard обновлены после MFA: маршруты owner/admin проверяются
+с учётом новых auth/MFA обёрток и порядка до validation; threat surface
+требует MFA на служебной очереди. Негативные сценарии PASS.
+Frontend 204/671 PASS, полный lint и Next production build PASS.
+`quality:backend` с тестовым env PASS, backend unit 463/1723 PASS;
+seeded isolated PostgreSQL/Redis integration 30 файлов / 149 PASS / 1 skip.
+Тестовые контейнеры удалены. Exact-SHA CI, staging KMS/restore,
+MFA/recovery/browser и реальные pilot evidence открыты; pilot NO-GO.
+
+## U03 — служебные чаты admin в mock, 4 ноября 2026
+
+Mock admin читает support/admin_escalation чат и вложения без назначения
+модератором: ограничение назначения относится к приватному request chat.
+Mock regression 8/8 PASS, TypeScript noEmit/targeted lint PASS.
+Staging acceptance открыта; pilot NO-GO.
+
+## U03 — область обычной блокировки в mock, 4 ноября 2026
+
+Admin/super-admin не создают обычную participant block через mock POST.
+Целевой ID должен быть другим участником переписки; сторонний ID отвергается.
+Mock regression 7/7 PASS, TypeScript noEmit/targeted lint PASS.
+Staging acceptance открыта; pilot NO-GO.
+
+## U03 — изоляция санкции в mock, 4 ноября 2026
+
+Participant block в mock переиспользует только активную обычную запись.
+Санкция по жалобе сохраняет `sourceReportId`, и её нельзя превратить в
+удаляемую блокировку повторным POST. Mock regression 6/6 PASS, TypeScript
+noEmit/targeted lint PASS. Staging acceptance открыта; pilot NO-GO.
+
+## U03 — mock parity приватных чатов, 4 ноября 2026
+
+Mock super-admin список сохраняет только support/escalation; независимый
+direct emergency read приватного request-чата работает по ID с причиной,
+сторона жалобы получает 403 даже после закрытия дела. Служебный список,
+назначение и решение повторяют конфликт по всей истории, shortcut
+request → chat-thread закрыт для privileged ролей. Mock 9/9 PASS и
+TypeScript noEmit/targeted lint PASS; опубликованный browser/staging replay открыт.
+
+## U03 — аварийный доступ к собственному делу, 4 ноября 2026
+
+После смены роли сторона любой жалобы переписки не может открыть её
+напрямую как super-admin даже с аварийной причиной. Общий доступ закрывает
+историю, вложения и WebSocket; независимый super-admin остаётся в audited
+пути. Boundary 39 PASS, isolated seeded PostgreSQL 11/11 PASS,
+backend build и targeted lint PASS.
+Staging acceptance и pilot evidence открыты; pilot NO-GO.
+
+## U03 — снятие блокировки только через апелляцию, 4 ноября 2026
+
+Обычный DELETE блокировки теперь снимает только participant block,
+созданную самим пользователем. Блокировка с `sourceReportId` недоступна
+этому пути даже super-admin; её снимает только принятое независимое решение
+по апелляции. Mock/OpenAPI обновлены. Boundary 38 PASS, mock 4 PASS,
+isolated seeded PostgreSQL integration 10/10 PASS, backend build/targeted lint PASS.
+Staging acceptance и pilot evidence открыты; pilot NO-GO.
+
+## U03 — исторический конфликт жалоб на чат, 4 ноября 2026
+
+Сторона закрытой жалобы не может получить доступ к новой pending жалобе
+той же переписки через служебный список, назначение, admin чтение,
+продление или решение. Проверка назначения и решения идёт под thread lock
+по всей истории; доступ независимого модератора требует текущей pending
+жалобы. Boundary 38 PASS, seeded isolated PostgreSQL integration 8/8 PASS,
+backend build и targeted lint PASS. Staging acceptance и pilot evidence
+остаются открытыми; pilot NO-GO.
+
+## Local gate replay, 29 октября 2026
+
+Полный backend unit 463/1722 PASS, isolated seeded integration
+30 файлов / 144 PASS / 1 skip, static security 7/7 и migration filename
+179/179 PASS. `docs/operations/pilot-evidence.json` отсутствует: реальные
+pilot gates нельзя объявить закрытыми по локальным тестам. CI/staging,
+KMS/restore и browser acceptance остаются открытыми; pilot NO-GO.
+
+## Integration setup documentation, 29 октября 2026
+
+README и backend test profile теперь явно требуют миграции, `demo:seed`
+и `autocare:seed` на том же disposable PostgreSQL перед full integration.
+Route test назван по фактическому seeded контракту; empty-table fallback
+имеет отдельный unit test. Последний полный integration 30/144 PASS,
+1 skip.
+
+## U03 — chat report conflict на PostgreSQL, 29 октября 2026
+
+Отдельный isolated PostgreSQL integration 1 файл / 6 тестов PASS: admin
+список исключает жалобы конфликтной переписки, super-admin не решает
+соседнее pending дело, собственное описание скрыто. Сторона жалобы не
+получает чтение, назначение и продление; независимый модератор с назначением
+сохраняет доступ. Полный integration 30 файлов / 144 PASS / 1 skip.
+Staging acceptance остаётся открытым.
+
+## Broadcast photoUrls schema parity, 29 октября 2026
+
+Миграция создала `autocare_broadcast_requests.photoUrls` как `text[]`, но
+TypeORM entity объявляла `jsonb`. Реальный insert массива падал с
+`malformed array literal: "[]"`. Модель приведена к `text[]`; integration
+на isolated PostgreSQL с непустым массивом и account deletion 1/1 PASS.
+После обязательных demo/AutoCare seeds полный integration прогон
+30 файлов / 144 PASS / 1 skip. Staging acceptance остаётся открытым.
+
+## Интеграционный прогон и MFA fixture, 29 октября 2026
+
+Backend unit 463 файла / 1722 теста PASS. На отдельном локальном
+PostgreSQL/Redis full integration сначала дал 26/29 файлов PASS:
+MFA teardown удалял append-only security events без разрешённого флага,
+account deletion fixture упирался в реальный mismatch `photoUrls` entity,
+а каталог ожидал обязательный seed. MFA teardown исправлен в двух suite,
+entity согласована с миграцией. После seeds полный повторный integration
+прогон: 30 файлов / 144 PASS / 1 skip. Новые конфликтные сценарии чатов
+дополнительно проверены на DB; staging acceptance остаётся открытым.
+
+## U03 — конфликт соседних жалоб, 29 октября 2026
+
+Решение по pending chat report под thread row lock дополнительно проверяет
+все pending жалобы переписки. Super-admin, являющийся стороной другого
+pending дела в этом чате, больше не может решить соседнюю жалобу.
+Boundary unit 38 PASS, build/lint PASS; PostgreSQL replay открыт.
+
+## U03 — независимая модерация жалоб на чат, 29 октября 2026
+
+После смены роли reporter/reported user не может быть назначен модератором
+своей переписки, читать её как admin, продлить доступ или решить жалобу.
+Проверка назначения и решения повторяется под row lock; admin список
+исключает переписки с конфликтом, собственная жалоба super-admin не содержит
+приватного описания. Boundary unit 37 PASS, build/lint PASS;
+PostgreSQL/staging replay открыт. U03 и pilot NO-GO сохраняются.
+
+## U03 — независимое решение по апелляции, 29 октября 2026
+
+Admin/super-admin не может принять или отклонить собственную appeal,
+включая апелляцию на chat restriction. Проверка автора выполняется под
+row lock до смены статуса, отзыва блока и уведомления. Boundary unit 6
+PASS; PostgreSQL/staging replay открыт. U03 и pilot NO-GO сохраняются.
+
+## U03 — независимое решение по профилю сервиса, 29 октября 2026
+
+Автор provider change request после смены роли owner → admin/super-admin
+больше не может сам одобрить или отклонить ранее созданную заявку. Проверка
+стоит под row lock до изменений provider и уведомления. Boundary unit 6
+PASS; PostgreSQL/staging replay открыт. U03 и pilot NO-GO сохраняются.
+
+## U03 — независимое решение по каталогу, 29 октября 2026
+
+Catalog-gap заявка больше не может быть одобрена или отклонена своим
+автором, даже если он admin/super-admin. Проверка стоит после row lock и
+до создания service definition/смены статуса. Boundary unit 7 PASS;
+PostgreSQL/staging replay открыт. U03 и pilot NO-GO сохраняются.
+
+## U03 — переходы заявок, 29 октября 2026
+
+Четырнадцать service/broadcast request mutations теперь требуют fresh MFA
+для admin/super-admin до валидации или записи. Негативная PostgreSQL матрица
+охватывает обе роли и все маршруты; локальный DB/Redis replay и staging
+acceptance открыты. U03 и pilot NO-GO сохраняются.
+
+## U03 — изменения кабинета сервиса, 29 октября 2026
+
+Шестнадцать provider workspace mutations теперь требуют свежий MFA для
+admin/super-admin до валидации и записи: ресурсы, коммуникации, доступ,
+заявки на изменение, бонусы, цены, промо, медиа и создание сервиса.
+Негативная PostgreSQL матрица добавлена для обеих ролей. Локальный DB/Redis
+replay и staging acceptance открыты; U03 и pilot NO-GO сохраняются.
+
+## U03 — чтения кабинета сервиса, 29 октября 2026
+
+Двенадцать GET маршрутов provider workspace требуют свежий MFA для
+admin/super-admin до выдачи внутренних ресурсов, броней, evidence,
+сотрудников, заявок на изменение, аналитики, бонусов и отзывов. Проверка
+подтверждённой почты сохранена. Негативная PostgreSQL матрица охватывает
+обе роли; локальный DB/Redis replay и staging acceptance открыты.
+U03 и pilot NO-GO сохраняются.
+
+## U03 — приватные чтения рассылки заявок, 29 октября 2026
+
+Broadcast detail и owner inbox требуют свежий MFA для admin/super-admin
+перед выдачей содержимого. Негативная PostgreSQL матрица охватывает обе
+роли и оба маршрута. Локальный DB/Redis replay и staging acceptance открыты;
+U03 и pilot NO-GO сохраняются.
+
+## U03 — приватные чтения заявок, 29 октября 2026
+
+Detail и timeline заявки, а также owner список заявок требуют свежий MFA
+для admin/super-admin перед выдачей данных. Негативная PostgreSQL матрица
+охватывает обе роли и три маршрута; локальный PostgreSQL/Redis стенд
+недоступен, поэтому replay и staging acceptance открыты. U03 и pilot NO-GO.
+
+## U03 — старый маршрут чата заявки, 29 октября 2026
+
+Legacy request conversation, attachment и WebSocket теперь отказывают
+admin/super-admin до чтения приватного содержимого; отметка прочтения
+остаётся no-op без обращения к БД. Модерация использует chat route с MFA,
+назначением/причиной и аудитом. Request boundary 12 PASS, backend build и
+targeted lint PASS; PostgreSQL/browser/staging replay открыт. Pilot NO-GO.
+
+## U03 — обход через членство в сервисе, 29 октября 2026
+
+`assertThreadAccess` теперь отказывает admin в приватном request-чате без
+действующей назначенной жалобы, даже если есть provider membership.
+`GET /v1/service-requests/:id/chat-thread` больше не выдаёт admin/super-admin
+тему через альтернативный маршрут. Проверены 30 unit-сценариев chat boundary,
+backend build и targeted lint; PostgreSQL/staging replay открыт.
+U03 и pilot NO-GO сохраняются.
+
+## U03 — аудит списка чатов, 29 октября 2026
+
+Каждое admin/super-admin чтение `GET /v1/chats` после fresh MFA сохраняет
+actor/role/itemCount в audit log, без тем и сообщений. Негативный и позитивный
+PostgreSQL сценарии добавлены; локальный DB/Redis стенд недоступен.
+U03 и pilot NO-GO сохраняются.
+
+## U03 — граница списка чатов, 29 октября 2026
+
+Super-admin индекс чатов теперь отдаёт только support/admin escalation;
+приватные request-чаты доступны через адресный маршрут с причиной и аудитом.
+Членство в сервисе не расширяет индекс admin/super-admin. Mock список приведён
+к той же модели. Unit-тесты проверяют SQL-фильтр и mock-выдачу; PostgreSQL
+и staging replay открыты. U03 и pilot NO-GO сохраняются.
+
+## U03 — действия с чатами, 29 октября 2026
+
+Admin/super-admin создание служебных чатов, жалобы, сообщения, вложения,
+удаление своих сообщений, отзыв блокировок и отметки прочтения требуют
+свежий MFA до действия. Client/provider сохраняют прежний путь. Добавлена
+негативная PostgreSQL матрица; локальная БД недоступна. U03 и pilot NO-GO открыты.
+
+## U03 — список тем чатов, 29 октября 2026
+
+`GET /v1/chats` требует свежий MFA для admin/super-admin до чтения тем;
+client/provider путь остаётся под прежними ресурсными правами. Добавлены
+негативные PostgreSQL сценарии для обеих ролей; локальная БД недоступна,
+поэтому их replay и staging acceptance открыты. U03 и pilot NO-GO сохраняются.
+
+## U03 — административные изменения, 29 октября 2026
+
+Все оставшиеся mutations в `admin.routes.ts` и platform review mutations
+требуют MFA не старше пяти минут до записи. Backend build, targeted lint и
+полный unit suite 463/1704 PASS с синтетической конфигурацией; PostgreSQL
+negative matrix на 23 маршрута добавлена, локально не запускалась. Другие
+модули/staging открыты.
+
+## U03 — административные чтения, 29 октября 2026
+
+Приватные admin dashboard routes и очередь отзывов платформы требуют свежий
+MFA до ответа; публичная иерархия рынков остаётся под role authorization.
+Backend build/targeted lint PASS; negative PostgreSQL matrix добавлена,
+локально не запускалась. Другие модули и staging replay открыты.
+
+## U03 — исключительное чтение, 29 октября 2026
+
+Свежий MFA требуется перед admin/super-admin чтением жалоб, истории и вложения чата,
+chat WebSocket с повторной live проверкой и super-admin просмотром заявки.
+Unit, backend build и targeted lint PASS; PostgreSQL negative case добавлен,
+но не запускался. Blob attachment transport передаёт JSON отказ на MFA
+step-up; frontend unit и Next build PASS. Browser/staging replay и другие
+чувствительные чтения открыты. U03 и pilot NO-GO сохраняются.
+
+## U02 — автомобили автопарка, 28 октября 2026
+
+`autocare_fleet_vehicles.label` и `vehicleSnapshot` получают HMAC по vehicle/fleet UUID. Migration 178680, bounded compare-write backfill, полный verify и opt-in strict reader подготовлены. Удаление владельца переподписывает оба обезличенных поля каждой строки. PostgreSQL CI, staging KMS/restore и включение strict остаются открытыми.
+
+
+## U02 — автопарки, 28 октября 2026
+
+`autocare_fleet_accounts.name` и `notes` получают HMAC по fleet/owner UUID. Migration 178679, bounded compare-write backfill, полный verify и opt-in strict reader подготовлены. Удаление владельца теперь переподписывает обезличенное название и очищает notes/binding; invariant проверяет название. PostgreSQL CI, staging KMS/restore и включение strict остаются открытыми.
+
+
+## U02 — вопросы эксперту, 28 октября 2026
+
+`autocare_expert_questions.vehicleSnapshot`, `symptoms` и `answer` получают HMAC по question/client UUID. Migration 178678, bounded compare-write backfill, полный verify и opt-in strict reader подготовлены. Удаление клиента переподписывает redacted symptoms каждой строки и очищает snapshot/answer с bindings. PostgreSQL CI, staging KMS/restore и включение strict остаются открытыми.
+
+
+## U02 — гарантийные обращения, 28 октября 2026
+
+`autocare_guarantee_claims.summary` и `resolution` получают HMAC по claim/request/client/provider UUID и claimType. Migration 178677, bounded compare-write backfill, полный verify и opt-in strict reader подготовлены. Удаление клиента переподписывает redacted summary каждой строки и очищает resolution/binding. PostgreSQL CI, staging KMS/restore и включение strict остаются открытыми.
+
+
+## U02 — предложения по рассылке, 28 октября 2026
+
+`autocare_broadcast_offers.offerSnapshot` получает HMAC по offer/broadcast/provider/location UUID. Migration 178676, bounded compare-write backfill, полный verify и opt-in strict reader подготовлены. Удаление клиента переподписывает redacted snapshot каждого предложения; invariant проверяет отсутствие старых снимков. PostgreSQL CI, staging KMS/restore и включение strict остаются открытыми.
+
+
+## U02 — рассылка заявки сервисам, 28 октября 2026
+
+`autocare_broadcast_requests.issueDescription` и `vehicleSnapshot` получают HMAC по broadcast/client/definition UUID. Migration 178675, bounded compare-write backfill, полный verify и opt-in strict reader подготовлены. Удаление аккаунта переподписывает redacted issue каждой строки и очищает snapshot/binding. PostgreSQL CI, staging KMS/restore и включение strict остаются открытыми.
+
+
+## U02 — журнал работ по заявке, 28 октября 2026
+
+`autocare_repair_events.title`, `notes` и `metadata` получают HMAC по event/request UUID и eventType. Migration 178674, bounded compare-write backfill, полный verify и opt-in strict reader подготовлены. Удаление аккаунта переподписывает redacted title/metadata каждой строки и очищает notes/binding. PostgreSQL CI, staging KMS/restore и включение strict остаются открытыми.
+
+
+## U02 — заявки на расширение каталога, 28 октября 2026
+
+Четыре зашифрованных поля `autocare_catalog_gap_requests` получают HMAC по
+gap/requester UUID, nullable provider UUID, двум slug и priceType. Migration
+178673, bounded compare-write backfill, полный verify и opt-in strict reader
+подготовлены. Удаление аккаунта переподписывает три redacted поля каждой
+строки и очищает reviewReason/binding. PostgreSQL/browser CI, staging
+KMS/restore и включение strict остаются открытыми.
+
+## U02 — тексты апелляций, 28 октября 2026
+
+`autocare_appeals.reason` и `decisionReason` получают HMAC по appeal,
+subject, subjectId, submittedById и nullable providerId. Migration 178672,
+bounded compare-write backfill, полный verify и opt-in strict reader
+подготовлены. Удаление аккаунта переподписывает redacted reason каждой строки
+и очищает decisionReason/binding. PostgreSQL/browser CI и staging KMS/restore
+остаются открытыми.
+
+## U02 — заявки на изменение профиля сервиса, 28 октября 2026
+
+`autocare_provider_change_requests.payload` и `reviewReason` получают HMAC
+по request/provider/requester UUID и kind. Migration 178671, bounded
+compare-write backfill, полный verify и opt-in strict reader подготовлены.
+Удаление аккаунта переподписывает redacted payload каждой строки и очищает
+reason/binding. PostgreSQL/browser CI, staging KMS/restore и включение strict
+остаются открытыми.
+
+## U03 — привилегированный сеанс, 28 октября 2026
+
+`requireAuth` и `refreshAuth` отвергают sessionless JWT, если текущая роль
+пользователя в БД — admin или super-admin. Обычный legacy/setup сценарий
+сохраняется. Это частичное усиление: MFA/SSO, recovery, step-up и живой
+PostgreSQL/browser replay ещё открыты; pilot NO-GO не меняется.
+
+## U02 — материалы доверия сервиса, 28 октября 2026
+
+`autocare_trust_evidence.reference` и `notes` получают HMAC по evidence/
+provider UUID и kind. Reference проверяется также против blind index; bounded
+backfill очищает старые индексы после null redaction. Обновление отзыва теперь
+загружает evidence под блокировкой и сохраняет полную строку. Migration 178670,
+полный verify и opt-in strict reader подготовлены. Staging KMS/restore и
+включение strict остаются открытыми.
+
+## U02 — причина блокировки чата, 28 октября 2026
+
+`autocare_chat_blocks.reason` получает HMAC по block/thread/blocker/blocked
+UUID. Migration 178669, bounded compare-write backfill, полный verify и opt-in
+strict reader подготовлены. Удаление аккаунта очищает причину и подпись.
+Staging KMS/restore и включение strict остаются открытыми.
+
+## U02 — тексты жалобы на чат, 28 октября 2026
+
+`autocare_chat_reports` получает отдельные HMAC для description,
+resolutionReason, assignmentReason и extensionReason по report/thread/reporter
+UUID. Migration 178668, bounded compare-write backfill, полный verify и opt-in
+strict reader подготовлены. Удаление аккаунта очищает тексты и подписи.
+Staging KMS/restore и включение strict остаются открытыми.
+
+## U02 — снимок сметы, 28 октября 2026
+
+`autocare_service_quotes.snapshot` получает HMAC по JSON, quote/request/provider
+UUID и version. Migration 178667, bounded compare-write backfill, полный
+verify и opt-in strict reader подготовлены. Удаление аккаунта создаёт отдельный
+зашифрованный redacted snapshot и подпись для каждой сметы. Staging KMS/restore
+и включение strict остаются открытыми.
+
+## U02 — причины переноса сервисной заявки, 28 октября 2026
+
+`autocare_reschedule_requests.reason` получает HMAC по reschedule/request/
+requester UUID; `resolutionReason` дополнительно по resolver UUID и status.
+Migration 178666, bounded compare-write backfill, полный verify и opt-in
+strict reader подготовлены. Удаление аккаунта очищает оба текста и подписи.
+Staging KMS/restore и включение strict остаются открытыми.
+
+## U02 — причина решения по переносу бронирования, 28 октября 2026
+
+`booking_reschedule_requests.resolutionReason` получает HMAC по тексту,
+UUID записи, бронирования, инициатора и решающего, а также status. Migration
+178665, bounded compare-write backfill, полный verify и opt-in strict reader
+подготовлены. Удаление аккаунта очищает причину и подпись. Staging KMS/restore
+и включение strict остаются открытыми.
+
+## U02 — текстовые поля бронирования, 28 октября 2026
+
+Комментарий, причина отмены и заметка владельца в `bookings` получают отдельные
+HMAC по тексту, UUID записи и client/cabinet/service UUID. Migration 178664,
+bounded compare-write backfill, полный verify и opt-in strict reader подготовлены.
+Ответ API исключает подписи, удаление аккаунта очищает значения и подписи.
+Staging KMS/restore и включение strict остаются открытыми.
+
+## U02 — причина в истории бронирования, 28 октября 2026
+
+Новые `booking_status_history.reason` получают HMAC по тексту, UUID записи,
+UUID бронирования и status. Migration 178663, bounded compare-write backfill,
+полный verify и opt-in strict reader подготовлены. API истории скрывает
+служебную подпись; удаление аккаунта очищает её вместе с причиной.
+Staging KMS/restore и включение strict остаются открытыми.
+## U02 — привязка результатов заявки, 28 октября 2026
+
+Причины отмены и неявки, а также заметка завершения в
+`autocare_service_requests` получают отдельные HMAC по тексту, UUID заявки и
+client/provider/location/definition UUID. Migration 178662, bounded
+compare-write backfill, полный verify и opt-in strict reader подготовлены.
+Удаление аккаунта очищает значения и подписи. Staging KMS/restore и включение
+strict остаются открытыми.
+
+## U02 — вторичные поля пользователя, 28 октября 2026
+
+Аватар, публичное имя и предпочитаемый город в `users` получают HMAC по
+расшифрованному значению и UUID пользователя. Для частичных выборок публичного
+профиля и сотрудников добавлены companion bindings. Migration 178661, bounded
+compare-write backfill, полный verify и opt-in strict reader подготовлены.
+Обновление города выполняется под блокировкой строки, чтобы подпись получала
+UUID. PostgreSQL CI, staging KMS/restore и strict cutover ещё открыты.
+
+
+## U02 — привязка полей автомобиля клиента, 28 октября 2026
+
+Новые VIN, госномер, внутренний номер и URL изображения в `client_vehicles`
+получают HMAC по расшифрованному значению, UUID автомобиля и владельца.
+Migration 178660, bounded compare-write backfill, полный verify и opt-in
+`DATA_ENCRYPTION_REQUIRE_CLIENT_VEHICLE_RECORD_BINDING` готовят strict reader.
+Ответ API не содержит служебных подписей. PR #38 прошёл PostgreSQL/browser CI
+и объединён в `dev` как `27953bf`. Staging KMS/restore ещё не подтверждены;
+strict выключен, U02 и pilot NO-GO открыты.
+
+## U02 service request note binding preparation — 2026-10-27
+
+Новые `autocare_service_requests.note` получают HMAC по расшифрованному
+тексту, request UUID и client/provider/location/definition UUID. ORM
+отвергает перенос примечания или смену owner/service scope. Migration 178659,
+bounded compare-write backfill, полный verify и opt-in strict reader готовят
+старые строки. Анонимизация очищает binding вместе с примечанием. PR #37 прошёл PostgreSQL/browser CI и объединён в `dev` как `a90a79b`. До staging KMS/restore и strict cutover U02 и pilot NO-GO открыты.
+
+## U02 vehicle snapshot binding preparation — 2026-10-27
+
+Новые `autocare_service_requests.vehicleSnapshot` получают HMAC по JSON,
+request UUID, client/provider/location/definition UUID и nullable vehicle UUID.
+ORM отвергает перенос снимка или смену owner/service/vehicle scope после
+AES-GCM расшифровки. Migration 178658, bounded compare-write backfill, полный
+verify и opt-in strict reader готовят старые строки. Анонимизация очищает
+binding вместе со снимком. PR #36 прошёл PostgreSQL/browser CI и объединён
+в `dev` как `f13d72d`. До staging KMS/restore и strict
+cutover U02 и pilot NO-GO остаются открытыми.
+
+## U02 contact snapshot binding preparation — 2026-10-27
+
+Новые `autocare_service_requests.contactSnapshot` получают HMAC по JSON,
+request UUID и client/provider/location/definition UUID. ORM отвергает перенос
+контактов или смену owner/service scope после AES-GCM расшифровки. Migration
+178657, bounded compare-write backfill, полный verify и opt-in strict reader
+готовят старые строки. Анонимизация очищает binding вместе со снимком.
+PR #35 прошёл PostgreSQL/browser CI и объединён в `dev` как `c637e6b`.
+До staging KMS/restore и strict cutover U02 и pilot NO-GO
+остаются открытыми.
+
+## U02 estimate snapshot binding preparation — 2026-10-27
+
+Новые `autocare_service_requests.estimateSnapshot` получают HMAC по JSON,
+request UUID и client/provider/location/definition UUID. ORM отвергает перенос
+сметы или смену owner/service scope после AES-GCM расшифровки. Migration
+178656, bounded compare-write backfill, полный verify и opt-in strict reader
+готовят старые строки. Частичная выборка аналитики теперь выбирает binding
+и все UUID контекста. Анонимизация очищает binding вместе со снимком.
+PR #34 прошёл PostgreSQL/browser CI и объединён в `dev` как `7a7224e`.
+До staging KMS/restore и strict cutover U02 и pilot NO-GO
+остаются открытыми.
+
+## U02 accepted quote binding preparation — 2026-10-27
+
+Новые `autocare_service_requests.acceptedQuoteSnapshot` получают HMAC по JSON,
+request UUID и client/provider/location/definition UUID. ORM отвергает перенос
+котировки или смену owner/service scope после AES-GCM расшифровки. Migration
+178655, bounded compare-write backfill, полный verify и opt-in strict reader
+готовят перенос старых строк. Анонимизация очищает binding вместе со снимком.
+PR #33 прошёл PostgreSQL/browser CI и объединён в `dev` как `2edb1b6`.
+До staging KMS/restore и strict cutover U02 и pilot NO-GO
+остаются открытыми.
+
+## U02 booking snapshot binding preparation — 2026-10-26
+
+Новые `autocare_service_requests.bookingSnapshot` получают HMAC по JSON,
+request UUID и client/provider/location/definition UUID. ORM проверяет его
+после AES-GCM и отвергает перенос ciphertext или смену owner/service scope.
+Migration 178654, bounded compare-write backfill, полный verify и opt-in
+strict reader готовят legacy перенос. Анонимизация очищает binding вместе
+со снимком; invariant дополнительно проверяет остаточные финансовые поля.
+PR #32 прошёл PostgreSQL/browser CI и объединён в `dev` как `c4035a9`.
+До staging KMS/restore и strict cutover U02 и pilot NO-GO
+остаются открытыми.
+
+## U02 private chat subject binding preparation — 2026-10-26
+
+Новые `autocare_chat_threads.subject` получают HMAC по plaintext, thread UUID,
+type и связям request/provider/client/creator. ORM проверяет его после AES-GCM
+и отвергает перенос ciphertext или изменение связей доступа. Migration 178653,
+bounded compare-write backfill, полный verify и opt-in strict reader готовят
+legacy перенос. Анонимизация аккаунта пересчитывает binding каждой темы после
+обнуления client/creator ID. PR #31 прошёл PostgreSQL/browser CI и объединён
+в `dev` как `ec6e2df`. До staging KMS/restore и strict cutover U02 и pilot
+NO-GO остаются открытыми.
+
+## U02 encrypted service offer binding preparation — 2026-10-26
+
+Новые `autocare_service_messages.offer` получают HMAC по JSON, message UUID,
+request/thread UUID, sender UUID и kind. ORM проверяет его после AES-GCM и
+отвергает перенос ciphertext между строками или изменение связей доступа.
+Migration 178652 добавляет nullable `offerBinding` и checkpoint; bounded
+compare-write backfill, полный verify и opt-in strict reader готовят перенос
+старых предложений. Raw SQL account deletion очищает binding вместе с offer.
+PR #29 прошёл PostgreSQL/browser CI и объединён в `dev` как `6ce7be0`;
+promotion PR #30 открыт для защищённого `main`. До staging KMS/restore и
+включения флага U02 и pilot NO-GO остаются открытыми.
+
 ## U02 private message body binding preparation — 2026-10-26
 
 Новые `autocare_service_messages.body` получают отдельный HMAC по plaintext,
@@ -10,9 +544,10 @@ ORM insert материализует default kind=`text` до вычислен�
 Migration 178651 добавляет nullable
 `bodyBinding` и checkpoint; bounded compare-write команда переносит legacy
 сообщения, полный verify и opt-in strict reader готовят cutover. Удаление
-сообщения и raw SQL account deletion обнуляют binding. До PostgreSQL CI,
-staging KMS/restore и включения флага старые строки читаются; offer JSON и
-остальные поля U02, pilot NO-GO открыты.
+сообщения и raw SQL account deletion обнуляют binding. PR #28 прошёл
+PostgreSQL/browser CI и объединён в `dev` как `f3d06a4`. До staging
+KMS/restore и включения флага старые строки читаются; остальные поля U02 и
+pilot NO-GO открыты.
 
 PR #27 (имя/телефон) прошёл полный CI и объединён в `dev` как `ba04e68`;
 защищённый promotion PR #19 ждёт независимого code-owner review.

@@ -26,9 +26,212 @@ export function requireUserProfileRecordBinding(environment: NodeJS.ProcessEnv =
     throw new Error('DATA_ENCRYPTION_REQUIRE_USER_PROFILE_RECORD_BINDING must be true or false.')
 }
 
+export function requireUserSecondaryRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_USER_SECONDARY_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_USER_SECONDARY_RECORD_BINDING must be true or false.')
+}
+
 export function requireMessageBodyRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
     const configured = environment.DATA_ENCRYPTION_REQUIRE_MESSAGE_BODY_RECORD_BINDING
     if (configured === undefined || configured === 'false') return false
     if (configured === 'true') return true
     throw new Error('DATA_ENCRYPTION_REQUIRE_MESSAGE_BODY_RECORD_BINDING must be true or false.')
+}
+
+export function requireMessageOfferRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_MESSAGE_OFFER_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_MESSAGE_OFFER_RECORD_BINDING must be true or false.')
+}
+
+export function requireChatSubjectRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_CHAT_SUBJECT_RECORD_BINDING must be true or false.')
+}
+
+export function requireBookingSnapshotRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_BOOKING_SNAPSHOT_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_BOOKING_SNAPSHOT_RECORD_BINDING must be true or false.')
+}
+
+export function requireAcceptedQuoteRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_ACCEPTED_QUOTE_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_ACCEPTED_QUOTE_RECORD_BINDING must be true or false.')
+}
+
+export function requireEstimateSnapshotRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_ESTIMATE_SNAPSHOT_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_ESTIMATE_SNAPSHOT_RECORD_BINDING must be true or false.')
+}
+
+export function requireContactSnapshotRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_CONTACT_SNAPSHOT_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_CONTACT_SNAPSHOT_RECORD_BINDING must be true or false.')
+}
+
+export function requireVehicleSnapshotRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_VEHICLE_SNAPSHOT_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_VEHICLE_SNAPSHOT_RECORD_BINDING must be true or false.')
+}
+
+export function requireServiceRequestNoteRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_NOTE_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_NOTE_RECORD_BINDING must be true or false.')
+}
+
+export function requireServiceRequestOutcomeRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_OUTCOME_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_SERVICE_REQUEST_OUTCOME_RECORD_BINDING must be true or false.')
+}
+
+export function requireClientVehicleRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_CLIENT_VEHICLE_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_CLIENT_VEHICLE_RECORD_BINDING must be true or false.')
+}
+
+export function requireBookingStatusReasonRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_BOOKING_STATUS_REASON_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_BOOKING_STATUS_REASON_RECORD_BINDING must be true or false.')
+}
+
+export function requireBookingTextRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_BOOKING_TEXT_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_BOOKING_TEXT_RECORD_BINDING must be true or false.')
+}
+
+export function requireBookingRescheduleReasonRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_BOOKING_RESCHEDULE_REASON_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_BOOKING_RESCHEDULE_REASON_RECORD_BINDING must be true or false.')
+}
+
+export function requireAutoCareRescheduleTextRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_AUTOCARE_RESCHEDULE_TEXT_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_AUTOCARE_RESCHEDULE_TEXT_RECORD_BINDING must be true or false.')
+}
+
+export function requireServiceQuoteSnapshotRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_SERVICE_QUOTE_SNAPSHOT_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_SERVICE_QUOTE_SNAPSHOT_RECORD_BINDING must be true or false.')
+}
+
+export function requireChatReportTextRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_CHAT_REPORT_TEXT_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_CHAT_REPORT_TEXT_RECORD_BINDING must be true or false.')
+}
+
+export function requireChatBlockReasonRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_CHAT_BLOCK_REASON_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_CHAT_BLOCK_REASON_RECORD_BINDING must be true or false.')
+}
+
+export function requireTrustEvidenceRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_TRUST_EVIDENCE_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_TRUST_EVIDENCE_RECORD_BINDING must be true or false.')
+}
+
+export function requireProviderChangeRequestRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_PROVIDER_CHANGE_REQUEST_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_PROVIDER_CHANGE_REQUEST_RECORD_BINDING must be true or false.')
+}
+
+export function requireAppealRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_APPEAL_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_APPEAL_RECORD_BINDING must be true or false.')
+}
+
+export function requireCatalogGapRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_CATALOG_GAP_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_CATALOG_GAP_RECORD_BINDING must be true or false.')
+}
+
+export function requireRepairEventRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_REPAIR_EVENT_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_REPAIR_EVENT_RECORD_BINDING must be true or false.')
+}
+
+export function requireBroadcastRequestRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_BROADCAST_REQUEST_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_BROADCAST_REQUEST_RECORD_BINDING must be true or false.')
+}
+
+export function requireBroadcastOfferRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_BROADCAST_OFFER_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_BROADCAST_OFFER_RECORD_BINDING must be true or false.')
+}
+
+export function requireGuaranteeClaimRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_GUARANTEE_CLAIM_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_GUARANTEE_CLAIM_RECORD_BINDING must be true or false.')
+}
+
+export function requireExpertQuestionRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_EXPERT_QUESTION_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_EXPERT_QUESTION_RECORD_BINDING must be true or false.')
+}
+
+export function requireFleetAccountRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_FLEET_ACCOUNT_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_FLEET_ACCOUNT_RECORD_BINDING must be true or false.')
+}
+
+export function requireFleetVehicleRecordBinding(environment: NodeJS.ProcessEnv = process.env) {
+    const configured = environment.DATA_ENCRYPTION_REQUIRE_FLEET_VEHICLE_RECORD_BINDING
+    if (configured === undefined || configured === 'false') return false
+    if (configured === 'true') return true
+    throw new Error('DATA_ENCRYPTION_REQUIRE_FLEET_VEHICLE_RECORD_BINDING must be true or false.')
 }

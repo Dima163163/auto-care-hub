@@ -69,10 +69,20 @@ function getVehicleImage(brandId: string, model: string) {
     return vehicleImageByModel[model.trim().toLowerCase()] ?? vehicleImageByBrand[brandId] ?? defaultVehicleImage
 }
 const toResponse = (vehicle: ClientVehicleEntity) => ({
-    ...vehicle,
+    id: vehicle.id,
+    userId: vehicle.userId,
+    brandId: vehicle.brandId,
+    model: vehicle.model,
+    year: vehicle.year,
+    fuelType: vehicle.fuelType,
     engineDisplacement: vehicle.engineDisplacement === null ? null : Number(vehicle.engineDisplacement),
     horsepower: vehicle.horsepower === null ? null : Number(vehicle.horsepower),
+    color: vehicle.color,
+    vin: vehicle.vin,
+    licensePlate: vehicle.licensePlate,
+    internalNumber: vehicle.internalNumber,
     imageUrl: vehicle.imageUrl || getVehicleImage(vehicle.brandId, vehicle.model),
+    isPrimary: vehicle.isPrimary,
     createdAt: vehicle.createdAt.toISOString(),
 })
 

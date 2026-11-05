@@ -13,17 +13,31 @@ export function mockChatThreadFromRequest(request: MockAutoCareServiceRequest): 
 
 export function getMockAutoCareChatThreads(user: User) {
     const activeModeratedThreadIds = new Set(mockAutoCareChatReports
-        .filter((report) => report.messageId !== null && report.status === 'pending' && report.assignedModeratorId === user.id && report.accessExpiresAt !== null && Date.parse(report.accessExpiresAt) > Date.now())
+        .filter((report) => report.messageId !== null && report.status === 'pending' && report.assignedModeratorId === user.id && report.accessExpiresAt !== null && Date.parse(report.accessExpiresAt) > Date.now() && !isMockChatReportParty(user.id, report.threadId))
         .map((report) => report.threadId))
     const requestThreads = mockAutoCareServiceRequests
-        .filter((request) => user.role === 'super_admin' || request.clientId === user.id || (user.role === 'owner' && ownerAutoCareProviders.some((provider) => provider.id === request.providerId)) || (user.role === 'admin' && activeModeratedThreadIds.has(`chat-request-${request.id}`)))
+        .filter((request) => ((user.role !== 'admin' && user.role !== 'super_admin') && request.clientId === user.id) || (user.role === 'owner' && ownerAutoCareProviders.some((provider) => provider.id === request.providerId)) || (user.role === 'admin' && activeModeratedThreadIds.has(`chat-request-${request.id}`)))
         .map(mockChatThreadFromRequest)
-    const genericThreads = mockAutoCareChatThreads.filter((thread) => user.role === 'super_admin' || ((user.role === 'admin') && (['support', 'admin_escalation'].includes(thread.type) || activeModeratedThreadIds.has(thread.id))) || thread.clientId === user.id || thread.createdById === user.id || (user.role === 'owner' && thread.providerId !== null && ownerAutoCareProviders.some((provider) => provider.id === thread.providerId)))
+    const genericThreads = mockAutoCareChatThreads.filter((thread) => (user.role === 'super_admin' && ['support', 'admin_escalation'].includes(thread.type)) || ((user.role === 'admin') && (['support', 'admin_escalation'].includes(thread.type) || activeModeratedThreadIds.has(thread.id))) || (user.role !== 'super_admin' && user.role !== 'admin' && (thread.clientId === user.id || thread.createdById === user.id || (user.role === 'owner' && thread.providerId !== null && ownerAutoCareProviders.some((provider) => provider.id === thread.providerId)))))
     return [...requestThreads, ...genericThreads].sort((left, right) => (right.updatedAt ?? '').localeCompare(left.updatedAt ?? ''))
 }
 
-export function getMockChatReportAccess(user: User, threadId: string) {
-    const reports = mockAutoCareChatReports.filter((report) => report.threadId === threadId && report.messageId !== null && report.status === 'pending')
+export function getMockDirectChatThread(user: User, chatId: string) {
+    if (user.role === 'super_admin') {
+        const request = mockAutoCareServiceRequests.find((item) => `chat-request-${item.id}` === chatId)
+        return request ? mockChatThreadFromRequest(request) : mockAutoCareChatThreads.find((thread) => thread.id === chatId)
+    }
+    return getMockAutoCareChatThreads(user).find((thread) => thread.id === chatId)
+}
+
+export function isMockChatReportParty(userId: string, threadId: string) {
+    return mockAutoCareChatReports.some((report) => report.threadId === threadId && (report.reporterId === userId || report.reportedUserId === userId))
+}
+
+export function getMockChatReportAccess(user: User, thread: MockAutoCareChatThread) {
+    if (thread.type === 'support' || thread.type === 'admin_escalation') return { allowed: user.role === 'admin' || user.role === 'super_admin', reports: [] }
+    const reports = mockAutoCareChatReports.filter((report) => report.threadId === thread.id && report.messageId !== null && report.status === 'pending')
+    if (isMockChatReportParty(user.id, thread.id)) return { allowed: false, reports: [] }
     if (user.role === 'super_admin') return { allowed: true, reports }
     const assigned = reports.filter((report) => report.assignedModeratorId === user.id && report.accessExpiresAt !== null && Date.parse(report.accessExpiresAt) > Date.now())
     return { allowed: user.role === 'admin' && assigned.length > 0, reports: assigned }

@@ -180,6 +180,7 @@ export async function decideAdminAutoCareAppeal(user: User, appealId: string, in
         const appeal = await repository.findOne({ where: { id: normalizedAppealId }, lock: { mode: 'pessimistic_write' } })
         if (!appeal) error(404, 'Appeal not found.')
         if (!canTransitionAppeal(appeal.status, parsed.value.status)) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'Appeal has already been decided.' })
+        if (appeal.submittedById === user.id) error(403, 'An administrator cannot review their own appeal.')
         appeal.status = parsed.value.status
         appeal.decisionReason = parsed.value.reason
         appeal.decidedById = user.id

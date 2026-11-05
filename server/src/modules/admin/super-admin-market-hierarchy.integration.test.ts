@@ -11,7 +11,7 @@ import {
 } from '../../entities/index.js'
 import { AuditAction, AuditLogEntity } from '../../entities/audit-log/audit-log.entity.js'
 import { UserEntity, UserRole, UserStatus } from '../../entities/user/user.entity.js'
-import { createAuthTokens } from '../auth/auth.service.js'
+import { createTestAccessToken } from '../../test-support/auth-session.js'
 
 describe('Super-admin market hierarchy integration', () => {
     const suffix = `${Date.now()}`
@@ -58,13 +58,13 @@ describe('Super-admin market hierarchy integration', () => {
     it('keeps the hierarchy super-admin-only', async () => {
         const response = await request(app.server)
             .get('/super-admin/market-hierarchy')
-            .set('Authorization', `Bearer ${createAuthTokens(regularAdmin).accessToken}`)
+            .set('Authorization', `Bearer ${await createTestAccessToken(regularAdmin)}`)
 
         expect(response.status).toBe(403)
     })
 
     it('creates and edits a country, city and zone without changing public frontend data', async () => {
-        const token = createAuthTokens(superAdmin).accessToken
+        const token = await createTestAccessToken(superAdmin)
         const profile = {
             defaultLocale: 'en',
             supportedLocales: ['en', 'ru'],

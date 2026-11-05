@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { buildApp } from '../../app.js'
 import { AppDataSource } from '../../database/data-source.js'
 import { UserEntity, UserRole, UserStatus } from '../../entities/user/user.entity.js'
-import { createAuthTokens } from '../auth/auth.service.js'
+import { createTestAccessToken } from '../../test-support/auth-session.js'
 
 describe('Super-admin trust policy integration', () => {
     const suffix = `${Date.now()}`
@@ -25,7 +25,7 @@ describe('Super-admin trust policy integration', () => {
 
         const response = await request(app.server)
             .get('/super-admin/trust-policy')
-            .set('Authorization', `Bearer ${createAuthTokens(superAdmin).accessToken}`)
+            .set('Authorization', `Bearer ${await createTestAccessToken(superAdmin)}`)
         expect(response.status).toBe(200)
         originalPolicy = response.body as Record<string, unknown>
     })
@@ -34,7 +34,7 @@ describe('Super-admin trust policy integration', () => {
         if (originalPolicy && superAdmin) {
             await request(app.server)
                 .patch('/super-admin/trust-policy')
-                .set('Authorization', `Bearer ${createAuthTokens(superAdmin).accessToken}`)
+                .set('Authorization', `Bearer ${await createTestAccessToken(superAdmin)}`)
                 .send(originalPolicy)
         }
         if (AppDataSource.isInitialized) {
@@ -47,13 +47,13 @@ describe('Super-admin trust policy integration', () => {
     it('restricts policy management to super-admins', async () => {
         const response = await request(app.server)
             .get('/super-admin/trust-policy')
-            .set('Authorization', `Bearer ${createAuthTokens(regularAdmin).accessToken}`)
+            .set('Authorization', `Bearer ${await createTestAccessToken(regularAdmin)}`)
 
         expect(response.status).toBe(403)
     })
 
     it('validates rollout markets and persists policy changes', async () => {
-        const token = createAuthTokens(superAdmin).accessToken
+        const token = await createTestAccessToken(superAdmin)
         const unknownMarket = await request(app.server)
             .patch('/super-admin/trust-policy')
             .set('Authorization', `Bearer ${token}`)

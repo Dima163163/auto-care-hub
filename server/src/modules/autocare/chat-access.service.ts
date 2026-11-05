@@ -5,7 +5,7 @@ import { UserEntity, UserRole } from '../../entities/user/user.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import { hasProviderWorkspacePermission } from './provider-access.service.js'
-import { isAutoCareChatBlockEffective } from './chat-moderation-policy.js'
+import { isAutoCareChatBlockEffective, isAutoCareChatReportParty } from './chat-moderation-policy.js'
 import { normalizeAutoCareChatUuid } from './chat-input-policy.js'
 import { fail } from './chat-errors.js'
 
@@ -38,14 +38,26 @@ export async function assertThreadAccess(user: UserEntity, thread: AutoCareChatT
     // access. Private request writes are checked separately by the shared policy.
     // Regular admins remain limited to operational support/escalation threads
     // or a conversation with an active pending moderation report.
-    if (user.role === UserRole.SuperAdmin) return 'super_admin'
+    if (user.role === UserRole.SuperAdmin) {
+        if (thread.type === AutoCareChatThreadType.ServiceRequest) {
+            const reports = await AppDataSource.getRepository(AutoCareChatReportEntity).find({
+                where: { threadId: thread.id },
+                select: { reporterId: true, reportedUserId: true },
+            })
+            if (reports.some((report) => isAutoCareChatReportParty(report, user.id))) fail(403, 'A chat report party cannot review this thread.')
+        }
+        return 'super_admin'
+    }
     if (user.role === UserRole.Admin && [AutoCareChatThreadType.Support, AutoCareChatThreadType.AdminEscalation].includes(thread.type)) return 'operational_support'
     if (user.role === UserRole.Admin) {
         if (thread.type !== AutoCareChatThreadType.ServiceRequest || !thread.requestId) fail(403, 'Moderation access is limited to an assigned service-request case.')
         const reports = await AppDataSource.getRepository(AutoCareChatReportEntity).find({
-            where: { threadId: thread.id, status: AutoCareChatReportStatus.Pending, assignedModeratorId: user.id },
+            where: { threadId: thread.id },
+            select: { reporterId: true, reportedUserId: true, status: true, assignedModeratorId: true, reportedMessageId: true, acknowledgedAt: true, policyVersion: true, accessExpiresAt: true },
         })
-        if (reports.some((report) => report.reportedMessageId && report.acknowledgedAt && report.policyVersion && report.accessExpiresAt && report.accessExpiresAt.getTime() > Date.now())) return 'pending_report_moderation'
+        if (reports.some((report) => isAutoCareChatReportParty(report, user.id))) fail(403, 'A chat report party cannot moderate this thread.')
+        if (reports.some((report) => report.status === AutoCareChatReportStatus.Pending && report.assignedModeratorId === user.id && report.reportedMessageId && report.acknowledgedAt && report.policyVersion && report.accessExpiresAt && report.accessExpiresAt.getTime() > Date.now())) return 'pending_report_moderation'
+        fail(403, 'Moderation access is limited to an assigned service-request case.')
     }
     if (thread.clientId === user.id) return 'client_or_creator'
     if (thread.createdById === user.id && thread.type === AutoCareChatThreadType.Support) return 'client_or_creator'

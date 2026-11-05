@@ -42,6 +42,7 @@ type LogoutResponse =
 type LoginRequest = {
     email: string
     password: string
+    mfaCode?: string
 }
 
 type RegisterRequest = {
@@ -65,6 +66,7 @@ export type PasswordSetupTokenResponse = {
 type CompletePasswordSetupRequest = {
     token: string
     password: string
+    mfaCode?: string
 }
 
 type RequestPasswordResetRequest = {

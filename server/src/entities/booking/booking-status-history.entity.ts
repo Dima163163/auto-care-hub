@@ -21,6 +21,9 @@ export class BookingStatusHistoryEntity {
     @Column({ type: 'text', nullable: true, transformer: createEncryptedFieldTransformer('booking_status_history', 'reason', 'text') })
     reason!: string | null
 
+    @Column({ type: 'text', nullable: true })
+    reasonBinding!: string | null
+
     @CreateDateColumn({ type: 'timestamptz' })
     createdAt!: Date
 }

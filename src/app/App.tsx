@@ -8,6 +8,7 @@ import { useTranslation } from '@/shared/lib/useTranslation'
 import { useTheme } from '@/shared/lib/useTheme'
 import { PwaLifecycle } from '@/features/pwa-lifecycle'
 import { ScrollToTopButton } from '@/shared/ui/scroll-to-top'
+import { PrivilegedStepUpDialog } from '@/shared/ui/privileged-step-up/PrivilegedStepUpDialog'
 
 function AppContent() {
     const { theme } = useTheme()
@@ -16,6 +17,7 @@ function AppContent() {
         <I18nProvider>
             <AccountLocaleSync />
             <AppRouter/>
+            <PrivilegedStepUpDialog />
             <PwaLifecycle />
             <ScrollToTopButton />
             <Toaster richColors position="top-right" theme={theme}/>

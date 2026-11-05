@@ -110,6 +110,9 @@ export async function decideAdminCatalogGapRequest(admin: UserEntity, requestId:
             .getOne()
         if (!request) throw new AppError({ statusCode: 404, code: ERROR_CODES.NotFound, message: 'Catalog gap request not found.' })
         if (request.status !== AutomotiveCatalogGapRequestStatus.Pending) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'Catalog gap request has already been decided.' })
+        if (request.requestedById === admin.id) {
+            throw new AppError({ statusCode: 403, code: ERROR_CODES.Forbidden, message: 'An administrator cannot review their own catalog request.' })
+        }
         if (decision.status === AutomotiveCatalogGapRequestStatus.Approved) {
             const serviceRepository = manager.getRepository(AutomotiveServiceDefinitionEntity)
             if (await serviceRepository.findOneBy({ slug: request.proposedSlug })) throw new AppError({ statusCode: 409, code: ERROR_CODES.Conflict, message: 'A service with this slug already exists.' })

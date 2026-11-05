@@ -2,8 +2,8 @@ import { http, HttpResponse } from "msw"
 import { emitMockAutoCareChatEvent, type ServiceChatMessage } from "@/entities/automotive-service/lib/service-chat"
 import { mockScenarioResponse } from ".././mock-scenario"
 import { currentMockUser } from './mock-access'
-import { decodeMockChatCursor, encodeMockChatCursor, getMockAutoCareChatThreads, getMockChatReportAccess, isMockChatMessagingBlocked, isMockChatReportCategory, mockChatAttachments, mockChatMessages, mockChatThreadFromRequest } from './mock-chat'
-import { autoCareProviders, mockAutoCareChatAttachments, mockAutoCareChatBlocks, mockAutoCareChatMessages, mockAutoCareChatReports, mockAutoCareChatThreads, mockAutoCareServiceRequests, ownerAutoCareProviders } from './mock-fixtures'
+import { decodeMockChatCursor, encodeMockChatCursor, getMockAutoCareChatThreads, getMockChatReportAccess, getMockDirectChatThread, isMockChatMessagingBlocked, isMockChatReportCategory, mockChatAttachments, mockChatMessages, mockChatThreadFromRequest } from './mock-chat'
+import { autoCareProviders, mockAutoCareChatAttachments, mockAutoCareChatBlocks, mockAutoCareChatMessages, mockAutoCareChatReports, mockAutoCareChatThreads, mockAutoCareProviderMemberships, mockAutoCareServiceRequests, ownerAutoCareProviders } from './mock-fixtures'
 import type { MockAutoCareChatBlock, MockAutoCareChatReport, MockAutoCareChatThread } from './mock-fixtures'
 import { getMockModerationRestriction, parseMockOffset } from './mock-validation'
 
@@ -15,7 +15,7 @@ export const chatHandlers = [
         if (!request) return HttpResponse.json({ message: 'Service request not found.' }, { status: 404 })
         const thread = mockChatThreadFromRequest(request)
         const isParticipant = request.clientId === user.id || (user.role === 'owner' && ownerAutoCareProviders.some((provider) => provider.id === request.providerId))
-        if (!isParticipant && !getMockChatReportAccess(user, thread.id).allowed && user.role !== 'super_admin') return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        if (user.role === 'admin' || user.role === 'super_admin' || !isParticipant) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
         return HttpResponse.json({ ...thread, unreadCount: 0, moderationRestriction: getMockModerationRestriction(thread, user) })
     }) },
 { order: 100, handler: http.get('/api/v1/chats', ({ request }) => {
@@ -111,26 +111,28 @@ export const chatHandlers = [
     }) },
 { order: 105, handler: http.post('/api/v1/chats/:chatId/blocks', async ({ params, request }) => {
         const user = currentMockUser()
+        if (user?.role === 'admin' || user?.role === 'super_admin') return HttpResponse.json({ message: 'Administrators must apply chat blocks through a moderation decision.' }, { status: 403 })
         const thread = user ? getMockAutoCareChatThreads(user).find((candidate) => candidate.id === params.chatId) : undefined
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
         if (!thread) return HttpResponse.json({ message: 'Chat not found.' }, { status: 404 })
         const body = await request.json() as { blockedUserId?: string; reason?: string | null }
-        const blockedUserId = body.blockedUserId ?? (thread.clientId === user.id ? 'user-owner-1' : thread.clientId)
-        if (!blockedUserId || blockedUserId === user.id) return HttpResponse.json({ message: 'Another participant is required.' }, { status: 400 })
+        const ownerIds = thread.providerId ? (mockAutoCareProviderMemberships.get(thread.providerId) ?? []).filter((membership) => membership.role === 'owner' && membership.status === 'active').map((membership) => membership.userId) : []
+        const participantIds = new Set([thread.clientId, thread.createdById, ...ownerIds].filter((id): id is string => Boolean(id)))
+        const blockedUserId = body.blockedUserId ?? [...participantIds].find((id) => id !== user.id)
+        if (!blockedUserId || blockedUserId === user.id || !participantIds.has(blockedUserId)) return HttpResponse.json({ message: 'The blocked user must be another chat participant.' }, { status: 400 })
         const now = new Date().toISOString()
-        const existing = mockAutoCareChatBlocks.find((block) => block.threadId === thread.id && block.blockerId === user.id && block.blockedUserId === blockedUserId)
+        const existing = mockAutoCareChatBlocks.find((block) => block.threadId === thread.id && block.blockerId === user.id && block.blockedUserId === blockedUserId && block.status === 'active' && block.sourceReportId === null)
         const block: MockAutoCareChatBlock = existing
-            ? Object.assign(existing, { status: 'active' as const, reason: body.reason?.trim() || existing.reason, revokedAt: null, sourceReportId: null, expiresAt: null })
-            : { id: `chat-block-${Date.now()}`, threadId: thread.id, blockerId: user.id, blockedUserId, status: 'active', reason: body.reason?.trim() || null, sourceReportId: null, expiresAt: null, createdAt: now, revokedAt: null }
+            ?? { id: `chat-block-${Date.now()}`, threadId: thread.id, blockerId: user.id, blockedUserId, status: 'active', reason: body.reason?.trim() || null, sourceReportId: null, expiresAt: null, createdAt: now, revokedAt: null }
         if (!existing) mockAutoCareChatBlocks.unshift(block)
         return HttpResponse.json(block, { status: 201 })
     }) },
 { order: 106, handler: http.delete('/api/v1/chats/:chatId/blocks/:blockId', ({ params }) => {
         const user = currentMockUser()
-        const block = mockAutoCareChatBlocks.find((candidate) => candidate.id === params.blockId && candidate.threadId === params.chatId)
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        const block = mockAutoCareChatBlocks.find((candidate) => candidate.id === params.blockId && candidate.threadId === params.chatId)
         if (!block) return HttpResponse.json({ message: 'Chat block not found.' }, { status: 404 })
-        if (block.blockerId !== user.id && !['admin', 'super_admin'].includes(user.role)) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
+        if (block.sourceReportId || block.blockerId !== user.id) return HttpResponse.json({ message: 'Forbidden' }, { status: 403 })
         block.status = 'revoked'
         block.revokedAt = new Date().toISOString()
         return HttpResponse.json(block)
@@ -139,11 +141,11 @@ export const chatHandlers = [
         const scenario = mockScenarioResponse(request)
         if (scenario) return scenario
         const user = currentMockUser()
-        const thread = user ? getMockAutoCareChatThreads(user).find((candidate) => candidate.id === params.chatId) : undefined
+        const thread = user ? getMockDirectChatThread(user, String(params.chatId)) : undefined
         if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
         if (!thread) return HttpResponse.json({ message: 'Chat not found.' }, { status: 404 })
-        const access = getMockChatReportAccess(user, thread.id)
-        if (user.role === 'admin' && !access.allowed) return HttpResponse.json({ message: 'An active moderator assignment is required.' }, { status: 403 })
+        const access = getMockChatReportAccess(user, thread)
+        if ((user.role === 'admin' || user.role === 'super_admin') && !access.allowed) return HttpResponse.json({ message: 'Independent moderation access is required.' }, { status: 403 })
         const url = new URL(request.url)
         const emergencyReason = url.searchParams.get('emergencyReason')?.trim() ?? ''
         if (user.role === 'super_admin' && emergencyReason.length < 10) return HttpResponse.json({ message: 'A documented emergency reason is required to read chat content.' }, { status: 403 })
@@ -235,10 +237,10 @@ export const chatHandlers = [
     }) },
 { order: 111, handler: http.get('/api/v1/chats/:chatId/attachments/:attachmentId', ({ params, request }) => {
         const user = currentMockUser()
-        const thread = user ? getMockAutoCareChatThreads(user).find((candidate) => candidate.id === params.chatId) : undefined
+        const thread = user ? getMockDirectChatThread(user, String(params.chatId)) : undefined
         if (!user || !thread) return HttpResponse.json({ message: 'Attachment not found.' }, { status: 404 })
-        const access = getMockChatReportAccess(user, thread.id)
-        if (user.role === 'admin' && !access.allowed) return HttpResponse.json({ message: 'An active moderator assignment is required.' }, { status: 403 })
+        const access = getMockChatReportAccess(user, thread)
+        if ((user.role === 'admin' || user.role === 'super_admin') && !access.allowed) return HttpResponse.json({ message: 'Independent moderation access is required.' }, { status: 403 })
         if (user.role === 'super_admin' && (new URL(request.url).searchParams.get('emergencyReason')?.trim().length ?? 0) < 10) return HttpResponse.json({ message: 'A documented emergency reason is required to read chat attachments.' }, { status: 403 })
         const attachment = mockChatAttachments(thread).find((candidate) => candidate.id === params.attachmentId)
         if (!attachment) return HttpResponse.json({ message: 'Attachment not found.' }, { status: 404 })

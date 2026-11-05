@@ -8,6 +8,7 @@ component "Resource resolved from DB\nrequest / thread / provider / attachment" 
 component "Client access\nresource.clientId == user.id" as Client
 component "Provider access\nactive membership + permission\nlocation scope / legacy owner fallback" as Provider
 component "Privileged access\nrole + exceptional reason / assignment\nзависит от конкретного entrypoint" as Admin
+component "MFA step-up\nfresh session proof <= 5 min\nprivileged mutations + CSV + private reads" as StepUp
 component "Shared chat write policy\nprivate request: client / provider only\nsupport / escalation: admin allowed" as ChatWrite
 component "Use-case mutation / private DTO" as Result
 component "Authorized object delivery\nprivate object key / short-lived access" as Object
@@ -19,19 +20,56 @@ Resource --> Provider
 Resource --> Admin
 Client --> Result : scoped read
 Provider --> Result : scoped read
-Admin --> Result : audited read
+Admin --> StepUp : sensitive mutation / exceptional read
+StepUp --> Result : recent factor proof
 Client --> ChatWrite
 Provider --> ChatWrite
 Admin --> ChatWrite : support / escalation only
 ChatWrite --> Result : messages / attachments
 Result --> Object : attachment access rechecked
-Admin --> Audit : exceptional read / moderation
+Admin --> Audit : chat index / exceptional read / moderation
+note right of StepUp
+  Private admin dashboards, chat reports and privileged chat actions
+  plus other privileged mutations
+  require fresh MFA.
+  Chat subject index, history, attachment and WebSocket access for admin/super-admin
+  require fresh MFA before content; WebSocket rechecks before delivery
+  and every 30 seconds during live access.
+  Super-admin index lists support/escalation only; private request chats
+  require per-thread audited access with an emergency reason.
+  Privileged index reads audit actor role and item count, not subjects.
+  Admin private request chat requires an active assigned moderation report;
+  provider membership cannot replace it. The request chat-thread shortcut
+  rejects admin and super-admin before returning the subject.
+  Legacy request conversation, attachment and WebSocket also reject both
+  privileged roles; they use the audited chat route for private review.
+  Admin and super-admin service-request detail, repair timeline and owner
+  request list require fresh MFA before private data.
+  Broadcast detail and provider inbox require it for both privileged roles.
+  Internal provider workspace GET routes also require fresh MFA for both roles.
+  Provider workspace mutations also require it before validation or write.
+  Service/broadcast request transitions require it for privileged actors.
+  Catalog gap reviewer cannot decide own proposal under the request row lock.
+  Provider change reviewer cannot decide a request authored before role change.
+  Appeal reviewer cannot decide own appeal or revoke own chat restriction.
+  Participant block DELETE is limited to its blocker; a moderation
+  restriction can only be revoked by an accepted independent appeal.
+  A party of any historical chat report cannot be assigned moderator, read
+  the private thread as admin or super-admin, extend access or decide another case after
+  role change. Admin and super-admin report indexes exclude conflicted threads.
+  A super-admin party cannot use direct emergency read to bypass that scope.
+  Assignment and decision scan all thread reports under the thread lock;
+  only pending reports can grant time-limited moderator access.
+  Other modules' sensitive reads and staging replay remain open.
+end note
 note right of Provider
   Workspace permission scopes имеют provider/location семантику.
   Глобальный owner — ещё compatibility роль;
   один frontend guard не является backend authorization.
 end note
 note right of Resource
+  Privileged TOTP secret stored as row-bound AES-GCM by user UUID;
+  recovery code hashes are one-use. Account deletion removes both tables.
   Новые user/invitation email envelopes содержат MAC
   с row ID, а invitation также с provider ID.
   afterLoad сверяет MAC и email с HMAC blind index.
@@ -42,12 +80,92 @@ note right of Resource
   провайдеру; после чтения сверяются с HMAC index.
   Bounded backfill дописывает MAC старым subjects;
   opt-in strict flag отвергает отсутствие MAC после cutover.
+  User avatar URL, community display name и preferred city имеют HMAC
+  по user UUID; частичные выборки включают binding. Preferred city
+  обновляется под row lock. Bounded backfill и opt-in strict reader.
+  Client vehicle VIN/plate/internal number/image URL имеют HMAC по
+  vehicle UUID и owner UUID; bounded backfill и opt-in strict reader.
+  API исключает binding из ответа.
+  Причина в booking status history имеет HMAC по history/booking UUID и
+  status; bounded backfill и opt-in strict reader. API скрывает binding.
+  Комментарий, причина отмены и заметка legacy booking имеют отдельные
+  HMAC по booking/client/cabinet/service UUID; bounded backfill и opt-in
+  strict reader. API скрывает binding, удаление очищает пару.
+  Причина решения по переносу имеет HMAC по reschedule/booking/requester/
+  resolver UUID и status; bounded backfill и opt-in strict reader.
+  Удаление аккаунта очищает причину и binding вместе.
+  Причина предложения AutoCare reschedule связана с reschedule/request/
+  requester UUID; причина решения дополнительно с resolver UUID и status.
+  Bounded backfill и opt-in strict reader; удаление очищает обе пары.
+  Снимок сметы имеет HMAC по quote/request/provider UUID и version.
+  Анонимизация создаёт шифротекст и binding для каждой строки отдельно;
+  bounded backfill и opt-in strict reader подготовлены.
+  Причина chat block имеет HMAC по block/thread/blocker/blocked UUID;
+  bounded backfill и opt-in strict reader. Удаление очищает пару.
+  Trust evidence reference/notes имеют HMAC по evidence/provider UUID и kind.
+  Reference также сверяется с blind index; backfill очищает старые индексы
+  после null redaction. Обновление отзыва сохраняет полный ORM-контекст.
+  Provider change payload/reviewReason имеют HMAC по request/provider/
+  requester UUID и kind. Анонимизация пересчитывает binding payload по
+  каждой строке и очищает reason/binding; bounded backfill и opt-in strict.
+  Appeal reason/decisionReason имеют HMAC по appeal/submitter/subject UUID,
+  subject и nullable provider UUID. Анонимизация пересчитывает reason
+  binding по каждой строке и очищает decisionReason/binding.
+  Catalog gap labels/comparisonAttributes/rationale/reviewReason имеют HMAC
+  по gap/requester UUID, nullable provider UUID, двум slug и priceType.
+  Удаление аккаунта пересчитывает три redacted bindings для каждой строки.
+  Repair event title/notes/metadata имеют HMAC по event/request UUID и
+  eventType. Удаление аккаунта переподписывает redacted title/metadata
+  каждой строки и очищает notes/binding. Bounded backfill и opt-in strict.
+  Broadcast issueDescription/vehicleSnapshot имеют HMAC по broadcast/
+  client/definition UUID. Удаление аккаунта
+  переподписывает issue и очищает snapshot/binding.
+  Broadcast offerSnapshot имеет HMAC по offer/broadcast/provider/location
+  UUID. Удаление клиента переподписывает redacted snapshot каждой строки.
+  Guarantee summary/resolution имеют HMAC по claim/request/client/provider
+  UUID и claimType. Удаление клиента переподписывает summary и очищает
+  resolution/binding каждой строки.
+  Expert question vehicleSnapshot/symptoms/answer имеют HMAC по question/
+  client UUID. Удаление клиента переподписывает symptoms и очищает
+  snapshot/answer с bindings.
+  Fleet account name/notes имеют HMAC по fleet/owner UUID. Удаление
+  владельца переподписывает обезличенное имя и очищает notes/binding.
+  Fleet vehicle label/vehicleSnapshot имеют HMAC по vehicle/fleet UUID.
+  Удаление владельца переподписывает оба redacted поля каждой строки.
+  Четыре текста chat report имеют отдельные HMAC по report/thread/
+  reporter UUID. Анонимизация очищает тексты и bindings вместе;
+  bounded backfill и opt-in strict reader подготовлены.
   User name/phone имеют companion HMAC по user UUID;
   bounded backfill и opt-in strict reader подготовлены.
   Текст нового chat message имеет companion HMAC по message UUID,
   request/thread UUID, sender UUID и kind;
   bounded backfill и opt-in strict reader подготовлены.
-  Offer JSON и остальные поля U02 пока не связаны со строкой.
+  Offer JSON имеет companion HMAC по тем же UUID и kind;
+  bounded backfill и opt-in strict reader подготовлены.
+  Тема чата имеет HMAC по thread UUID, type и связям доступа;
+  анонимизация пересчитывает binding после очистки client/creator.
+  Bounded backfill и opt-in strict reader подготовлены.
+  Booking snapshot имеет HMAC по request UUID и client/provider/
+  location/definition UUID; null при анонимизации очищает binding.
+  Bounded backfill и opt-in strict reader подготовлены.
+  Accepted quote snapshot имеет такой же scoped HMAC по request UUID
+  и client/provider/location/definition UUID; null очищает binding.
+  Bounded backfill и opt-in strict reader подготовлены.
+  Estimate snapshot имеет scoped HMAC по тем же UUID; частичная
+  выборка аналитики включает binding и полный контекст.
+  Bounded backfill и opt-in strict reader подготовлены.
+  Contact snapshot имеет scoped HMAC по request/client/provider/
+  location/definition UUID; удаление аккаунта очищает binding.
+  Bounded backfill и opt-in strict reader подготовлены.
+  Vehicle snapshot имеет scoped HMAC по этим UUID и nullable vehicle UUID;
+  удаление аккаунта очищает binding. Bounded backfill и opt-in strict reader.
+  Примечание заявки имеет scoped HMAC по request/client/provider/
+  location/definition UUID; удаление аккаунта очищает binding.
+  Bounded backfill и opt-in strict reader подготовлены.
+  Причины отмены/неявки и заметка завершения имеют отдельные scoped HMAC
+  по request/client/provider/location/definition UUID. Bounded backfill,
+  opt-in strict reader и очистка подписей при удалении аккаунта подготовлены.
+  Остальные поля U02 пока не связаны со строкой.
 end note
 note bottom of Admin
   Legacy request participant guard допускает SuperAdmin для иных действий.
@@ -58,5 +176,5 @@ note bottom of Object
   S3/private storage adapter и scan/quarantine поддержаны кодом.
   Production storage policy / KMS / MFA — отдельные acceptance gates.
 end note
-footer require-auth.ts / provider-access.service.ts / request-access.service.ts / chat-write-policy.ts / sensitive-data-subscriber.ts
+footer require-auth.ts / provider-access.service.ts / request-access.service.ts / catalog-gap.service.ts / provider-change-request.service.ts / appeal.service.ts / chat-access.service.ts / chat-report.service.ts / chat-moderator-assignment.service.ts / chat-block.service.ts / chat-write-policy.ts / sensitive-data-subscriber.ts
 @enduml

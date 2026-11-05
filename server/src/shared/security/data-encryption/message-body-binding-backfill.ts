@@ -1,15 +1,15 @@
 import type { DataSource } from 'typeorm'
 import { decryptFieldValue } from './field-encryption.js'
 import { createPlaintextRecordBinding, verifyPlaintextRecordBinding } from './plaintext-record-binding.js'
-import { messageBodyRecordContext, type MessageBodyRecordScope } from './message-body-record-scope.js'
+import { messageRecordContext, type MessageRecordScope } from './message-record-scope.js'
 import { runBoundedBackfill, type BackfillCheckpoint, type BackfillRow } from './bounded-backfill.js'
 
-type MessageBodyRow = MessageBodyRecordScope & { body: string | null; bodyBinding: string | null }
+type MessageBodyRow = MessageRecordScope & { body: string | null; bodyBinding: string | null }
 type StoredCheckpoint = { afterId: string | null; processed: string }
 const CHECKPOINT_NAME = 'autocare_service_messages'
 
 function transformRow(row: BackfillRow<MessageBodyRow>, requireBinding: boolean): string | null {
-    const context = messageBodyRecordContext(row.value)
+    const context = messageRecordContext(row.value)
     if (row.value.body === null) {
         if (row.value.bodyBinding !== null) throw new Error('Encrypted autocare_service_messages.body record binding is invalid.')
         return null

@@ -2,6 +2,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const passwordSetupMocks = vi.hoisted(() => ({
     consumeUsableSecurityToken: vi.fn(),
+    isPrivilegedMfaProvisioned: vi.fn(),
+    verifyPrivilegedMfa: vi.fn(),
+}))
+
+vi.mock('./privileged-mfa.service.js', () => ({
+    isPrivilegedMfaProvisioned: passwordSetupMocks.isPrivilegedMfaProvisioned,
+    verifyPrivilegedMfa: passwordSetupMocks.verifyPrivilegedMfa,
 }))
 
 vi.mock('./security-token.service.js', () => ({
@@ -83,6 +90,8 @@ function setupConsumption(
 describe('password setup sessions', () => {
     beforeEach(() => {
         passwordSetupMocks.consumeUsableSecurityToken.mockReset()
+        passwordSetupMocks.isPrivilegedMfaProvisioned.mockReset().mockResolvedValue(true)
+        passwordSetupMocks.verifyPrivilegedMfa.mockReset().mockResolvedValue(true)
     })
 
     it('issues access and refresh tokens bound to a persisted session after setup', async () => {
@@ -105,6 +114,7 @@ describe('password setup sessions', () => {
         const result = await completePasswordSetup({
             token: 'a-valid-one-time-setup-token-value',
             password: 'Long-enough-passphrase-2026!',
+            mfaCode: '123456',
             userAgent: 'test-browser',
             ipAddress: '127.0.0.1',
         })
@@ -122,7 +132,11 @@ describe('password setup sessions', () => {
             ipAddress: '127.0.0.1',
             revokedAt: null,
             expiresAt: expect.any(Date),
+            mfaVerifiedAt: expect.any(Date),
         }))
+        expect(passwordSetupMocks.verifyPrivilegedMfa).toHaveBeenCalledWith(
+            user.id, '123456', expect.any(Number), manager,
+        )
         expect(verifyAccessToken(result.accessToken).sessionId)
             .toBe('00000000-0000-4000-8000-000000000002')
         expect(verifyRefreshToken(result.refreshToken).sessionId)

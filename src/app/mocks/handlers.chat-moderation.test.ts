@@ -3,6 +3,7 @@ import { setupServer } from 'msw/node'
 
 import { handlers } from './handlers'
 import { clearMockSession, setMockSession } from './session'
+import { mockAutoCareChatAttachments, mockAutoCareChatBlocks, mockAutoCareChatReports } from './autocare/mock-fixtures'
 
 const server = setupServer(...handlers)
 server.listen({ onUnhandledRequest: 'error' })
@@ -14,6 +15,121 @@ async function fetchJson(path: string, init?: RequestInit) {
 }
 
 describe('mock chat report moderation contract', () => {
+    it('allows admin operational support history and attachments without a report assignment', async () => {
+        const chatId = 'chat-support-owner'
+        const previous = mockAutoCareChatAttachments.get(chatId)
+        mockAutoCareChatAttachments.set(chatId, [{
+            id: 'synthetic-support-attachment', uploadedById: 'user-owner-1',
+            contentType: 'image/png', bytes: 1, status: 'ready',
+            url: `/api/v1/chats/${chatId}/attachments/synthetic-support-attachment`,
+            createdAt: new Date().toISOString(), contentBase64: 'AA==',
+        }])
+        try {
+            setMockSession({ currentUserId: 'user-admin-moderator-1', currentRole: 'admin' })
+            expect((await fetchJson(`/api/v1/chats/${chatId}`)).status).toBe(200)
+            expect((await fetchJson('/api/v1/chats/chat-escalation-admin')).status).toBe(200)
+            const attachment = await fetchJson(`/api/v1/chats/${chatId}/attachments/synthetic-support-attachment`)
+            expect(attachment.status).toBe(200)
+            expect(attachment.headers.get('content-type')).toContain('image/png')
+        } finally {
+            if (previous) mockAutoCareChatAttachments.set(chatId, previous)
+            else mockAutoCareChatAttachments.delete(chatId)
+        }
+    })
+
+    it('limits ordinary blocks to chat participants and rejects privileged creation', async () => {
+        const chatId = 'chat-request-owner-request-2'
+        let blockId: string | null = null
+        try {
+            setMockSession({ currentUserId: 'user-admin-1', currentRole: 'super_admin' })
+            expect((await fetchJson('/api/v1/chats/chat-support-owner/blocks', {
+                method: 'POST', headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ blockedUserId: 'user-owner-1' }),
+            })).status).toBe(403)
+
+            setMockSession({ currentUserId: 'user-owner-1', currentRole: 'owner' })
+            expect((await fetchJson(`/api/v1/chats/${chatId}/blocks`, {
+                method: 'POST', headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ blockedUserId: 'foreign-user-id' }),
+            })).status).toBe(400)
+            expect(mockAutoCareChatBlocks.some((block) => block.threadId === chatId && block.blockedUserId === 'foreign-user-id')).toBe(false)
+
+            const valid = await fetchJson(`/api/v1/chats/${chatId}/blocks`, {
+                method: 'POST', headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ blockedUserId: 'user-client-1' }),
+            })
+            expect(valid.status).toBe(201)
+            const block = await valid.json() as { id: string; blockedUserId: string }
+            blockId = block.id
+            expect(block.blockedUserId).toBe('user-client-1')
+        } finally {
+            if (blockId) {
+                const index = mockAutoCareChatBlocks.findIndex((block) => block.id === blockId)
+                if (index >= 0) mockAutoCareChatBlocks.splice(index, 1)
+            }
+        }
+    })
+
+    it('keeps a report restriction separate from an ordinary participant block', async () => {
+        const chatId = 'chat-request-owner-request-2'
+        const restriction = {
+            id: 'synthetic-report-restriction', threadId: chatId, blockerId: 'user-owner-1',
+            blockedUserId: 'user-client-1', status: 'active' as const, reason: 'Reviewed report',
+            sourceReportId: 'chat-report-demo-1', expiresAt: null,
+            createdAt: new Date().toISOString(), revokedAt: null,
+        }
+        let participantId: string | null = null
+        mockAutoCareChatBlocks.unshift(restriction)
+        try {
+            setMockSession({ currentUserId: 'user-owner-1', currentRole: 'owner' })
+            const create = await fetchJson(`/api/v1/chats/${chatId}/blocks`, {
+                method: 'POST', headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ blockedUserId: 'user-client-1', reason: 'Participant preference' }),
+            })
+            expect(create.status).toBe(201)
+            const participant = await create.json() as { id: string; sourceReportId: string | null }
+            participantId = participant.id
+            expect(participant.id).not.toBe(restriction.id)
+            expect(participant.sourceReportId).toBeNull()
+            expect(restriction).toMatchObject({ status: 'active', sourceReportId: 'chat-report-demo-1' })
+            expect((await fetchJson(`/api/v1/chats/${chatId}/blocks/${restriction.id}`, { method: 'DELETE' })).status).toBe(403)
+            expect((await fetchJson(`/api/v1/chats/${chatId}/blocks/${participant.id}`, { method: 'DELETE' })).status).toBe(200)
+            expect(restriction.status).toBe('active')
+        } finally {
+            for (const id of [restriction.id, participantId]) {
+                if (!id) continue
+                const index = mockAutoCareChatBlocks.findIndex((block) => block.id === id)
+                if (index >= 0) mockAutoCareChatBlocks.splice(index, 1)
+            }
+        }
+    })
+
+    it('allows independent super-admin emergency read without listing private chats or exposing a party case', async () => {
+        const chatId = 'chat-request-owner-request-1'
+        const reason = encodeURIComponent('Independent urgent review of a private report')
+        setMockSession({ currentUserId: 'user-admin-1', currentRole: 'super_admin' })
+        expect((await fetchJson(`/api/v1/chats/${chatId}?emergencyReason=${reason}`)).status).toBe(200)
+        expect((await fetchJson('/api/v1/service-requests/owner-request-1/chat-thread')).status).toBe(403)
+        const index = await (await fetchJson('/api/v1/chats')).json() as Array<{ id: string }>
+        expect(index.some((thread) => thread.id === chatId)).toBe(false)
+
+        const historicalReport = { ...mockAutoCareChatReports[0]!, id: 'mock-conflicted-emergency-read', threadId: chatId, reporterId: 'user-admin-1', status: 'dismissed' as const }
+        mockAutoCareChatReports.unshift(historicalReport)
+        try {
+            expect((await fetchJson(`/api/v1/chats/${chatId}?emergencyReason=${reason}`)).status).toBe(403)
+            const queue = await (await fetchJson('/api/admin/chat-reports?scope=active')).json() as { items: Array<{ threadId: string }> }
+            expect(queue.items.some((report) => report.threadId === chatId)).toBe(false)
+            expect((await fetchJson('/api/admin/chat-reports/chat-report-demo-1/decision', {
+                method: 'PATCH',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ status: 'dismissed', reason: 'Independent reviewer is required.' }),
+            })).status).toBe(403)
+        } finally {
+            const index = mockAutoCareChatReports.findIndex((report) => report.id === historicalReport.id)
+            if (index >= 0) mockAutoCareChatReports.splice(index, 1)
+        }
+    })
+
     it('filters the admin queue before cursor pagination and returns only the requester history page', async () => {
         setMockSession({ currentUserId: 'user-admin-1', currentRole: 'super_admin' })
         const firstResponse = await fetchJson('/api/admin/chat-reports?scope=active&assignedModeratorId=unassigned&limit=1')
@@ -167,6 +283,11 @@ describe('mock chat report moderation contract', () => {
             setMockSession({ currentUserId: 'user-owner-1', currentRole: 'owner' })
             const blockedThread = await (await fetchJson('/api/v1/service-requests/owner-request-2/chat-thread')).json() as { moderationRestriction?: { id: string; state: string; appealStatus: string | null } }
             expect(blockedThread.moderationRestriction).toMatchObject({ state: 'active', appealStatus: null })
+            setMockSession({ currentUserId: 'user-admin-1', currentRole: 'super_admin' })
+            expect((await fetchJson(`/api/v1/chats/chat-request-owner-request-2/blocks/${blockedThread.moderationRestriction!.id}`, { method: 'DELETE' })).status).toBe(403)
+            setMockSession({ currentUserId: 'user-admin-moderator-1', currentRole: 'admin' })
+            expect((await fetchJson(`/api/v1/chats/chat-request-owner-request-2/blocks/${blockedThread.moderationRestriction!.id}`, { method: 'DELETE' })).status).toBe(403)
+            setMockSession({ currentUserId: 'user-owner-1', currentRole: 'owner' })
             expect((await fetchJson('/api/v1/service-requests/owner-request-2/messages', {
                 method: 'POST',
                 headers: { 'content-type': 'application/json' },

@@ -21,6 +21,10 @@ export function normalizeAutoCareChatReportUuid(value: unknown): string | null {
     return normalizeUuid(value)
 }
 
+export function isAutoCareChatReportParty(report: Pick<AutoCareChatReportEntity, 'reporterId' | 'reportedUserId'>, userId: string): boolean {
+    return report.reporterId === userId || report.reportedUserId === userId
+}
+
 export function normalizeAutoCareChatReportStatus(value: unknown): AutoCareChatReportStatus | null {
     if (typeof value !== 'string') return null
     const normalized = value.normalize('NFKC').trim().toLowerCase()

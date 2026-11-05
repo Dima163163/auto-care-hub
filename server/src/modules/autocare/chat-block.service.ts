@@ -39,8 +39,8 @@ export async function revokeAutoCareChatBlock(user: UserEntity, chatId: string, 
         const blocks = manager.getRepository(AutoCareChatBlockEntity)
         const block = await blocks.findOneBy({ id: normalizedBlockId, threadId: lockedThread.id })
         if (!block) fail(404, 'Chat block not found.')
-        if (user.role === UserRole.Admin) fail(403, 'Only a super administrator can override a moderation block.')
-        if (user.role !== UserRole.SuperAdmin && block.blockerId !== user.id) fail(403, 'You can only revoke your own chat block.')
+        if (block.sourceReportId) fail(403, 'A moderation restriction can only be revoked through an accepted appeal.')
+        if (block.blockerId !== user.id) fail(403, 'You can only revoke your own chat block.')
         block.status = AutoCareChatBlockStatus.Revoked
         block.revokedAt = new Date()
         return blocks.save(block)

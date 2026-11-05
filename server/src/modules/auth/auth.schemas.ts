@@ -16,6 +16,11 @@ export const registerSchema = z.object({
 export const loginSchema = z.object({
     email: z.string().trim().email('Enter a valid email.').max(320),
     password: passwordVerificationSchema,
+    mfaCode: z.string().trim().min(6).max(64).optional(),
+})
+
+export const privilegedStepUpSchema = z.object({
+    mfaCode: z.string().trim().min(6).max(64),
 })
 
 export const passwordSetupTokenSchema = z.object({
@@ -24,6 +29,7 @@ export const passwordSetupTokenSchema = z.object({
 
 export const completePasswordSetupSchema = passwordSetupTokenSchema.extend({
     password: passwordSchema,
+    mfaCode: z.string().trim().min(6).max(64).optional(),
 })
 
 export const requestPasswordResetSchema = z.object({

@@ -50,6 +50,7 @@ import {
     processOAuthLinkCallback,
     processOAuthUnlinkCallback,
 } from './oauth.service.js'
+import { assertOAuthLoginRoleAllowed } from './oauth-privileged-login-policy.js'
 import { setRefreshTokenCookie } from '../auth/auth-cookie.js'
 import type {
     OAuthAuthorizeResponse,
@@ -141,6 +142,7 @@ export async function oauthRoutes(app: FastifyInstance) {
             )
             assertDeploymentOAuthProviderAllowed(params.provider)
             const user = await requireAuth(request)
+            assertOAuthLoginRoleAllowed(user.role)
             const state = generateOAuthState()
             const repository = AppDataSource.getRepository(OAuthLinkRequestEntity)
             const identityProvider = params.provider === 'google'

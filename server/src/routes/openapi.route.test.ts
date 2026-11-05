@@ -7,6 +7,11 @@ describe('OpenAPI document', () => {
         const document = getOpenApiDocument()
 
         expect(document.openapi).toBe('3.1.0')
+        expect(document.paths['/auth/step-up'].post.requestBody.content['application/json'].schema).toMatchObject({
+            required: ['mfaCode'],
+            additionalProperties: false,
+        })
+        expect(document.paths['/admin/audit-logs/export'].get.responses['403'].description).toContain('MFA_STEP_UP_REQUIRED')
         expect(document.paths['/admin/users']).toBeDefined()
         expect(document.paths['/cabinets/all'].get.operationId).toBe('listAllPublicCabinets')
         expect(document.paths['/admin/account-deletion-requests'].get.operationId).toBe('listAdminAccountDeletionRequests')

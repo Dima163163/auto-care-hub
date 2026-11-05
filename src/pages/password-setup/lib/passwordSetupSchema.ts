@@ -11,6 +11,7 @@ export function createPasswordSetupSchema(t: I18nContextValue['t']) {
             confirmPassword: z
                 .string()
                 .min(1, t('auth.validation.confirmPasswordRequired')),
+            mfaCode: z.string().max(64).optional(),
         })
         .refine((values) => values.password === values.confirmPassword, {
             message: t('auth.validation.passwordsMustMatch'),

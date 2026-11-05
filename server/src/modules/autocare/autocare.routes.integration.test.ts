@@ -16,7 +16,7 @@ describe('AutoCare public catalog and request route integration', () => {
         await app.close()
     })
 
-    it('exposes the market catalog and zones before optional demo seed data', async () => {
+    it('exposes the published market catalog and zones on a seeded test database', async () => {
         const marketsResponse = await request(app.server).get('/v1/markets')
 
         expect(marketsResponse.status).toBe(200)

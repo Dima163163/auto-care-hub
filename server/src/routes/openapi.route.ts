@@ -102,6 +102,18 @@ export function getOpenApiDocument() {
         servers: [{ url: '/api', description: 'Configured API base path' }],
         security: [{ bearerAuth: [] }],
         paths: {
+            '/auth/step-up': {
+                post: {
+                    operationId: 'verifyPrivilegedStepUp',
+                    parameters: [{ name: 'X-CSRF-Token', in: 'header', required: true, schema: { type: 'string' } }],
+                    requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', additionalProperties: false, required: ['mfaCode'], properties: { mfaCode: { type: 'string', minLength: 6, maxLength: 64 } } } } } },
+                    responses: {
+                        '200': { description: 'Recent MFA proof recorded on the current privileged session.' },
+                        '403': { description: 'MFA_STEP_UP_REQUIRED when the proof is rejected.' },
+                        '429': { description: 'Rate limit exceeded.' },
+                    },
+                },
+            },
             '/health/live': {
                 get: {
                     operationId: 'getHealthLive',
@@ -604,7 +616,7 @@ export function getOpenApiDocument() {
                 post: { operationId: 'createAutoCareChatBlock', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], requestBody: { required: false, content: { 'application/json': { schema: { type: 'object', properties: { blockedUserId: { type: 'string', format: 'uuid' }, reason: { type: ['string', 'null'], maxLength: 1000 } }, additionalProperties: false } } } }, responses: { '201': { description: 'Blocked another participant in the chat.' } } },
             },
             '/v1/chats/{chatId}/blocks/{blockId}': {
-                delete: { operationId: 'revokeAutoCareChatBlock', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'blockId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Revoked a participant or moderation block.' } } },
+                delete: { operationId: 'revokeAutoCareChatBlock', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }, { name: 'blockId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Revoked the caller’s own participant block. Moderation restrictions require an accepted appeal.' } } },
             },
             '/v1/chats/{chatId}/read': {
                 post: { operationId: 'markAutoCareChatRead', parameters: [{ name: 'chatId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Marked chat messages as read.' } } },
@@ -718,6 +730,7 @@ export function getOpenApiDocument() {
                             description: 'Bounded CSV audit-log export.',
                             content: { 'text/csv': { schema: { type: 'string' } } },
                         },
+                        '403': { description: 'MFA_STEP_UP_REQUIRED when the current privileged proof is stale.' },
                     },
                 },
             },
@@ -746,7 +759,7 @@ export function getOpenApiDocument() {
                 get: { operationId: 'listAdminSecurityCenterEvents', parameters: securityCenterEventParameters, responses: { '200': { description: 'No-store super-admin security activity list.', content: { 'application/json': { schema: { oneOf: [{ type: 'array', maxItems: 100, items: { $ref: '#/components/schemas/SecurityCenterEvent' } }, { $ref: '#/components/schemas/SecurityCenterEventCursorPage' }] } } } } } },
             },
             '/admin/security-center/events/export': {
-                get: { operationId: 'exportAdminSecurityCenterEvents', parameters: securityCenterExportParameters, responses: { '200': { description: 'Bounded redacted CSV security investigation report.', content: { 'text/csv': { schema: { type: 'string' } } } } } },
+                get: { operationId: 'exportAdminSecurityCenterEvents', parameters: securityCenterExportParameters, responses: { '200': { description: 'Bounded redacted CSV security investigation report.', content: { 'text/csv': { schema: { type: 'string' } } } }, '403': { description: 'MFA_STEP_UP_REQUIRED when the current privileged proof is stale.' } } },
             },
             '/admin/security-center/mitigations': {
                 get: { operationId: 'listAdminSecurityMitigations', parameters: securityMitigationParameters, responses: { '200': { description: 'No-store temporary security mitigations.', content: { 'application/json': { schema: { oneOf: [{ type: 'array', maxItems: 100, items: { $ref: '#/components/schemas/SecurityMitigation' } }, { $ref: '#/components/schemas/SecurityMitigationCursorPage' }] } } } } } },

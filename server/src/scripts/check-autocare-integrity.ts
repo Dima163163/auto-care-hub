@@ -58,6 +58,7 @@ const AUTOCARE_CRITICAL_TABLE_GROUPS = {
         'autocare_chat_reports',
         'autocare_chat_blocks',
         'autocare_reschedule_requests',
+        'autocare_reschedule_text_binding_backfill_checkpoints',
         'autocare_broadcast_requests',
         'autocare_broadcast_offers',
         'autocare_guarantee_claims',

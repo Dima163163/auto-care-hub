@@ -49,10 +49,10 @@ import {
     ServiceRequestEntity,
 } from '../../entities/index.js'
 import { AutoCareChatReportCategory } from '../../entities/automotive/chat-moderation.entity.js'
-import { UserRole } from '../../entities/user/user.entity.js'
-import type { UserEntity } from '../../entities/user/user.entity.js'
+import { UserEntity, UserRole, UserStatus } from '../../entities/user/user.entity.js'
 import {
     assertAutoCareChatRealtimeAccess,
+    assignAdminAutoCareChatModerator,
     getAutoCareChatAccessContext,
     createAutoCareChat,
     createAutoCareChatAttachment,
@@ -268,6 +268,9 @@ describe('AutoCare chat service boundaries', () => {
             nextCursor: null,
             totalCount: 1,
         })
+        expect(reportQuery.andWhere).toHaveBeenCalledWith(expect.stringContaining('NOT EXISTS'), {
+            reviewerId: admin.id,
+        })
     })
 
     it('keeps admin authorization ahead of report list and decision validation', async () => {
@@ -300,11 +303,12 @@ describe('AutoCare chat service boundaries', () => {
             limit: 20,
         })).resolves.toMatchObject({ items: [], nextCursor: null, totalCount: 0 })
 
-        expect(filterCalls).toHaveLength(4)
+        expect(filterCalls).toHaveLength(5)
         expect(filterCalls[0]).toEqual(['report.status = :activeStatus', { activeStatus: AutoCareChatReportStatus.Pending }])
         expect(filterCalls[1]).toEqual(['report.category = :category', { category: AutoCareChatReportCategory.Threat }])
         expect(filterCalls[2]?.[0]).toBe('report.assignedModeratorId IS NULL')
         expect(filterCalls[3]?.[1]).toEqual({ search: 'case-42' })
+        expect(filterCalls[4]).toEqual([expect.stringContaining('NOT EXISTS'), { reviewerId: superAdmin.id }])
         expect(count).toHaveBeenCalledOnce()
         expect(query.take).toHaveBeenCalledWith(21)
     })
@@ -392,6 +396,107 @@ describe('AutoCare chat service boundaries', () => {
         await expect(assertAutoCareChatRealtimeAccess(superAdmin, chatId)).resolves.toBe(true)
     })
 
+    it.each(['reporterId', 'reportedUserId'] as const)('denies an assigned moderator who is the %s of a pending report', async (partyField) => {
+        setupReadAccess({
+            thread: makeThread({ type: AutoCareChatThreadType.ServiceRequest, requestId: '66666666-6666-4666-8666-666666666666' }),
+            report: {
+                status: AutoCareChatReportStatus.Pending,
+                reportedMessageId: '77777777-7777-4777-8777-777777777777',
+                acknowledgedAt: new Date(),
+                policyVersion: 'v1',
+                assignedModeratorId: admin.id,
+                accessExpiresAt: new Date(Date.now() + 60_000),
+                [partyField]: admin.id,
+            },
+        })
+
+        await expect(getAutoCareChatAccessContext(admin, chatId)).rejects.toMatchObject({ statusCode: 403 })
+    })
+
+    it('denies a super-admin report party direct private thread access even with an emergency reason', async () => {
+        setupReadAccess({
+            thread: makeThread({ type: AutoCareChatThreadType.ServiceRequest }),
+            report: { status: AutoCareChatReportStatus.Dismissed, reporterId: superAdmin.id },
+        })
+        await expect(getAutoCareChatAccessContext(superAdmin, chatId, 'Emergency review of this case'))
+            .rejects.toMatchObject({ statusCode: 403 })
+    })
+
+    it.each(['reporterId', 'reportedUserId'] as const)('does not let the %s decide a chat report after role change', async (partyField) => {
+        const reportId = '99999999-9999-4999-8999-999999999999'
+        const report = { id: reportId, threadId: chatId, status: AutoCareChatReportStatus.Pending, [partyField]: admin.id }
+        mocks.getRepository.mockImplementation((entity: unknown) => entity === AutoCareChatReportEntity
+            ? { findOneBy: vi.fn().mockResolvedValue(report) }
+            : {})
+
+        await expect(decideAdminAutoCareChatReport(admin, reportId, AutoCareChatReportStatus.Dismissed, 'Independent review required')).rejects.toMatchObject({ statusCode: 403 })
+        expect(mocks.transaction).not.toHaveBeenCalled()
+    })
+
+    it('rechecks the locked report before a moderator decision', async () => {
+        const reportId = '99999999-9999-4999-8999-999999999999'
+        const thread = makeThread({ type: AutoCareChatThreadType.ServiceRequest })
+        const report = { id: reportId, threadId: chatId, status: AutoCareChatReportStatus.Pending, reporterId: client.id, reportedUserId: owner.id }
+        const lockedReport = { ...report, reportedUserId: admin.id }
+        const save = vi.fn()
+        mocks.getRepository.mockImplementation((entity: unknown) => entity === AutoCareChatReportEntity
+            ? { findOneBy: vi.fn().mockResolvedValue(report) }
+            : entity === AutoCareChatThreadEntity ? { findOneBy: vi.fn().mockResolvedValue(thread) } : {})
+        mocks.transaction.mockImplementation(async (operation: (manager: unknown) => Promise<unknown>) => operation({
+            getRepository(entity: unknown) {
+                if (entity === AutoCareChatThreadEntity) return { findOne: vi.fn().mockResolvedValue(thread) }
+                if (entity === AutoCareChatReportEntity) return { findOne: vi.fn().mockResolvedValue(lockedReport), save }
+                return {}
+            },
+        }))
+
+        await expect(decideAdminAutoCareChatReport(admin, reportId, AutoCareChatReportStatus.Dismissed, 'Independent review required')).rejects.toMatchObject({ statusCode: 403 })
+        expect(save).not.toHaveBeenCalled()
+    })
+
+    it('blocks a super administrator from deciding another pending report in their own thread', async () => {
+        const reportId = '99999999-9999-4999-8999-999999999999'
+        const thread = makeThread({ type: AutoCareChatThreadType.ServiceRequest })
+        const report = { id: reportId, threadId: chatId, status: AutoCareChatReportStatus.Pending, reporterId: client.id, reportedUserId: owner.id }
+        const otherReport = { ...report, id: '88888888-8888-4888-8888-888888888888', reporterId: superAdmin.id }
+        const save = vi.fn()
+        mocks.getRepository.mockImplementation((entity: unknown) => entity === AutoCareChatReportEntity
+            ? { findOneBy: vi.fn().mockResolvedValue(report) }
+            : entity === AutoCareChatThreadEntity ? { findOneBy: vi.fn().mockResolvedValue(thread) } : {})
+        mocks.transaction.mockImplementation(async (operation: (manager: unknown) => Promise<unknown>) => operation({
+            getRepository(entity: unknown) {
+                if (entity === AutoCareChatThreadEntity) return { findOne: vi.fn().mockResolvedValue(thread) }
+                if (entity === AutoCareChatReportEntity) return { findOne: vi.fn().mockResolvedValue(report), find: vi.fn().mockResolvedValue([report, otherReport]), save }
+                return {}
+            },
+        }))
+
+        await expect(decideAdminAutoCareChatReport(superAdmin, reportId, AutoCareChatReportStatus.Dismissed, 'Independent review required')).rejects.toMatchObject({ statusCode: 403 })
+        expect(save).not.toHaveBeenCalled()
+    })
+
+    it.each(['reporterId', 'reportedUserId'] as const)('refuses assignment when the candidate moderator is the %s of a pending report', async (partyField) => {
+        const reportId = '99999999-9999-4999-8999-999999999999'
+        const thread = makeThread({ type: AutoCareChatThreadType.ServiceRequest, requestId: '66666666-6666-4666-8666-666666666666' })
+        const report = { id: reportId, threadId: chatId, status: AutoCareChatReportStatus.Pending, reportedMessageId: '77777777-7777-4777-8777-777777777777', acknowledgedAt: new Date(), policyVersion: 'v1', [partyField]: admin.id }
+        const save = vi.fn()
+        mocks.getRepository.mockImplementation((entity: unknown) => entity === AutoCareChatReportEntity
+            ? { findOneBy: vi.fn().mockResolvedValue(report) }
+            : entity === AutoCareChatThreadEntity ? { findOneBy: vi.fn().mockResolvedValue(thread) } : {})
+        mocks.transaction.mockImplementation(async (operation: (manager: unknown) => Promise<unknown>) => operation({
+            getRepository(entity: unknown) {
+                if (entity === ServiceRequestEntity) return { findOne: vi.fn().mockResolvedValue({ id: thread.requestId }) }
+                if (entity === AutoCareChatThreadEntity) return { findOne: vi.fn().mockResolvedValue(thread) }
+                if (entity === AutoCareChatReportEntity) return { findOne: vi.fn().mockResolvedValue(report), find: vi.fn().mockResolvedValue([report]), save }
+                if (entity === UserEntity) return { findOneBy: vi.fn().mockResolvedValue({ id: admin.id, role: UserRole.Admin, status: UserStatus.Active }) }
+                return {}
+            },
+        }))
+
+        await expect(assignAdminAutoCareChatModerator(superAdmin, reportId, admin.id, 'Review the reported chat')).rejects.toMatchObject({ statusCode: 403 })
+        expect(save).not.toHaveBeenCalled()
+    })
+
     it('returns content-free, explicit scope metadata after authorizing the chat', async () => {
         setupReadAccess({
             thread: makeThread({ type: AutoCareChatThreadType.ServiceRequest, requestId: '66666666-6666-4666-8666-666666666666' }),
@@ -416,6 +521,26 @@ describe('AutoCare chat service boundaries', () => {
         setupReadAccess({ thread: makeThread({ type: AutoCareChatThreadType.ServiceRequest }) })
         await expect(getAutoCareChatAccessContext(superAdmin, chatId)).rejects.toMatchObject({ statusCode: 400 })
         await expect(getAutoCareChatAccessContext(superAdmin, chatId, 'Urgent review of a safety complaint')).resolves.toMatchObject({ accessScope: 'super_admin', emergencyReason: 'Urgent review of a safety complaint' })
+    })
+
+    it('does not let an admin provider membership bypass the assigned-report gate', async () => {
+        setupReadAccess({
+            thread: makeThread({
+                type: AutoCareChatThreadType.ServiceRequest,
+                requestId: '66666666-6666-4666-8666-666666666666',
+                providerId: '77777777-7777-4777-8777-777777777777',
+            }),
+            provider: { id: '77777777-7777-4777-8777-777777777777' },
+        })
+        mocks.hasProviderWorkspacePermission.mockResolvedValue(true)
+
+        await expect(getAutoCareChatAccessContext(admin, chatId)).rejects.toMatchObject({ statusCode: 403 })
+        expect(mocks.hasProviderWorkspacePermission).not.toHaveBeenCalled()
+    })
+
+    it.each([admin, superAdmin])('keeps privileged roles out of the request chat-thread shortcut for %s', async (moderator) => {
+        await expect(getAutoCareChatThreadForRequest(moderator, chatId)).rejects.toMatchObject({ statusCode: 403 })
+        expect(mocks.getRepository).not.toHaveBeenCalled()
     })
 
     it('does not let a provider from another workspace open the chat', async () => {

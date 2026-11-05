@@ -60,7 +60,11 @@ export async function toThreadResponse(user: UserEntity, thread: AutoCareChatThr
 export async function getMyAutoCareChats(user: UserEntity, input: unknown = {}) {
     const normalized = normalizeCursorPaginationInput(input)
     if (!normalized || normalized.beforeCursor) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Thread pagination is invalid.' })
-    const scopes = await getManagedProviderPermissionScopes(user.id, 'chats')
+    // Privileged reviewers use the moderated chat path for private threads;
+    // provider memberships must not widen their index to unrelated chats.
+    const scopes = user.role === UserRole.Admin || user.role === UserRole.SuperAdmin
+        ? []
+        : await getManagedProviderPermissionScopes(user.id, 'chats')
     if (user.role === UserRole.Owner && !scopes.length) return isCursorPaginationRequested(normalized) ? { items: [], nextCursor: null } : []
     const query = AppDataSource.getRepository(AutoCareChatThreadEntity).createQueryBuilder('thread')
         .leftJoin(ServiceRequestEntity, 'request', 'request.id = thread.requestId AND request.providerId = thread.providerId')
@@ -75,7 +79,7 @@ export async function getMyAutoCareChats(user: UserEntity, input: unknown = {}) 
             if (scope.locationIds) parameters[`locations${index}`] = scope.locationIds
             clauses.push(`(thread.providerId = :provider${index}${scope.locationIds ? ` AND request.locationId IN (:...locations${index})` : ''})`)
         }
-    } else if (user.role === UserRole.SuperAdmin) clauses.push('TRUE')
+    } else if (user.role === UserRole.SuperAdmin) clauses.push("thread.type IN ('support', 'admin_escalation')")
     else if (user.role === UserRole.Admin) {
         clauses.push("thread.type IN ('support', 'admin_escalation')")
         clauses.push(`thread.type = 'service_request' AND thread.requestId IS NOT NULL AND EXISTS (SELECT 1 FROM autocare_chat_reports report WHERE report."threadId" = thread.id

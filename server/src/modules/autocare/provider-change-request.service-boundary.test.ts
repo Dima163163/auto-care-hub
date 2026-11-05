@@ -1,4 +1,8 @@
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const mocks = vi.hoisted(() => ({ transaction: vi.fn() }))
+
+vi.mock('../../database/data-source.js', () => ({ AppDataSource: mocks }))
 
 import { AutomotiveProviderChangeRequestStatus } from '../../entities/automotive/provider-change-request.entity.js'
 import { UserRole } from '../../entities/user/user.entity.js'
@@ -15,6 +19,10 @@ const client = { id: '22222222-2222-4222-8222-222222222222', role: UserRole.Clie
 const admin = { id: '33333333-3333-4333-8333-333333333333', role: UserRole.Admin } as never
 
 describe('Provider change request service boundaries', () => {
+    beforeEach(() => {
+        mocks.transaction.mockReset()
+    })
+
     it('enforces owner role before listing provider changes', async () => {
         await expect(listOwnerProviderChangeRequests(client, 'not-a-uuid')).rejects.toMatchObject({ statusCode: 403 })
         await expect(listOwnerProviderChangeRequests(owner, 'not-a-uuid')).rejects.toMatchObject({ statusCode: 422 })
@@ -40,5 +48,30 @@ describe('Provider change request service boundaries', () => {
     it('keeps admin authorization and id validation ahead of decision transaction', async () => {
         await expect(decideAdminProviderChangeRequest(client, 'not-a-uuid', AutomotiveProviderChangeRequestStatus.Approved)).rejects.toMatchObject({ statusCode: 403 })
         await expect(decideAdminProviderChangeRequest(admin, 'not-a-uuid', AutomotiveProviderChangeRequestStatus.Approved)).rejects.toMatchObject({ statusCode: 422 })
+    })
+
+    it('rejects review of a request submitted before the owner became an administrator', async () => {
+        const requestId = '44444444-4444-4444-8444-444444444444'
+        const query = {
+            where: vi.fn().mockReturnThis(),
+            setLock: vi.fn().mockReturnThis(),
+            getOne: vi.fn().mockResolvedValue({
+                id: requestId,
+                requestedById: admin.id,
+                status: AutomotiveProviderChangeRequestStatus.Pending,
+            }),
+        }
+        const requestRepository = {
+            createQueryBuilder: vi.fn().mockReturnValue(query),
+            save: vi.fn(),
+        }
+        const manager = { getRepository: vi.fn().mockReturnValue(requestRepository) }
+        mocks.transaction.mockImplementation(async (run) => run(manager))
+
+        await expect(decideAdminProviderChangeRequest(admin, requestId, AutomotiveProviderChangeRequestStatus.Approved))
+            .rejects.toMatchObject({ statusCode: 403, code: 'FORBIDDEN' })
+        expect(query.setLock).toHaveBeenCalledWith('pessimistic_write')
+        expect(manager.getRepository).toHaveBeenCalledTimes(1)
+        expect(requestRepository.save).not.toHaveBeenCalled()
     })
 })

@@ -59,6 +59,22 @@ export async function updateUserPreferences(
     if (normalizedInput.preferredCategories !== undefined) changes.preferredCategories = preferredCategories ?? []
     if (normalizedInput.locale !== undefined) changes.locale = locale ?? null
 
+    if (Object.hasOwn(changes, 'preferredCity')) {
+        const currentUser = await AppDataSource.transaction(async (manager) => {
+            const repository = manager.getRepository(UserEntity)
+            const current = await repository.findOne({
+                where: { id: user.id, status: UserStatus.Active, tokenVersion: user.tokenVersion },
+                lock: { mode: 'pessimistic_write' },
+            })
+            if (!current) {
+                throw new AppError({ statusCode: 401, code: ERROR_CODES.Unauthorized, message: 'Session has expired. Please login again.' })
+            }
+            Object.assign(current, changes)
+            return repository.save(current)
+        })
+        return toPublicUser(currentUser)
+    }
+
     if (Object.keys(changes).length > 0) {
         // The auth snapshot can predate a block, password reset, or logout-all.
         // Update only preference columns and reject requests from that old version.

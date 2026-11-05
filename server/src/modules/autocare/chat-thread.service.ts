@@ -122,6 +122,9 @@ export async function getAutoCareChat(user: UserEntity, chatId: string, input: {
 export async function getAutoCareChatThreadForRequest(user: UserEntity, requestId: string) {
     const normalizedRequestId = normalizeAutoCareChatUuid(requestId)
     if (!normalizedRequestId) throw new AppError({ statusCode: 422, code: ERROR_CODES.ValidationError, message: 'Service request id must be a valid UUID.' })
+    if (user.role === UserRole.Admin || user.role === UserRole.SuperAdmin) {
+        fail(403, 'Administrators must use the audited chat review route.')
+    }
     const request = await AppDataSource.getRepository(ServiceRequestEntity).findOneBy({ id: normalizedRequestId })
     if (!request) fail(404, 'Service request not found.')
     if (request.clientId !== user.id) {

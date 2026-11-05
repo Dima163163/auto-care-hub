@@ -19,6 +19,7 @@ function createLoginSchema(t: I18nContextValue['t']) {
     return z.object({
         email: z.string().email(t('auth.validation.validEmail')),
         password: z.string().min(1, t('auth.validation.passwordRequired')),
+        mfaCode: z.string().max(64).optional(),
     })
 }
 
@@ -54,14 +55,19 @@ export function useLogin() {
         resolver: zodResolver(schema),
         defaultValues: {
             email: '',
-            password: ''
+            password: '',
+            mfaCode: '',
         }
     })
 
     const onSubmit = async (values: LoginFormValues) => {
         setFormError(null)
         try {
-            const user = await login(values).unwrap()
+            const user = await login({
+                email: values.email,
+                password: values.password,
+                mfaCode: values.mfaCode?.trim() || undefined,
+            }).unwrap()
 
             navigate(redirectPath ?? getDefaultRouteByRole(user.role), {
                 replace: true
