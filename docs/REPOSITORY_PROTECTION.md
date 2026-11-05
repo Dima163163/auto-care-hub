@@ -32,8 +32,9 @@ Git commit alone:
 - restrict direct pushes to the repository owner/release maintainers.
 
 The checked-in `.github/workflows/promote-dev-to-main.yml` starts on a push to
-`dev`, waits for a successful push-triggered `Quality` run for that exact commit, creates or
-reuses the `dev` → `main` pull request, waits for the pull-request checks, and
+`dev`, waits for a successful push-triggered `Quality PR-push` run for that exact commit, creates or
+reuses the `dev` → `main` pull request, waits for the pull-request checks and a
+successful `Quality` run named for that exact PR number and head SHA, and
 enables GitHub auto-merge with a merge commit so the verified `dev` commit remains
 in `main` history. Squashing the promotion previously made later `dev` → `main`
 pull requests conflict even when the released trees matched. The workflow fails
@@ -41,6 +42,22 @@ closed if the repository setting
 disallows the workflow token from creating pull requests; it never attempts to
 bypass protected `main` with a direct push. A failed check leaves promotion
 incomplete; fix the source branch and push a new commit to run the gates again.
+
+On 2026-11-05, PR #46 merged after the prior PR #30 checks for the same head SHA
+had passed, while PR #46's own browser E2E was still running. Its own Quality
+later passed, but the timing exposed a gate gap. The PR-numbered run-name and
+promotion waiter now prevent the **workflow** from enabling auto-merge until
+that PR's `Application CI` passes. GitHub's generic required check can still
+reuse an older result for the same SHA if someone manually enables auto-merge;
+do not enable it outside the promotion workflow. Published CI must verify this
+fix before the workflow is considered accepted.
+
+PR #47 reached `dev` as `38cc855` and its push Quality/Application CI passed.
+GitHub REST exposes the configured run-name in both `name` and `display_title`;
+the initial waiter still filtered `name == Quality` and could not find that
+successful run. The follow-up filters `Quality PR-push` for dev pushes and the
+exact `Quality PR-<number>` for the promotion PR. Published CI and protected
+promotion remain required before this follow-up is accepted.
 
 The checked-in `.github/CODEOWNERS`, `Quality` workflow, aggregate
 `Application CI` job, and promotion workflow provide the review, status-check,

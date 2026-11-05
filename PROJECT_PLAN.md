@@ -1,13 +1,61 @@
 # AutoCare Hub — Project Plan
 
+## Promotion run-name follow-up — 2026-11-05
+
+- [x] PR #47 merge commit `38cc855` вошёл в `dev`; exact-SHA push Quality
+  (`Quality PR-push`) и `Application CI` завершились PASS.
+- [x] Исправить выявленное в опубликованном запуске несоответствие: GitHub
+  возвращает `run.name = Quality PR-push` / `Quality PR-<номер>`, а promotion
+  workflow и PR waiter искали старое `Quality`. Точный push selector проверен
+  на реальном формате ответа; локальные negative/positive tests 23/23 и
+  полный root tooling 188/188 PASS.
+- [ ] Повторить опубликованный `dev` push и защищённый PR Quality с этим fix,
+  затем code-owner review и auto-merge в `main`.
+
+## Локальная проверка кандидата и U02, 2026-11-05
+
+- [x] Повторить полный локальный gate после CI/MFA изменений: frontend
+  204 файла / 671 тест PASS, lint и Next build PASS; backend unit
+  463 файла / 1723 теста, build и `quality:backend` PASS; disposable
+  PostgreSQL/Redis integration 30 файлов / 153 PASS / 1 skip.
+- [x] Выполнить все 35 read-only `encryption:backfill-* --mode verify`
+  вариантов на disposable БД: все завершились `exhausted:true`.
+  Только пять проверок прочли строки (14 user email, 14 user profile,
+  14 user secondary, 20 outbox, 6 trust evidence); остальные 30 таблиц пусты.
+- [ ] Проверить старые строки, объём и restore на подготовленном staging перед
+  U02/N09 cutover. Эти локальные команды не доказывают готовность реальных данных.
+
+## U03 — старые административные отзывы, 2026-11-05
+
+- [x] Потребовать свежий MFA перед списком, сменой статуса и удалением старых
+  отзывов. Положительные и отрицательные сценарии для admin/super-admin на
+  disposable PostgreSQL/Redis прошли (полный authorization suite 33/33);
+  backend build и targeted lint PASS.
+- [ ] Повторить защищённые маршруты с реальными учётными записями на staging.
+  Локальное исправление само по себе не закрывает U03 и pilot acceptance.
+
+## PR-specific promotion Quality gate — 2026-11-05
+
+- [x] PR #46 вошёл в `main` как `1c57fe0` с проверенным `dev` `4c969e4`;
+  его собственный Quality завершился PASS позднее. Зафиксирован release gap:
+  workflow принимал успешный `Application CI` старого PR #30 для того же SHA.
+- [x] Дать каждому PR Quality run имя с номером PR и до включения auto-merge
+  требовать успешный Quality run и `Application CI` именно текущего PR.
+  Отрицательные тесты старого PASS/нового pending и failure проходят локально:
+  19/19 promotion/policy tests PASS.
+- [ ] Проверить исправленный workflow на опубликованном кандидате. Защита
+  GitHub по общему check name всё ещё допускает ручное включение auto-merge
+  до свежего PR CI; владелец не должен включать его вне promotion workflow.
+
 ## PR #30 promotion scan follow-up — 2026-11-04
 
 - [x] Определить два Gitleaks finding релизного PR #30: публичный RFC 6238
   TOTP vector получил новые fingerprints после squash PR #43 в `78ba6a0`.
 - [x] Добавить только эти два fingerprint в `.gitleaksignore`; исторический
   commit/path/rule/line указан полностью, другие секреты не игнорируются.
-- [ ] Получить Quality на новом dev commit и обоих событиях push/PR для
-  dev → main; защищённый main требует отдельного code-owner review.
+- [x] Quality для `dev` push и PR #30 прошёл; затем PR #46 от GitHub Actions
+  получил code-owner approval и вошёл в `main` merge commit `1c57fe0`.
+  Повторный PR #46 Quality также завершился PASS.
 
 ## PR #43 CI follow-up — 2026-11-04
 
@@ -23,9 +71,8 @@
   44 таблицы в manifest, 30 pending constraints validated на disposable PostgreSQL.
 - [x] Зафиксировать, что PR #43 уже squash-merged в dev как `78ba6a0`
   до завершения Quality; dev push Quality упал, main не продвинут.
-- [ ] Провести отдельный PR с оставшимся CI fix в dev после зелёного
-  exact-SHA Quality; затем дождаться dev push Quality и провести
-  защищённый dev → main PR по обязательным проверкам и review.
+- [x] Остаточный CI fix вошёл через PR #44 и #45; exact-SHA `dev` push
+  Quality и protected PR Quality прошли, PR #46 вошёл в `main` с review.
 
 ## Exact-candidate local quality replay — 2026-11-04
 
@@ -193,7 +240,9 @@
 - [x] Защитить admin/super-admin действия с чатами и вложениями свежим MFA;
   mock-список синхронизирован. Unit backend 5 PASS, frontend mock 1 PASS;
   TypeScript, targeted lint и backend build PASS.
-- [ ] Выполнить добавленные PostgreSQL/browser сценарии и staging replay;
+- [x] Повторить локальную PostgreSQL/Redis integration: 30 файлов,
+  153 PASS / 1 skip. Отдельные frontend step-up/CSV/attachment unit 5/5 PASS.
+- [ ] Провести browser/staging replay с реальными привилегированными ролями;
   U03 и pilot NO-GO сохраняются.
 
 ## U02 — автомобили автопарка, 2026-10-28
@@ -281,13 +330,17 @@
 - [x] Требовать свежий MFA для оставшихся admin/platform-review mutations
   (модерация, сервисы, каталог, рынки, кабинеты). Backend build, targeted
   lint и полный unit suite 463/1704 PASS; PostgreSQL negative matrix добавлена.
-- [ ] Выполнить mutation matrix на isolated PostgreSQL и staging.
+- [x] Выполнить mutation matrix на isolated PostgreSQL: полный admin
+  authorization suite 33/33 PASS и общий integration 153 PASS / 1 skip.
+- [ ] Повторить mutation matrix на staging с реальными ролями и MFA.
 
 - [x] Требовать свежий MFA перед чтением персональных/операционных admin
   dashboards и очереди отзывов платформы; public market hierarchy не меняется.
   Backend build/targeted lint PASS; negative PostgreSQL matrix добавлена,
   локально не запускалась.
-- [ ] Проверить admin read matrix на isolated PostgreSQL и staging.
+- [x] Проверить admin read matrix на isolated PostgreSQL: полный admin
+  authorization suite 33/33 PASS и общий integration 153 PASS / 1 skip.
+- [ ] Повторить admin read matrix на staging.
 
 - [x] Добавить свежий MFA перед admin/super-admin чтением жалоб и приватного чата,
   вложений, chat WebSocket и super-admin просмотром заявки; live WebSocket
@@ -295,14 +348,17 @@
   PostgreSQL negative case добавлен, локально не запускался.
 - [x] Сохранить JSON код отказа вместо Blob для приватного attachment GET,
   чтобы общий frontend step-up повторил запрос; frontend unit и Next build PASS.
-- [ ] Проверить этот путь на PostgreSQL/browser/staging и закрыть остальные
-  чувствительные чтения до приёмки U03.
+- [x] Повторить локальный PostgreSQL/Redis integration и frontend
+  step-up/attachment/CSV unit: 153 PASS / 1 skip и 5/5 PASS соответственно.
+- [ ] Проверить browser/staging и остальные чувствительные чтения до приёмки U03.
 
 - [x] Запретить access и refresh без persisted session для текущих
   admin/super-admin, включая токены с устаревшей ролью client.
 - [x] Проверить положительный путь с активным сеансом и отказ для двух ролей.
-- [ ] Реализовать MFA/SSO, recovery и step-up; проверить PostgreSQL/browser
-  сценарии. Этот локальный барьер сам по себе V2-SEC-02 не закрывает.
+- [x] Реализовать TOTP/recovery и step-up, повторить локальный PostgreSQL/Redis
+  integration и frontend transport unit; 153 PASS / 1 skip, 5/5 PASS.
+- [ ] Проверить browser/staging сценарии с реальными ролями, внешний
+  identity/recovery и операционный rollout до закрытия V2-SEC-02.
 
 ## U02 — вторичные поля пользователя, 2026-10-28
 

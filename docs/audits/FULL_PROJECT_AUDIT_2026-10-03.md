@@ -1,5 +1,26 @@
 # Дополнительный полный аудит AutoCare Hub — 3 октября 2026
 
+## U02 — локальный read-only verify, 5 ноября 2026
+
+На disposable PostgreSQL после 179 миграций и seeds все 35 вариантов
+`encryption:backfill-* --mode verify` завершились с `exhausted:true`.
+Пять проверок прочли в сумме 68 строк (user email/profile/secondary, outbox,
+trust evidence), остальные 30 таблиц были пусты. Backend unit 463/1723 и
+полный local Quality backend gate PASS. Это подтверждает исполнение команд и
+не доказывает корректность legacy backfill, объёмного rollout, KMS/restore или
+strict cutover. **U02/N09 открыты; pilot NO-GO.**
+
+## U03 — локальная перепроверка MFA, 5 ноября 2026
+
+Старые admin review маршруты (список, смена статуса, удаление) теперь требуют
+свежий MFA до чтения и изменения. Authorization integration на disposable
+PostgreSQL/Redis 33/33 PASS; полный integration replay 30 файлов / 153 PASS /
+1 skip. Первый общий прогон дал один неповторившийся 404 вместо 403 в старой
+MFA mutation matrix; изолированный и полный повтор прошли, причина не
+установлена. Frontend transport step-up/CSV/attachment unit 5/5 PASS.
+Browser/staging с реальными привилегированными аккаунтами и операционная
+приёмка остаются открытыми. **U03 открыт; pilot NO-GO.**
+
 ## U02 — привязка автомобилей автопарка, 28 октября 2026
 
 Два зашифрованных поля `autocare_fleet_vehicles` получают HMAC по vehicle/fleet UUID. Migration 178680, bounded compare-write, полный verify и opt-in strict reader подготовлены; удаление владельца переподписывает оба обезличенных поля каждой строки. PostgreSQL CI, staging KMS/restore и strict cutover ещё открыты. **U02 открыт; pilot NO-GO.**

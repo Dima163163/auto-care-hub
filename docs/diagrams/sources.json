@@ -714,7 +714,7 @@
     },
     {
       "path": ".github/workflows/quality.yml",
-      "sha256": "7fb8dc4deb7a5393c6dc761b3dd364c031cd4e345a016aeab9a1064ce72e2c54",
+      "sha256": "d4be440de000e590fab8379aa99906d1eaadeb3764caff427e62f2c358befc5e",
       "scopes": [
         "frontend"
       ]
@@ -2692,7 +2692,7 @@
     },
     {
       "path": "server/src/modules/admin/admin-authorization.integration.test.ts",
-      "sha256": "f1efe251e31b08abbdf3ab4469cc503e418cc56241b5304004612ba59fd2fe31",
+      "sha256": "59c350c2a7c635c1a2f553a3984091116876d3cc4b9ee439f4c614bbc2034c50",
       "scopes": [
         "security"
       ]
@@ -2844,6 +2844,14 @@
       "sha256": "98072ef384196825f3bb7ece9c4ef2d2d8d1971bf1fc13a28912eb3fbf00effe",
       "scopes": [
         "frontend",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/modules/reviews/reviews.routes.ts",
+      "sha256": "6e0f4ea329242bdc03377883424810655a94000f52f7716295b1e9181a9c2de3",
+      "scopes": [
+        "auth",
         "security"
       ]
     }

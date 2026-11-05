@@ -1,6 +1,35 @@
 # Current finding disposition — 2026-10-04
 
-**PR #30 promotion scan, 04.11:** после squash PR #43 два публичных RFC
+**Promotion run-name follow-up, 05.11:** PR #47 merged в `dev` как `38cc855`,
+его push Quality/Application CI PASS. Workflow не нашёл успешный run, потому
+что GitHub REST `name` теперь `Quality PR-push`, а selector ожидал `Quality`;
+PR waiter имел аналогичный дефект. Точные имена исправлены, jq/PR/policy
+tests 23/23 и root tooling 188/188 PASS. Публикация исправления и защищённый
+PR в `main` открыты.
+
+**Локальный U02 verify 05.11:** все 35 read-only binding verify команд
+завершились; пять прочли 68 строк, остальные 30 таблиц пусты. Полный
+frontend 204/671, lint/Next build, backend unit 463/1723, build,
+`quality:backend` и integration 30 файлов / 153 PASS / 1 skip.
+Legacy backfill, объём, KMS/restore и strict cutover остаются открытыми.
+
+**Локальный шаг 05.11, U03 legacy reviews:** три admin review маршрута
+проверяют свежий MFA до чтения, валидации и изменения. Полный authorization
+integration на disposable PostgreSQL/Redis 33/33 PASS для admin и super-admin;
+backend build PASS. Общий integration replay 30 файлов / 153 PASS / 1 skip;
+первый прогон дал одиночный 404 вместо 403 в старой mutation matrix, затем
+изолированный и полный повтор прошли. Причина не установлена. Frontend
+step-up/CSV/attachment unit 5/5 PASS. Browser/staging и U03/pilot acceptance
+открыты.
+
+**Promotion gate, 05.11:** PR #46 вошёл в `main` как `1c57fe0` с parent
+`dev` `4c969e4`; его повторный Quality завершился PASS после merge.
+Workflow преждевременно включил auto-merge, приняв старый успешный PR #30
+Quality для того же SHA. Локальный fix требует run-name с номером текущего
+PR и успешный `Application CI` внутри именно этого run; 19/19 focused
+tests PASS. Опубликованный exact-candidate CI исправления ещё открыт.
+
+**PR #30 promotion scan, 04.11 (исторический снимок):** после squash PR #43 два публичных RFC
 6238 TOTP test vector получили новые fingerprints в `78ba6a0`.
 Добавлены только эти точные исторические исключения. Новый dev push/PR
 Quality и code-owner review остаются открыты; main не продвинут.

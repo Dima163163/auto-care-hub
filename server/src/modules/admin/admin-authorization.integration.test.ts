@@ -415,6 +415,37 @@ describe('Admin and workspace authorization integration', () => {
         expect(response.body).not.toHaveProperty('items')
     })
 
+    it.each(['admin', 'super_admin'] as const)('rejects stale MFA before legacy review moderation by %s', async (role) => {
+        const actor = role === 'admin' ? admin : superAdmin
+        const token = await createTestAccessToken(actor)
+        const sessionId = verifyAccessToken(token).sessionId
+        if (!sessionId) throw new Error('Privileged test token has no session ID.')
+        await AppDataSource.getRepository(UserSessionEntity).update(sessionId, {
+            mfaVerifiedAt: new Date(Date.now() - 5 * 60_000 - 1_000),
+        })
+
+        const reviewId = '11111111-1111-4111-8111-111111111111'
+        const responses = [
+            await request(app.server).get('/admin/reviews').set('Authorization', `Bearer ${token}`),
+            await request(app.server).patch(`/admin/reviews/${reviewId}/status`).set('Authorization', `Bearer ${token}`),
+            await request(app.server).delete(`/admin/reviews/${reviewId}`).set('Authorization', `Bearer ${token}`),
+        ]
+        for (const response of responses) {
+            expect(response.status).toBe(403)
+            expect(response.body.code).toBe('MFA_STEP_UP_REQUIRED')
+        }
+    })
+
+    it.each(['admin', 'super_admin'] as const)('allows legacy review listing with fresh MFA for %s', async (role) => {
+        const actor = role === 'admin' ? admin : superAdmin
+        const token = await createTestAccessToken(actor)
+        const response = await request(app.server)
+            .get('/admin/reviews')
+            .set('Authorization', `Bearer ${token}`)
+        expect(response.status).toBe(200)
+        expect(Array.isArray(response.body)).toBe(true)
+    })
+
     it.each(['admin', 'super_admin'] as const)('rejects stale MFA before listing chat subjects to %s', async (role) => {
         const actor = role === 'admin' ? admin : superAdmin
         const token = await createTestAccessToken(actor)

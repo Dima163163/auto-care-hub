@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify'
 
+import { requireRecentPrivilegedMfa } from '../auth/privileged-step-up.service.js'
 import { requireAuth, requireVerifiedEmail } from '../auth/require-auth.js'
 import {
     validateBody,
@@ -103,7 +104,7 @@ export async function reviewsRoutes(app: FastifyInstance) {
     app.get<{ Reply: AdminReviewsResponse }>(
         '/admin/reviews',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
 
             return getAdminReviews(user)
         }
@@ -112,7 +113,7 @@ export async function reviewsRoutes(app: FastifyInstance) {
     app.patch<{ Params: unknown; Body: unknown; Reply: AdminReviewResponse }>(
         '/admin/reviews/:id/status',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const params = validateParams(reviewParamsSchema, request.params)
             const body = validateBody(updateReviewStatusSchema, request.body)
 
@@ -137,7 +138,7 @@ export async function reviewsRoutes(app: FastifyInstance) {
     app.delete<{ Params: unknown; Reply: DeleteReviewResponse }>(
         '/admin/reviews/:id',
         async (request) => {
-            const user = await requireAuth(request)
+            const user = await requireRecentPrivilegedMfa(request)
             const params = validateParams(reviewParamsSchema, request.params)
 
             const result = await deleteAdminReview(user, params.id)
