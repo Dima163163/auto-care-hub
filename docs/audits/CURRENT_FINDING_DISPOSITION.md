@@ -3,7 +3,11 @@
 **Локальный шаг 05.11, U03 legacy reviews:** три admin review маршрута
 проверяют свежий MFA до чтения, валидации и изменения. Полный authorization
 integration на disposable PostgreSQL/Redis 33/33 PASS для admin и super-admin;
-backend build PASS. Staging replay и общий U03/pilot acceptance открыты.
+backend build PASS. Общий integration replay 30 файлов / 153 PASS / 1 skip;
+первый прогон дал одиночный 404 вместо 403 в старой mutation matrix, затем
+изолированный и полный повтор прошли. Причина не установлена. Frontend
+step-up/CSV/attachment unit 5/5 PASS. Browser/staging и U03/pilot acceptance
+открыты.
 
 **Promotion gate, 05.11:** PR #46 вошёл в `main` как `1c57fe0` с parent
 `dev` `4c969e4`; его повторный Quality завершился PASS после merge.

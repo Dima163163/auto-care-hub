@@ -6,7 +6,11 @@
 проверяют свежий privileged MFA до валидации и доступа к данным. Отрицательные
 и положительные сценарии для admin/super-admin прошли на disposable
 PostgreSQL/Redis: полный authorization integration 33/33 PASS; backend build
-PASS. Staging replay с реальными аккаунтами остаётся открытым; U03/pilot NO-GO.
+PASS. Общий integration replay: 30 файлов, 153 PASS / 1 skip; первый прогон
+дал один неповторившийся 404 вместо 403 в существующей MFA mutation matrix,
+изолированный повтор 33/33 и второй полный прогон прошли. Причина разового
+сбоя не установлена. Frontend step-up/CSV/attachment unit 5/5 PASS.
+Browser/staging replay с реальными аккаунтами остаётся открытым; U03/pilot NO-GO.
 
 ## PR-specific promotion gate, 5 ноября 2026
 

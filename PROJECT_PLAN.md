@@ -215,7 +215,9 @@
 - [x] Защитить admin/super-admin действия с чатами и вложениями свежим MFA;
   mock-список синхронизирован. Unit backend 5 PASS, frontend mock 1 PASS;
   TypeScript, targeted lint и backend build PASS.
-- [ ] Выполнить добавленные PostgreSQL/browser сценарии и staging replay;
+- [x] Повторить локальную PostgreSQL/Redis integration: 30 файлов,
+  153 PASS / 1 skip. Отдельные frontend step-up/CSV/attachment unit 5/5 PASS.
+- [ ] Провести browser/staging replay с реальными привилегированными ролями;
   U03 и pilot NO-GO сохраняются.
 
 ## U02 — автомобили автопарка, 2026-10-28
@@ -303,13 +305,17 @@
 - [x] Требовать свежий MFA для оставшихся admin/platform-review mutations
   (модерация, сервисы, каталог, рынки, кабинеты). Backend build, targeted
   lint и полный unit suite 463/1704 PASS; PostgreSQL negative matrix добавлена.
-- [ ] Выполнить mutation matrix на isolated PostgreSQL и staging.
+- [x] Выполнить mutation matrix на isolated PostgreSQL: полный admin
+  authorization suite 33/33 PASS и общий integration 153 PASS / 1 skip.
+- [ ] Повторить mutation matrix на staging с реальными ролями и MFA.
 
 - [x] Требовать свежий MFA перед чтением персональных/операционных admin
   dashboards и очереди отзывов платформы; public market hierarchy не меняется.
   Backend build/targeted lint PASS; negative PostgreSQL matrix добавлена,
   локально не запускалась.
-- [ ] Проверить admin read matrix на isolated PostgreSQL и staging.
+- [x] Проверить admin read matrix на isolated PostgreSQL: полный admin
+  authorization suite 33/33 PASS и общий integration 153 PASS / 1 skip.
+- [ ] Повторить admin read matrix на staging.
 
 - [x] Добавить свежий MFA перед admin/super-admin чтением жалоб и приватного чата,
   вложений, chat WebSocket и super-admin просмотром заявки; live WebSocket
@@ -317,14 +323,17 @@
   PostgreSQL negative case добавлен, локально не запускался.
 - [x] Сохранить JSON код отказа вместо Blob для приватного attachment GET,
   чтобы общий frontend step-up повторил запрос; frontend unit и Next build PASS.
-- [ ] Проверить этот путь на PostgreSQL/browser/staging и закрыть остальные
-  чувствительные чтения до приёмки U03.
+- [x] Повторить локальный PostgreSQL/Redis integration и frontend
+  step-up/attachment/CSV unit: 153 PASS / 1 skip и 5/5 PASS соответственно.
+- [ ] Проверить browser/staging и остальные чувствительные чтения до приёмки U03.
 
 - [x] Запретить access и refresh без persisted session для текущих
   admin/super-admin, включая токены с устаревшей ролью client.
 - [x] Проверить положительный путь с активным сеансом и отказ для двух ролей.
-- [ ] Реализовать MFA/SSO, recovery и step-up; проверить PostgreSQL/browser
-  сценарии. Этот локальный барьер сам по себе V2-SEC-02 не закрывает.
+- [x] Реализовать TOTP/recovery и step-up, повторить локальный PostgreSQL/Redis
+  integration и frontend transport unit; 153 PASS / 1 skip, 5/5 PASS.
+- [ ] Проверить browser/staging сценарии с реальными ролями, внешний
+  identity/recovery и операционный rollout до закрытия V2-SEC-02.
 
 ## U02 — вторичные поля пользователя, 2026-10-28
 
