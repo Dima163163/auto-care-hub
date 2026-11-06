@@ -9,8 +9,8 @@ const mocks = vi.hoisted(() => ({
     uploadMedia: vi.fn(),
     prepareProviderMedia: vi.fn(),
     clearFormDraft: vi.fn(),
-    readFormDraft: vi.fn(() => null),
-    useFormDraft: vi.fn(() => ({ clearDraft: vi.fn() })),
+    readFormDraft: vi.fn((_key: string, _parse: unknown) => null),
+    useFormDraft: vi.fn((_options: unknown) => ({ clearDraft: vi.fn() })),
 }))
 
 vi.mock('@/features/auth', () => ({
@@ -27,11 +27,11 @@ vi.mock('@/shared/lib/useTranslation', () => ({
 
 vi.mock('@/shared/lib/form-draft', () => ({
     clearFormDraft: (...args: unknown[]) => mocks.clearFormDraft(...args),
-    readFormDraft: (...args: unknown[]) => mocks.readFormDraft(...args),
+    readFormDraft: (key: string, parse: unknown) => mocks.readFormDraft(key, parse),
 }))
 
 vi.mock('@/shared/lib/useFormDraft', () => ({
-    useFormDraft: (...args: unknown[]) => mocks.useFormDraft(...args),
+    useFormDraft: (options: unknown) => mocks.useFormDraft(options),
 }))
 
 vi.mock('@/shared/ui/form-draft-notice/FormDraftNotice', () => ({
