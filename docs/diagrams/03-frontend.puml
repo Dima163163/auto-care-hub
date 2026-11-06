@@ -16,10 +16,12 @@ package "Существующее React application tree" {
   component "src/entities\nданные и API hooks" as Entities
   component "ServiceRequestChat\nсостояние по userId + requestId" as RequestChat
   component "RequestForm\nчерновик визита с абсолютной датой" as BookingForm
+  component "Owner draft forms\nprovider / profile / fleet vehicle" as OwnerDrafts
   component "src/shared + src/components/ui\nUI / i18n / safe error messages" as Shared
 }
 package "Данные" {
   component "Redux store\nRTK Query cache" as Store
+  component "Browser localStorage\naccount-scoped draft keys" as DraftStorage
   component "autocareApi.ts\nединая injectEndpoints registration" as AutoAPI
   component "api/autocare/*.endpoints.ts\ntypes / schemas / transforms\n10 доменных factories" as Factories
   component "shared/api/baseApi.ts\nauth / refresh / CSRF / MFA step-up / errors" as Transport
@@ -39,6 +41,9 @@ Screens --> RequestChat : request conversation
 RequestChat --> Entities : thread / messages / mutations
 Screens --> BookingForm : request booking
 BookingForm --> Entities : availability / submit
+Screens --> OwnerDrafts : owner edit flows
+OwnerDrafts --> DraftStorage : ownerId + market/provider/fleet
+OwnerDrafts --> Entities : create / upload / change request
 Features --> Entities
 Entities --> Shared
 Screens --> Shared
@@ -104,5 +109,16 @@ note right of BookingForm
   URL date/time имеет приоритет над черновиком.
   Сохранённый slot восстанавливается на исходную дату;
   исчезнувший slot требует нового выбора до отправки.
+  Request page aborts pending create/attachment mutations
+  when navigation, logout or context switch unmounts it.
+  Late FileReader completion cannot start an attachment.
+  Route id masks a stale cached provider profile; submitted
+  request, step and summary state belong to one context only.
+end note
+note right of OwnerDrafts
+  Shared legacy draft keys are discarded, never restored.
+  Account or context switch remounts each form; pending
+  provider creation/media and fleet vehicle create are aborted on unmount.
+  A late local file read cannot start an upload or create.
 end note
 @enduml

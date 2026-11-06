@@ -128,6 +128,16 @@ encrypted restore PASS. Эти результаты не меняют форма
 staging applied inventory, реальные ключи и данные, ручная и независимая
 приёмка остаются условиями закрытия соответствующих ID.
 
+Дополнительный локальный replay 06.11 проверил timezone/DST/московскую
+полночь и смену client → owner с Back в mock browser. Owner draft keys получили
+account scope и late-request guards; это сужает локальный C004/C009/C014
+риск, но не закрывает staging/real-API, ручную visual/accessibility и
+исторические данные. Опциональный visual snapshot suite использует устаревшие
+эталоны и требует отдельной приёмки перед зачётом V2-MVP-09.
+После этого локально добавлены 6 focused race tests и abort pending client
+request create/attachment при navigation/logout/provider switch; browser mock
+slow create 3/3 пройден. Реальный API ещё не зачтён.
+
 ## 4. Контур B — ручная MVP-приёмка
 
 **Текущий статус: 0/2 закрыто.** Автоматизация подготовлена, но подпись человека не

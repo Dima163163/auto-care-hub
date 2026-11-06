@@ -1,5 +1,27 @@
 # AutoCare Hub Project Context
 
+## Local acceptance follow-up, 6 ноября 2026
+
+PR #52 (`dev` `30dd6b3`) и PR #53 (`main` `2b972a8`) прошли exact-candidate
+Quality/Application CI и защищённый merge; деревья равны. Текущая отдельная
+ветка `fix/local-pilot-acceptance` от `dev` добавляет browser replay для
+service timezone/DST и смены client → owner с Back. Также три owner draft
+формы больше не делят localStorage между аккаунтами; старые общие ключи
+удаляются, late media/read/create после unmount не обновляют новую форму.
+Client request page также abort pending create/attachment при смене контекста;
+late FileReader не запускает вложение, а submitted state не переходит между
+сервисами. Focused owner unit 11/11, request race 6/6, browser replay 7/7
+(timezone/identity/slow create).
+Полный `check:local-mvp` после последнего изменения request page PASS,
+включая lint, все frontend tests, Next/backend build и responsive browser.
+Кандидат ещё не опубликован и не прошёл полный CI.
+
+Visual snapshot suite не является текущим evidence: сохранённые снимки
+отражают прежнюю композицию и расходятся с нынешним интерфейсом; обновление
+требует визуальной приёмки владельца. Формальные 54 pilot gates не изменены:
+staging/KMS/real DB/SMTP/media/restore, ручная accessibility и независимый
+security review остаются открытыми; pilot NO-GO.
+
 ## Local preflight and dependency refresh, 6 ноября 2026
 
 Изолированная ветка `fix/local-pilot-remaining` от `dev` `ba95bca` обновляет

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "baseline": "0b6a548c2787ff9c3a3f9e5a8985021714a74fe7",
+  "baseline": "30dd6b33577b0d3f2b8f6ade05a74b744cff5b43",
   "verifiedOn": "2026-11-06",
   "description": "Selected source anchors and directory names; not exhaustive architecture correctness evidence.",
   "diagrams": [
@@ -557,6 +557,13 @@
       ]
     },
     {
+      "path": "src/pages/autocare-request/ui/AutoCareRequestPage.tsx",
+      "sha256": "09fd7c8df5ba89cd2c5f94c12d73a85008b622ec2804e607c76934864f05c5da",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
       "path": "src/pages/autocare-request/ui/RequestForm.tsx",
       "sha256": "8d375145e3d7e3e9623e2435b175fd3f540c17b1048b200f34c9622f212137eb",
       "scopes": [
@@ -989,6 +996,27 @@
     {
       "path": "src/entities/automotive-service/lib/useAutoCareRequestPages.ts",
       "sha256": "3038a9ee0636142d9b7fa7de62c7af79e87f1c6905c151597cd8c057c152e984",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/pages/owner-autocare-providers/ui/OwnerAutoCareProviderForm.tsx",
+      "sha256": "fb56641af07c7a579f0a7496724aff733f71f77743ad8079a119d902a7524964",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/pages/owner-autocare-provider-details/ui/OwnerProviderProfileChangeForm.tsx",
+      "sha256": "61247aaeb13d1b4a40aebbb10d1994f9e599714ac634f8466c4ce3c3bc825142",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/pages/owner-dashboard/ui/OwnerFleetVehicleForm.tsx",
+      "sha256": "cfdc5c91dee9204a972b2ce5aec2983b6bef24c9dd673f76a58db6b130ea979a",
       "scopes": [
         "frontend"
       ]
