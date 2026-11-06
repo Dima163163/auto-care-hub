@@ -114,6 +114,59 @@ async function failNextRequestSubmission(page: Page, failure: 'offline' | 'timeo
     }, { failureMode: failure })
 }
 
+async function beginHeldRequestWithAttachment(page: Page) {
+    await signInAsClient(page)
+    await page.addInitScript(() => {
+        const originalFetch = window.fetch.bind(window)
+        const state = { waiting: false, attachmentCalls: 0, release: () => {} }
+        Object.assign(window, { __autocareSlowCreate: state })
+
+        window.fetch = async (input, init) => {
+            const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+            const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase()
+            const path = new URL(url, window.location.origin).pathname
+            if (method === 'POST' && /^\/api\/v1\/service-requests\/[^/]+\/attachments$/.test(path)) state.attachmentCalls += 1
+            const response = await originalFetch(input, init)
+            if (method !== 'POST' || path !== '/api/v1/service-requests') return response
+            state.waiting = true
+            return new Promise<Response>((resolve) => { state.release = () => resolve(response) })
+        }
+    })
+    await page.goto('/services/api-proservice-moscow/request?service=oil-change')
+
+    const form = page.locator('main form').first()
+    const appointmentPicker = form.locator('section').first()
+    const timeSlots = appointmentPicker.getByRole('button').filter({ hasText: /^\d{1,2}:\d{2}$/ })
+    let hasAvailableDate = false
+    for (let dateIndex = 0; dateIndex < 4; dateIndex += 1) {
+        if (dateIndex > 0) await appointmentPicker.getByRole('button').nth(dateIndex).click()
+        try {
+            await expect(timeSlots.first()).toBeVisible({ timeout: 3_000 })
+            hasAvailableDate = true
+            break
+        } catch {
+            // Closed dates are expected in the fixture; use the first open slot.
+        }
+    }
+    expect(hasAvailableDate).toBe(true)
+    await form.locator('#request-attachments').setInputFiles({ name: 'inspection.png', mimeType: 'image/png', buffer: tinyPng })
+    const confirmations = form.locator('input[type="checkbox"]')
+    for (let index = 0; index < 2; index += 1) await confirmations.nth(index).check()
+    await form.getByRole('button', { name: /send appointment request|отправить запрос/i }).click()
+
+    await expect.poll(() => page.evaluate(() => (window as unknown as { __autocareSlowCreate: { waiting: boolean } }).__autocareSlowCreate.waiting)).toBe(true)
+    await expect(page.getByText(/request sent|запрос отправлен/i)).toHaveCount(0)
+}
+
+async function releaseHeldRequestAndCountAttachments(page: Page) {
+    return page.evaluate(async () => {
+        const state = (window as unknown as { __autocareSlowCreate: { release: () => void; attachmentCalls: number } }).__autocareSlowCreate
+        state.release()
+        await new Promise((resolve) => window.setTimeout(resolve, 250))
+        return state.attachmentCalls
+    })
+}
+
 test.describe('public and client AutoCare states', () => {
     test('opens the provider gallery and the service comparison table', async ({ page }) => {
         // The second navigation compiles the dynamic provider route on a cold
@@ -240,6 +293,33 @@ test.describe('public and client AutoCare states', () => {
             await form.getByRole('button', { name: /retry|повторить/i }).click()
 
             await expect(page.getByText(/request sent|запрос отправлен/i).first()).toBeVisible()
+        })
+    }
+
+    for (const exit of ['navigation', 'logout', 'provider switch'] as const) {
+        test(`leaving a slow request by ${exit} never uploads its old attachment`, async ({ page }, testInfo) => {
+            test.skip(testInfo.project.name !== 'chromium', 'The desktop browser covers this mutation race.')
+            test.setTimeout(90_000)
+            await beginHeldRequestWithAttachment(page)
+
+            if (exit === 'navigation') {
+                await page.locator('main a[href^="/services/"]').first().click()
+                await expect(page).toHaveURL(/\/services\/api-proservice-moscow(?:\?|$)/)
+            } else if (exit === 'logout') {
+                await page.getByRole('button', { name: /open account menu|открыть меню аккаунта/i }).click()
+                await page.getByRole('button', { name: /logout|log out|выйти/i }).first().click()
+                await expect(page).toHaveURL(/\/$/)
+            } else {
+                await page.evaluate(() => {
+                    window.history.pushState(null, '', '/services/api-autolux-moscow/request?service=oil-change')
+                    window.dispatchEvent(new PopStateEvent('popstate'))
+                })
+                await expect(page).toHaveURL(/\/services\/api-autolux-moscow\/request/)
+                await expect(page.locator('main a[href*="/services/api-autolux-moscow"]')).toBeVisible()
+            }
+
+            expect(await releaseHeldRequestAndCountAttachments(page)).toBe(0)
+            await expect(page.getByText(/request sent|запрос отправлен/i)).toHaveCount(0)
         })
     }
 

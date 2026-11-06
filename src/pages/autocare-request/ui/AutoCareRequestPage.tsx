@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowLeft, CheckCircle2 } from 'lucide-react'
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
 
@@ -20,6 +20,11 @@ import { GuaranteeClaimCard } from './GuaranteeClaimCard'
 import { toRequestVehicleSnapshot } from './request-vehicle-snapshot'
 import { parseRequestDate } from './request-date'
 
+type AbortableRequest<T> = {
+    unwrap: () => Promise<T>
+    abort?: () => void
+}
+
 export function AutoCareRequestPage() {
     const { id = '' } = useParams()
     const [searchParams] = useSearchParams()
@@ -30,14 +35,11 @@ export function AutoCareRequestPage() {
     const requestedVehicleId = searchParams.get('vehicleId')
     const { data: fleets, isFetching: isFleetsFetching } = useGetMyAutoCareFleetsQuery(undefined, { skip: user?.role !== 'client' || !requestedVehicleId })
     const { data: savedVehicles, isFetching: isVehiclesFetching } = useGetMyVehiclesQuery(undefined, { skip: user?.role !== 'client' || !requestedVehicleId })
-    const [activeStep, setActiveStep] = useState<2 | 3 | 4>(2)
-    const [submittedRequestId, setSubmittedRequestId] = useState<string | null>(null)
-    const [attachmentUploadErrorCount, setAttachmentUploadErrorCount] = useState(0)
+    const [activeStepState, setActiveStepState] = useState<{ contextKey: string; step: 2 | 3 | 4 } | null>(null)
+    const [submittedRequestState, setSubmittedRequestState] = useState<{ contextKey: string; requestId: string } | null>(null)
+    const [attachmentUploadState, setAttachmentUploadState] = useState<{ contextKey: string; errorCount: number } | null>(null)
     const { data, isLoading, isError } = useGetAutoCareProviderProfileQuery(id, { skip: !id })
-    const [appointmentSelection, setAppointmentSelection] = useState(() => ({
-        date: parseRequestDate(searchParams.get('date')) ?? '',
-        time: searchParams.get('time') ?? '',
-    }))
+    const [appointmentSelectionState, setAppointmentSelectionState] = useState<{ contextKey: string; date: string; time: string } | null>(null)
     const [createRequest, { isLoading: isSubmitting, error: submitError }] = useCreateAutoCareServiceRequestMutation()
     const [createAttachment] = useCreateAutoCareServiceAttachmentMutation()
     const provider = data ? mapAutoCareProviderProfile(data) : undefined
@@ -48,15 +50,41 @@ export function AutoCareRequestPage() {
     const selectedVehicle = fleets?.flatMap((fleet) => fleet.vehicles).find((vehicle) => vehicle.id === requestedVehicleId)
     const selectedSavedVehicle = savedVehicles?.find((vehicle) => vehicle.id === requestedVehicleId)
     const initialVehicle = toRequestVehicleSnapshot(selectedSavedVehicle ?? selectedVehicle?.vehicleSnapshot)
-    const requestContextKey = [user?.id ?? 'anonymous', data?.id ?? id, data?.location.id ?? '', offering?.id ?? '', requestedVehicleId ?? 'none'].join(':')
+    const requestContextKey = [user?.id ?? 'anonymous', id, data?.id ?? '', data?.location.id ?? '', offering?.id ?? '', requestedVehicleId ?? 'none'].join(':')
+    const activeStep = activeStepState?.contextKey === requestContextKey ? activeStepState.step : 2
+    const submittedRequestId = submittedRequestState?.contextKey === requestContextKey ? submittedRequestState.requestId : null
+    const attachmentUploadErrorCount = attachmentUploadState?.contextKey === requestContextKey ? attachmentUploadState.errorCount : 0
+    const appointmentSelection = appointmentSelectionState?.contextKey === requestContextKey
+        ? appointmentSelectionState
+        : { date: parseRequestDate(searchParams.get('date')) ?? '', time: searchParams.get('time') ?? '' }
+    const handleAppointmentSelectionChange = useCallback((selection: { date: string; time: string }) => {
+        setAppointmentSelectionState({ contextKey: requestContextKey, ...selection })
+    }, [requestContextKey])
     const requestOperationRef = useRef<{ contextKey: string; idempotencyKey: string | null; inFlight: boolean }>({ contextKey: requestContextKey, idempotencyKey: null, inFlight: false })
-    const latestContextKeyRef = useRef(requestContextKey)
+    const latestContextKeyRef = useRef<string | null>(null)
+    const pendingRequestsRef = useRef(new Set<AbortableRequest<unknown>>())
     useEffect(() => {
         latestContextKeyRef.current = requestContextKey
         requestOperationRef.current = { contextKey: requestContextKey, idempotencyKey: null, inFlight: false }
+        const pendingRequests = pendingRequestsRef.current
+        return () => {
+            latestContextKeyRef.current = null
+            for (const request of pendingRequests) request.abort?.()
+            pendingRequests.clear()
+        }
     }, [requestContextKey])
 
-    if (isLoading) return <main className="min-h-full bg-background"><AutoCareRequestSkeleton label={t('common.loading')} /></main>
+    const isCurrentRequestContext = () => latestContextKeyRef.current === requestContextKey
+    const unwrapCurrentRequest = async <T,>(request: AbortableRequest<T>): Promise<T> => {
+        pendingRequestsRef.current.add(request)
+        try {
+            return await request.unwrap()
+        } finally {
+            pendingRequestsRef.current.delete(request)
+        }
+    }
+
+    if (isLoading || (data && data.id !== id)) return <main className="min-h-full bg-background"><AutoCareRequestSkeleton label={t('common.loading')} /></main>
     if (isError || !provider || !offering || !data) {
         return <main className="mx-auto max-w-[var(--layout-public-max)] px-[var(--layout-gutter)] py-20 text-center"><h1 className="text-2xl font-black text-foreground">{isError ? t('common.failedToLoad') : t('autocare.providerNotFound')}</h1></main>
     }
@@ -72,12 +100,12 @@ export function AutoCareRequestPage() {
             return false
         }
         const operation = requestOperationRef.current
-        if (operation.contextKey !== requestContextKey || latestContextKeyRef.current !== requestContextKey || operation.inFlight) return false
+        if (operation.contextKey !== requestContextKey || !isCurrentRequestContext() || operation.inFlight) return false
         operation.inFlight = true
         const requestKey = operation.idempotencyKey ?? crypto.randomUUID()
         operation.idempotencyKey = requestKey
         try {
-            const result = await createRequest({
+            const result = await unwrapCurrentRequest(createRequest({
                 providerId: data.id,
                 locationId: data.location.id,
                 offeringId: offering.id,
@@ -88,35 +116,35 @@ export function AutoCareRequestPage() {
                 note: payload.note,
                 dataProcessingConsent: true,
                 idempotencyKey: requestKey,
-            }).unwrap()
-            if (latestContextKeyRef.current !== requestContextKey) return false
-            setSubmittedRequestId(result.id)
+            }))
+            if (!isCurrentRequestContext()) return false
+            setSubmittedRequestState({ contextKey: requestContextKey, requestId: result.id })
             operation.idempotencyKey = null
             const uploadResults = await Promise.allSettled(payload.files.map(async (file) => {
-                if (latestContextKeyRef.current !== requestContextKey) throw new Error('Request context changed.')
+                if (!isCurrentRequestContext()) throw new Error('Request context changed.')
                 const contentType = getSupportedImageMimeType(file)
                 if (!contentType) {
                     throw new Error(t('autocare.requestUnsupportedImage', { name: file.name }))
                 }
 
                 const contentBase64 = await readFileAsBase64(file)
-                if (latestContextKeyRef.current !== requestContextKey) throw new Error('Request context changed.')
-                return createAttachment({
+                if (!isCurrentRequestContext()) throw new Error('Request context changed.')
+                return unwrapCurrentRequest(createAttachment({
                     requestId: result.id,
                     fileName: file.name,
                     contentType,
                     size: file.size,
                     contentBase64,
-                }).unwrap()
+                }))
             }))
-            if (latestContextKeyRef.current !== requestContextKey) return false
-            setAttachmentUploadErrorCount(uploadResults.filter((item) => item.status === 'rejected').length)
+            if (!isCurrentRequestContext()) return false
+            setAttachmentUploadState({ contextKey: requestContextKey, errorCount: uploadResults.filter((item) => item.status === 'rejected').length })
             return true
         } catch {
             // RTK Query exposes the mutation error to the form; retain the key for a safe retry.
             return false
         } finally {
-            if (latestContextKeyRef.current === requestContextKey) operation.inFlight = false
+            if (isCurrentRequestContext()) operation.inFlight = false
         }
     }
 
@@ -133,7 +161,7 @@ export function AutoCareRequestPage() {
             <div className="mx-auto max-w-[var(--layout-operational-max)] px-[var(--layout-gutter)] py-6 sm:py-8">
                 <RequestSummary provider={provider} offering={offering} />
                 <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-                    <div>{submittedRequestId ? <><RequestFollowUp providerId={provider.id} requestId={submittedRequestId} />{attachmentUploadErrorCount > 0 ? <p role="status" className="mt-3 rounded-[var(--radius-card)] border border-status-warning-border bg-status-warning-surface px-4 py-3 text-xs font-bold text-status-warning-foreground">{t('autocare.chatUploadError')} ({attachmentUploadErrorCount})</p> : null}</> : requestedVehicleId && (isFleetsFetching || isVehiclesFetching) ? <div role="status" aria-label={t('common.loading')} className="rounded-[var(--radius-panel)] border border-border bg-card p-6"><Skeleton className="h-6 w-48" /><Skeleton className="mt-5 h-12 w-full" /><Skeleton className="mt-4 h-24 w-full" /><Skeleton className="mt-4 h-11 w-40 rounded-[var(--radius-control)]" /></div> : <RequestForm key={`${requestContextKey}:${location.search}`} draftKey={user?.id && data ? `autocare-request:${requestContextKey}` : null} providerId={data.id} locationId={data.location.id} offeringId={offering.id} serviceTimezone={data.location.timezone} initialVehicle={initialVehicle} initialVehicleId={selectedSavedVehicle?.id ?? null} initialContact={{ name: user?.name ?? '', email: user?.email ?? '', phone: user?.phone ?? '' }} onSubmit={handleSubmit} onAppointmentSelectionChange={setAppointmentSelection} onStageChange={setActiveStep} reviewSummary={<RequestCompactSummary provider={provider} offering={offering} appointmentDate={appointmentSelection.date} appointmentTime={appointmentSelection.time} serviceTimezone={data.location.timezone} />} isSubmitting={isSubmitting} errorMessage={submitError ? t('autocare.requestSubmitError') : undefined} />}</div>
+                    <div>{submittedRequestId ? <><RequestFollowUp providerId={provider.id} requestId={submittedRequestId} />{attachmentUploadErrorCount > 0 ? <p role="status" className="mt-3 rounded-[var(--radius-card)] border border-status-warning-border bg-status-warning-surface px-4 py-3 text-xs font-bold text-status-warning-foreground">{t('autocare.chatUploadError')} ({attachmentUploadErrorCount})</p> : null}</> : requestedVehicleId && (isFleetsFetching || isVehiclesFetching) ? <div role="status" aria-label={t('common.loading')} className="rounded-[var(--radius-panel)] border border-border bg-card p-6"><Skeleton className="h-6 w-48" /><Skeleton className="mt-5 h-12 w-full" /><Skeleton className="mt-4 h-24 w-full" /><Skeleton className="mt-4 h-11 w-40 rounded-[var(--radius-control)]" /></div> : <RequestForm key={`${requestContextKey}:${location.search}`} draftKey={user?.id && data ? `autocare-request:${requestContextKey}` : null} providerId={data.id} locationId={data.location.id} offeringId={offering.id} serviceTimezone={data.location.timezone} initialVehicle={initialVehicle} initialVehicleId={selectedSavedVehicle?.id ?? null} initialContact={{ name: user?.name ?? '', email: user?.email ?? '', phone: user?.phone ?? '' }} onSubmit={handleSubmit} onAppointmentSelectionChange={handleAppointmentSelectionChange} onStageChange={(step) => setActiveStepState({ contextKey: requestContextKey, step })} reviewSummary={<RequestCompactSummary provider={provider} offering={offering} appointmentDate={appointmentSelection.date} appointmentTime={appointmentSelection.time} serviceTimezone={data.location.timezone} />} isSubmitting={isSubmitting} errorMessage={submitError ? t('autocare.requestSubmitError') : undefined} />}</div>
                 <div className="hidden lg:block"><RequestOrderSummary provider={provider} offering={offering} appointmentDate={appointmentSelection.date} appointmentTime={appointmentSelection.time} serviceTimezone={data.location.timezone} /></div>
                 </div>
             </div>

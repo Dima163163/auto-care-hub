@@ -149,6 +149,78 @@ test.describe('AutoCare stable-web release gate', () => {
         await expect(page).toHaveURL(/\/login(?:\?[^#]*)?$/)
     })
 
+    test('switching accounts and Back never restores the previous private identity', async ({ page }) => {
+        await gotoStable(page, '/login')
+        await page.locator('#email').fill('emily.carter@example.com')
+        await page.locator('#password').fill('password123')
+        await page.getByRole('button', { name: /sign in|войти/i }).click()
+        await expect(page).toHaveURL(/\/profile$/)
+        await expect(page.getByRole('main')).toContainText('emily.carter@example.com')
+
+        await page.getByRole('button', { name: /logout|log out|выйти/i }).first().click()
+        await expect(page).toHaveURL(/\/$/)
+
+        await gotoStable(page, '/login')
+        await page.locator('#email').fill('sophia.miller@example.com')
+        await page.locator('#password').fill('password123')
+        await page.getByRole('button', { name: /sign in|войти/i }).click()
+        await expect(page).toHaveURL(/\/owner\/dashboard$/)
+
+        await page.goBack()
+        await expect(page.locator('html[data-autocare-ready="ready"]')).toHaveCount(1, { timeout: routeReadyTimeoutMs })
+        await expect.poll(() => page.evaluate(async () => (await fetch('/api/auth/me')).status)).toBe(200)
+        const currentAccount = await page.evaluate(async () => {
+            const response = await fetch('/api/auth/me')
+            const body = await response.json() as { email?: string }
+            return { status: response.status, email: body.email }
+        })
+        expect(currentAccount).toEqual({ status: 200, email: 'sophia.miller@example.com' })
+        await expect(page.getByRole('main')).not.toContainText('emily.carter@example.com')
+
+        await gotoStable(page, '/profile')
+        await expect(page.getByRole('main')).toContainText('sophia.miller@example.com')
+        await expect(page.getByRole('main')).not.toContainText('emily.carter@example.com')
+    })
+
+    test('booking availability follows the service date across browser timezones and DST', async ({ browser }, testInfo) => {
+        test.skip(testInfo.project.name !== 'chromium', 'One browser project covers the timezone matrix.')
+
+        const baseURL = testInfo.project.use.baseURL
+        if (!baseURL) throw new Error('The release browser project needs a base URL.')
+
+        const scenarios = [
+            { timezoneId: 'Europe/Moscow', now: '2026-03-29T22:30:00.000Z', serviceDate: '2026-03-30' },
+            { timezoneId: 'America/New_York', now: '2026-03-29T22:30:00.000Z', serviceDate: '2026-03-30' },
+            { timezoneId: 'America/New_York', now: '2026-03-08T07:30:00.000Z', serviceDate: '2026-03-08' },
+        ] as const
+
+        for (const scenario of scenarios) {
+            const context = await browser.newContext({ baseURL, timezoneId: scenario.timezoneId })
+            try {
+                const page = await context.newPage()
+                const availabilityDates: string[] = []
+                page.on('request', (request) => {
+                    if (!request.url().includes('/availability')) return
+                    const date = new URL(request.url()).searchParams.get('date')
+                    if (date) availabilityDates.push(date)
+                })
+                await page.clock.install({ time: new Date(scenario.now) })
+
+                await gotoStable(page, '/login')
+                await page.locator('#email').fill('emily.carter@example.com')
+                await page.locator('#password').fill('password123')
+                await page.getByRole('button', { name: /sign in|войти/i }).click()
+                await expect(page).toHaveURL(/\/profile$/)
+
+                await gotoStable(page, '/services/api-proservice-moscow/request?service=oil-change')
+                await expect.poll(() => availabilityDates).toContain(scenario.serviceDate)
+                await expect(page.getByText('(Europe/Moscow)', { exact: true })).toBeVisible()
+            } finally {
+                await context.close()
+            }
+        }
+    })
+
     test('discovery shell stays usable across release breakpoints', async ({ page }) => {
         test.setTimeout(90_000)
         for (const width of guestWidths) {

@@ -1,5 +1,38 @@
 # AutoCare Hub — Project Plan
 
+## Дополнительная локальная приёмка — 2026-11-06
+
+- [x] PR #52 прошёл Quality/Application CI и вошёл в `dev` как `30dd6b3`;
+  защищённый PR #53 прошёл собственный CI, review и вошёл в `main` как
+  `2b972a8`. Деревья `dev`/`main` равны. Эти результаты относятся к предыдущему
+  release-кандидату, не к текущим локальным правкам.
+- [x] Browser mock replay проверил сервисную дату при timezone браузера
+  Europe/Moscow и America/New_York, переход через московскую полночь и DST;
+  смена client → owner с Back прошла на desktop/mobile/tablet. Regression
+  добавлена в обязательный browser E2E.
+- [x] Три черновика владельца теперь привязаны к account ID и market/provider/
+  fleet контексту. Старые общие ключи удаляются без восстановления. При смене
+  аккаунта форма монтируется заново; поздний media prepare не запускает
+  upload/create, pending provider creation/media и fleet vehicle create abort
+  при уходе со страницы.
+  Focused owner form tests 11/11, browser replay 4/4, lint и Next build PASS.
+- [x] Создание клиентской заявки и загрузка вложений теперь прерываются при
+  уходе со страницы, выходе из аккаунта и смене сервиса. Поздний FileReader
+  не запускает вложение в старом контексте. Подтверждение, шаг и дата заявки
+  не переносятся в новый сервис; старая кешированная карточка скрыта до
+  загрузки нового сервиса. Focused race tests 6/6; slow create browser
+  navigation/logout/provider switch 3/3.
+- [x] Финальный `check:local-mvp` после этих изменений PASS: frontend lint и
+  tests, Next/backend build, contracts и responsive browser.
+  `check:mvp-remaining-blocks` также PASS: BLOCK-01 98/100 локально закрыто.
+- [ ] `test:e2e:visual` на текущем интерфейсе расходится с сохранёнными
+  снимками старой композиции; сравнение не является зелёным evidence. Обновление
+  эталонов требует отдельной визуальной приёмки владельца. Смена дизайна и
+  замена снимков не входят в этот локальный кодовый пакет.
+- [ ] Согласование demo-only copy/assets, ручная accessibility/visual приёмка
+  и staging/real
+  инфраструктура остаются открытыми. Локальные тесты не подтверждают GO.
+
 ## Локальное закрытие перед внешней приёмкой — 2026-11-06
 
 - [x] Устранить опубликованные advisory для API lockfile точечными overrides:

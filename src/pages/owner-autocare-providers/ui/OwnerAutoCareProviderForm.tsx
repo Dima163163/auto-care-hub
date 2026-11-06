@@ -14,8 +14,10 @@ import {
     useUploadOwnerAutoCareProviderMediaMutation,
     type CreateOwnerAutoCareProviderInput,
 } from '@/entities/automotive-service'
+import { useGetMeQuery } from '@/features/auth'
 import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
-import { readFormDraft } from '@/shared/lib/form-draft'
+import { clearFormDraft, readFormDraft } from '@/shared/lib/form-draft'
+import { getAccountScopedStorageKey } from '@/shared/lib/get-account-scoped-storage-key'
 import { useFormDraft } from '@/shared/lib/useFormDraft'
 import { FormDraftNotice } from '@/shared/ui/form-draft-notice/FormDraftNotice'
 import { useTranslation } from '@/shared/lib/useTranslation'
@@ -76,14 +78,50 @@ function getUploadFileKey(file: File) {
     return `${file.name}:${file.size}:${file.lastModified}:${file.type}`
 }
 
-export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormProps) {
+type AbortableRequest<T> = {
+    unwrap: () => Promise<T>
+    abort?: () => void
+}
+
+export function OwnerAutoCareProviderForm(props: OwnerAutoCareProviderFormProps) {
+    const { data: user } = useGetMeQuery()
+    const marketId = props.market?.id ?? 'new'
+    const storageKey = getAccountScopedStorageKey('autocare-owner-provider', user?.id, marketId)
+
+    if (!storageKey) return null
+
+    return <AccountScopedOwnerAutoCareProviderForm key={storageKey} {...props} storageKey={storageKey} legacyKey={`autocare-owner-provider:${marketId}`} />
+}
+
+function AccountScopedOwnerAutoCareProviderForm({ market, storageKey, legacyKey }: OwnerAutoCareProviderFormProps & { storageKey: string; legacyKey: string }) {
     const { locale, t } = useTranslation()
     const formRef = useRef<HTMLFormElement>(null)
+    const activeRef = useRef(true)
+    const submitInProgressRef = useRef(false)
+    const pendingRequestsRef = useRef(new Set<AbortableRequest<unknown>>())
     const [createProvider, { isLoading }] = useCreateOwnerAutoCareProviderMutation()
     const [uploadLogo, { isLoading: isLogoUploading }] = useUploadOwnerAutoCareProviderLogoMutation()
     const [uploadMedia, { isLoading: isMediaUploading }] = useUploadOwnerAutoCareProviderMediaMutation()
-    const storageKey = `autocare-owner-provider:${market?.id ?? 'new'}`
     const initialDraft = useMemo(() => readFormDraft(storageKey, parseOwnerProviderDraft), [storageKey])
+    useEffect(() => clearFormDraft(legacyKey), [legacyKey])
+    useEffect(() => {
+        activeRef.current = true
+        const pendingRequests = pendingRequestsRef.current
+        return () => {
+            activeRef.current = false
+            for (const request of pendingRequests) request.abort?.()
+            pendingRequests.clear()
+        }
+    }, [])
+
+    const unwrapActive = async <T,>(request: AbortableRequest<T>): Promise<T> => {
+        pendingRequestsRef.current.add(request)
+        try {
+            return await request.unwrap()
+        } finally {
+            pendingRequestsRef.current.delete(request)
+        }
+    }
     const defaultTextDraft = useMemo(() => ({
         ...EMPTY_OWNER_PROVIDER_TEXT_DRAFT,
         countryCode: market?.countryCode ?? EMPTY_OWNER_PROVIDER_TEXT_DRAFT.countryCode,
@@ -241,6 +279,9 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
             return
         }
 
+        if (submitInProgressRef.current) return
+        submitInProgressRef.current = true
+
         let mediaStage = false
         let mediaCache = uploadedMedia
         try {
@@ -251,7 +292,9 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
             if (hasLogo && logoKey && !logoUrl) {
                 mediaStage = true
                 const preparedLogo = await prepareProviderMedia(logoFile)
-                const uploadedLogoUrl = (await uploadLogo(preparedLogo).unwrap()).url
+                if (!activeRef.current) return
+                const uploadedLogoUrl = (await unwrapActive(uploadLogo(preparedLogo))).url
+                if (!activeRef.current) return
                 logoUrl = uploadedLogoUrl
                 mediaCache = { ...mediaCache, logo: { key: logoKey, url: uploadedLogoUrl } }
                 setUploadedMedia(mediaCache)
@@ -264,7 +307,10 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
             let coverUrl = coverKey && mediaCache.cover?.key === coverKey ? mediaCache.cover.url : null
             if (hasCover && coverKey && !coverUrl) {
                 mediaStage = true
-                const uploadedCoverUrl = (await uploadMedia({ ...(await prepareProviderMedia(coverFile)), kind: 'cover' }).unwrap()).url
+                const preparedCover = await prepareProviderMedia(coverFile)
+                if (!activeRef.current) return
+                const uploadedCoverUrl = (await unwrapActive(uploadMedia({ ...preparedCover, kind: 'cover' }))).url
+                if (!activeRef.current) return
                 coverUrl = uploadedCoverUrl
                 mediaCache = { ...mediaCache, cover: { key: coverKey, url: uploadedCoverUrl } }
                 setUploadedMedia(mediaCache)
@@ -280,7 +326,10 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
                 }
 
                 mediaStage = true
-                const url = (await uploadMedia({ ...(await prepareProviderMedia(file)), kind: 'gallery' }).unwrap()).url
+                const preparedMedia = await prepareProviderMedia(file)
+                if (!activeRef.current) return
+                const url = (await unwrapActive(uploadMedia({ ...preparedMedia, kind: 'gallery' }))).url
+                if (!activeRef.current) return
                 galleryUrls.push(url)
                 mediaCache = { ...mediaCache, gallery: [...mediaCache.gallery.filter((entry) => entry.key !== key), { key, url }] }
                 setUploadedMedia(mediaCache)
@@ -325,7 +374,9 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
                 galleryImageUrls: galleryUrls,
                 documents: validation.documents,
             }
-            await createProvider(body).unwrap()
+            if (!activeRef.current) return
+            await unwrapActive(createProvider(body))
+            if (!activeRef.current) return
             form.reset()
             clearDraft()
             setTextDraft(defaultTextDraft)
@@ -345,8 +396,11 @@ export function OwnerAutoCareProviderForm({ market }: OwnerAutoCareProviderFormP
             setIsDraftRestored(false)
             toast.success(t('autocare.ownerProviderCreated'))
         } catch (error) {
+            if (!activeRef.current) return
             if (mediaStage) setMediaError(true)
             toast.error(getApiErrorMessage(error, t('autocare.ownerProviderCreateFailed')))
+        } finally {
+            submitInProgressRef.current = false
         }
     }
 
