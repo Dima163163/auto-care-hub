@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "baseline": "0b6a548c2787ff9c3a3f9e5a8985021714a74fe7",
-  "verifiedOn": "2026-11-04",
+  "verifiedOn": "2026-11-06",
   "description": "Selected source anchors and directory names; not exhaustive architecture correctness evidence.",
   "diagrams": [
     {
@@ -68,14 +68,14 @@
     },
     {
       "path": "package.json",
-      "sha256": "78e87e9c03469168198f875e49f41e07af4b5c02ec0066329a93ef6b9e3a0acd",
+      "sha256": "6858e93a463cdea5edcaf7e95e07992b43c330feaa245301015e1a8c83006803",
       "scopes": [
         "frontend"
       ]
     },
     {
       "path": "server/package.json",
-      "sha256": "d37d8739c2399f0b702ad126f67b880967a63553ebfc0e31f8124a60054f4aa1",
+      "sha256": "3162b24769da72b1cbd1fe3c417465b1047ea139543ecfd37b8306916f215bcb",
       "scopes": [
         "backend"
       ]

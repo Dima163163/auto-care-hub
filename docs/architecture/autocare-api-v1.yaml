@@ -1,7 +1,9 @@
 schema_version: 1
 document:
   name: AutoCare Hub discovery, location and service-request API
-  status: proposed
+  status: historical_proposal_superseded_for_commercial_scope
+  current_pilot_scope: ../operations/PILOT_SCOPE_FREEZE.md
+  superseded_invariant: provider_subscription_is_separate_from_customer_service_request
   source_of_truth:
     - ../../docs/API_CONTRACT.md
     - ../../docs/design/autocare-interaction-state-contract.md

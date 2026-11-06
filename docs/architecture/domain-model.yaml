@@ -1,14 +1,21 @@
 schema_version: 1
 document:
   name: AutoCare Hub target domain model
-  status: proposed
-  updated: 2026-08-14
-  source_of_truth:
+  status: historical_proposal_superseded_for_commercial_scope
+  updated: 2026-11-06
+  current_pilot_scope: ../operations/PILOT_SCOPE_FREEZE.md
+  superseded_scope:
+    - subscriptions
+    - subscription_promo_codes
+    - provider_billing
+    - paid_placement
+  historical_sources:
     - ../../ARCHITECTURE.md
     - ../../PROJECT_PLAN.md
   purpose: >-
-    Compact machine-readable navigation map for implementation planning. This
-    file is not an ORM schema or permission grant by itself.
+    Historical machine-readable proposal. Commercial contexts below were
+    superseded by the canonical pilot scope and are not implementation tasks.
+    This file is not an ORM schema or permission grant by itself.
 
 platform:
   style: modular_monolith

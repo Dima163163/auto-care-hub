@@ -1,9 +1,11 @@
 schema_version: 1
 document:
   name: AutoCare Hub phase dependency map
-  status: proposed
-  updated: 2026-08-13
+  status: historical_proposal_superseded_for_commercial_scope
+  updated: 2026-11-06
   detailed_plan: ../../PROJECT_PLAN.md
+  current_pilot_scope: ../operations/PILOT_SCOPE_FREEZE.md
+  superseded_phase: phase_10_provider_subscriptions
 
 global_gates:
   user_reviews_before_push: true

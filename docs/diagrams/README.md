@@ -1,5 +1,17 @@
 # Карта проекта AutoCare Hub
 
+**Dependency anchor refresh, 2026-11-06:** проверены изменения только
+`package.json` и `server/package.json`: transitive overrides `glob`,
+`minimatch`, `qs` без изменения runtime links/routes/data flows. Обновлены
+два SHA-256 в `sources.json`; PlantUML и SVG не менялись. Полная карта
+371 anchors PASS после обновления.
+
+**Protected release, 2026-11-06:** увеличение окна ожидания опубликовано
+через PR #50 (`dev` `ba95bca`) и PR #51 (`main` `8417792`); exact-candidate
+CI и обязательное review прошли. Отдельного main push Quality после bot merge
+не было. Изменение касается только GitHub Actions, поэтому runtime PlantUML,
+SVG и source anchors не менялись. Записи ниже — исторические снимки.
+
 **Release CI approval window, 2026-11-05:** promotion PR #49 потребовал
 ручного разрешения GitHub, и старый 45-минутный шаг ожидания истёк до конца
 браузерного CI. Локально увеличены bounded wait и лимиты job/step; это
