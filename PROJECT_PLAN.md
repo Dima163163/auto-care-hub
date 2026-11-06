@@ -1,5 +1,45 @@
 # AutoCare Hub — Project Plan
 
+## Локальное закрытие перед внешней приёмкой — 2026-11-06
+
+- [x] Устранить опубликованные advisory для API lockfile точечными overrides:
+  `qs` 6.16.1 и TypeORM `glob` 14.0.2. Backend `npm audit` — 0;
+  `npm audit --omit=dev` — 0 для обоих пакетов. В web lockfile
+  `minimatch` 11.0.1 и `glob` 14.0.2 убрали все moderate/high/critical;
+  остаются 4 low в одной цепочке Vite PWA build tooling (`deepmerge`,
+  `@rollup/plugin-node-resolve`, `workbox-build`, `vite-plugin-pwa`),
+  для `deepmerge` опубликованного исправления пока нет.
+- [x] Проверить API dependency swap на disposable PostgreSQL 17:
+  fresh install 179 миграций, повторный прогон без pending, 30 constraints
+  validated. Синтетический зашифрованный backup восстановлен в отдельную
+  БД: 179/179 миграций, 112 таблиц. Реальные KMS, медиа, PITR и RPO/RTO
+  этим не проверены.
+- [x] После overrides полный локальный MVP gate и `quality:backend` PASS
+  (frontend lint/unit, Next build, source/tooling checks, responsive Chromium,
+  backend build/unit). Vite build и PWA Chromium 12/12 PASS; backend
+  unit 463/1723 и seeded
+  PostgreSQL/Redis integration 30 файлов / 153 PASS / 1 skip.
+- [x] Отметить прежние subscription/billing-фазы в архитектурных reference
+  документах как историческое предложение, отменённое pilot scope freeze;
+  пользовательский runtime и визуальный дизайн не изменены.
+- [ ] Применённый migration inventory staging, KMS/IAM, strict U02 cutover
+  на исторических строках, privileged MFA/recovery staging, реальные
+  домены/HTTPS/SMTP/S3/AV, restore/alerts/две реплики, ручная и независимая
+  приёмка требуют внешнего окружения или участия владельца. Локальный
+  preflight честно BLOCKED по пяти конфигурационным группам.
+
+## Protected release of the promotion wait fix — 2026-11-06
+
+- [x] PR #50 с увеличенным окном ожидания и проверками exact-SHA вошёл в
+  `dev` как `ba95bca`. GitHub создал PR #51; его Quality и Application CI,
+  обязательное review и повторный promotion run прошли.
+- [x] PR #51 вошёл в защищённый `main` merge commit `8417792` со вторым
+  родителем `ba95bca`; деревья `main` и `dev` совпадают. Отдельный main push
+  Quality не запускался после bot merge через `GITHUB_TOKEN`.
+- [ ] Реальные KMS/IAM, staging, база с историческими строками, restore,
+  домен/HTTPS/SMTP, ручная и независимая приёмка остаются условиями пилота;
+  локальные тесты их не заменяют.
+
 ## Promotion PR approval window — 2026-11-05
 
 - [x] PR #48 вошёл в `dev` как `20c578a`; `Quality PR-push` и
@@ -16,8 +56,8 @@
   `20c578a` вторым родителем. Trees совпадают. Отдельный main push Quality
   не запустился после bot merge через `GITHUB_TOKEN`; это свойство GitHub,
   а не пройденный post-merge check.
-- [ ] Опубликовать увеличение лимита через отдельный PR в `dev` и повторить
-  защищённое продвижение в `main`; локальная проверка не доказывает работу CI.
+- [x] Опубликовать увеличение лимита через PR #50 в `dev`, проверить PR #51
+  и повторить защищённое продвижение в `main` (`8417792`).
 
 ## Promotion run-name follow-up — 2026-11-05
 

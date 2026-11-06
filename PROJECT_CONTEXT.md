@@ -1,5 +1,34 @@
 # AutoCare Hub Project Context
 
+## Local preflight and dependency refresh, 6 ноября 2026
+
+Изолированная ветка `fix/local-pilot-remaining` от `dev` `ba95bca` обновляет
+только lockfile overrides и устаревшие status/reference документы.
+API `qs` 6.16.1 / TypeORM `glob` 14.0.2: `npm audit` 0, backend build,
+unit 463/1723, seeded PostgreSQL/Redis integration 30 файлов / 153 PASS /
+1 skip. Первые интеграционные прогоны были неприемлемы для evidence: один
+запущен до обязательного seed, другой пересёкся с тяжёлыми браузерными
+проверками; отдельный повтор проблемного файла и полный последовательный
+повтор прошли. Web `minimatch` 11.0.1 / `glob` 14.0.2: moderate/high/critical 0,
+4 low advisory в Vite PWA build tooling без опубликованного исправления
+`deepmerge`; production-only audits для обоих пакетов 0. Полный local MVP
+gate, `quality:backend`, Vite build и PWA browser 12/12 PASS. На disposable PostgreSQL 17
+fresh/repeat migrations 179/179, integrity 30 constraints; зашифрованный
+synthetic backup восстановлен в отдельную БД с 179 миграциями/112 таблицами.
+`check:migration-checksum` требует applied manifest конкретного deployment;
+`check:mvp-readiness` BLOCKED по пяти отсутствующим группам конфигурации.
+Статусы 54 pilot gates и NO-GO для реальных данных не меняются.
+
+## Protected release and local closeout, 6 ноября 2026
+
+PR #50 с исправлением окна ожидания вошёл в `dev` как `ba95bca`. Его push
+Quality/Application CI прошли. Bot PR #51 получил разрешение на CI, собственные
+Quality/Application CI PASS и независимое code-owner approval. Повторный
+promotion run PASS; защищённый merge создал `main` `8417792` со вторым
+родителем `ba95bca`. Деревья `main`/`dev` равны. Main push Quality после
+bot merge через `GITHUB_TOKEN` не запускался. Предыдущие разделы ниже —
+датированные снимки, а не текущий статус публикации.
+
 ## Promotion PR approval window, 5 ноября 2026
 
 PR #48 вошёл в `dev` как `20c578a`; push Quality/Application CI PASS.

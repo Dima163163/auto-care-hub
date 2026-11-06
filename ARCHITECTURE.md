@@ -1,5 +1,12 @@
 # AutoCare Hub — Architecture
 
+> Scope note (2026-11-06): this is a historical target proposal. Sections on
+> subscriptions, promo codes, paid placement and billing were superseded by
+> [the canonical pilot scope](docs/operations/PILOT_SCOPE_FREEZE.md), which
+> explicitly excludes those capabilities and does not list them as post-pilot
+> work. They are neither implemented nor authorized by this document.
+> Runtime behavior must be checked against the current code and diagrams.
+>
 > Status: target architecture with the first public discovery/profile slices
 > implemented on `dev`; backend replacement and legacy deletion remain gated by
 > replacement coverage and review
