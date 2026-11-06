@@ -1,11 +1,21 @@
 # Current finding disposition — 2026-10-04
 
+**Promotion wait, 05.11:** PR #48 вошёл в `dev` как `20c578a`; его push
+Quality/Application CI и собственный PR #49 Quality/Application CI PASS.
+Bot PR #49 потребовал ручного разрешения запуска. Promotion job завершился
+по 45-минутному лимиту шага ещё до окончания PR browser CI. Локально лимиты
+увеличены до 110 минут для шага, 160 минут для job и 540 bounded attempts;
+exact-SHA/PR/check guards сохранены, focused tests PASS. Повторный promotion
+job и code-owner review PASS; PR #49 вошёл в `main` как `2dfa294`, tree
+совпадает с проверенным `dev`. Отдельного main push Quality не было из-за
+bot merge через `GITHUB_TOKEN`; локальный timeout fix ещё не опубликован.
+
 **Promotion run-name follow-up, 05.11:** PR #47 merged в `dev` как `38cc855`,
 его push Quality/Application CI PASS. Workflow не нашёл успешный run, потому
 что GitHub REST `name` теперь `Quality PR-push`, а selector ожидал `Quality`;
 PR waiter имел аналогичный дефект. Точные имена исправлены, jq/PR/policy
-tests 23/23 и root tooling 188/188 PASS. Публикация исправления и защищённый
-PR в `main` открыты.
+tests 23/23 и root tooling 188/188 PASS. Исправление опубликовано через PR #48,
+проверено push Quality и PR #49 Quality, защищённый merge в `main` завершён.
 
 **Локальный U02 verify 05.11:** все 35 read-only binding verify команд
 завершились; пять прочли 68 строк, остальные 30 таблиц пусты. Полный

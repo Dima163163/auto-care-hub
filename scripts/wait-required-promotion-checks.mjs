@@ -13,7 +13,7 @@ async function runGitHub(args, pendingAllowed = false) {
     }
 }
 
-export async function waitRequiredPromotionChecks({ repository, prNumber, sourceSha, runGh = runGitHub, delay = (ms) => new Promise((accept) => setTimeout(accept, ms)), maxAttempts = 270 }) {
+export async function waitRequiredPromotionChecks({ repository, prNumber, sourceSha, runGh = runGitHub, delay = (ms) => new Promise((accept) => setTimeout(accept, ms)), maxAttempts = 540 }) {
     if (!/^[\w.-]+\/[\w.-]+$/.test(repository) || !/^[1-9]\d*$/.test(String(prNumber)) || !/^[a-f0-9]{40}$/.test(sourceSha)) throw new Error('Invalid promotion candidate.')
     const currentPrRunName = `Quality PR-${prNumber}`
     const assertCandidate = async () => {

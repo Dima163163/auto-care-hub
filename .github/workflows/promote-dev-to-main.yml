@@ -18,7 +18,7 @@ jobs:
   promote:
     name: Promote verified dev
     runs-on: ubuntu-latest
-    timeout-minutes: 100
+    timeout-minutes: 160
 
     steps:
       - name: Wait for the complete Quality workflow for this commit
@@ -125,7 +125,7 @@ jobs:
 
       - name: Wait for pull-request CI to pass
         if: ${{ steps.promotion-pr.outputs.mode == 'pull-request' }}
-        timeout-minutes: 45
+        timeout-minutes: 110
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ steps.promotion-pr.outputs.number }}

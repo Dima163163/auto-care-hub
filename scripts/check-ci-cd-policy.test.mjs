@@ -12,6 +12,17 @@ test('keeps the repository CI/CD promotion policy fail-closed', async () => {
     )
 })
 
+test('rejects the old wait window that can expire during PR browser CI', async () => {
+    const sources = await readCiCdPolicySources()
+    const checks = validateCiCdPolicy({
+        ...sources,
+        promotion: sources.promotion.replace('timeout-minutes: 110', 'timeout-minutes: 45'),
+        promotionWait: sources.promotionWait.replace('maxAttempts = 540', 'maxAttempts = 270'),
+    })
+
+    assert.ok(checks.some(({ name, passed }) => name === 'Promotion allows the full PR CI and maintainer approval window' && !passed))
+})
+
 test('rejects a promotion workflow without an explicit CI wait', async () => {
     const sources = await readCiCdPolicySources()
     const checks = validateCiCdPolicy({
