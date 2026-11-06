@@ -596,7 +596,7 @@ test.describe('AutoCare real API smoke', () => {
         }
     })
 
-    test('real owner and admin shells preserve a recoverable error state', async ({ page }) => {
+    test('real owner shell preserves a recoverable error state', async ({ page }) => {
         const ownerRequestsPattern = /\/api\/owner\/service-requests(?:\?|$)/
         await signIn(page, 'owner.demo@autocarehub.test')
         await page.route(ownerRequestsPattern, async (route) => {
@@ -609,9 +609,9 @@ test.describe('AutoCare real API smoke', () => {
         await page.goto('/owner/autocare-requests')
         await expect(page.getByRole('main')).toBeVisible()
         await expect(page.getByRole('alert')).toBeVisible()
-        await page.unroute(ownerRequestsPattern)
+    })
 
-        await page.context().clearCookies()
+    test('real admin shell preserves a recoverable error state', async ({ page }) => {
         const adminProvidersPattern = /\/api\/admin\/autocare-providers(?:\?|$)/
         await signIn(page, 'admin.demo@autocarehub.test')
         await page.route(adminProvidersPattern, async (route) => {
