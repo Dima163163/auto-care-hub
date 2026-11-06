@@ -1,8 +1,15 @@
 # Индекс документации AutoCare Hub
 
-Релиз PR #46 вошёл в `main` 5 ноября; локальный PR-specific promotion gate
-описан в [политике репозитория](REPOSITORY_PROTECTION.md) и
-[плане](../PROJECT_PLAN.md). Опубликованный CI этой поправки ещё открыт.
+Релиз PR #51 вошёл в `main` `8417792` 6 ноября после PR #50 в `dev`,
+проверок Quality/Application CI, review и повторного promotion run.
+Предыдущие релизные заметки ниже — датированные снимки. Действующая граница
+пилота — [54 условия](operations/PILOT_SCOPE_FREEZE.md); старые архитектурные
+предложения о подписках не являются планом реализации.
+
+Исторический снимок: PR #46 вошёл в `main` 5 ноября; тогда ещё локальный
+PR-specific promotion gate описан в
+[политике репозитория](REPOSITORY_PROTECTION.md) и
+[плане](../PROJECT_PLAN.md). Позднее он опубликован и проверен через PR #47–49.
 
 U03 local step-up от 29 октября расширен на оставшиеся административные
 изменения; PostgreSQL/staging приёмка открыта. См.
@@ -56,7 +63,7 @@ text/spec документ, PlantUML и SVG/HTML reference; статус ука�
 | Документ / назначение | Тип | Покрытие | Связь с кодом |
 | --- | --- | --- | --- |
 | [AGENTS.md](../AGENTS.md) — Agent Instructions | текущий документ / статус реализации не сверён | сверено частично | docs/diagrams/, Git branch/status |
-| [ARCHITECTURE.md](../ARCHITECTURE.md) — AutoCare Hub — Architecture | целевая архитектура с частично реализованными срезами | сверено частично | Next/Fastify baseline и границы будущего billing; детали реализации не проверены целиком |
+| [ARCHITECTURE.md](../ARCHITECTURE.md) — AutoCare Hub — Architecture | историческая целевая схема с частично реализованными срезами | сверено частично | Next/Fastify baseline; коммерческий scope отменён PILOT_SCOPE_FREEZE.md, детали реализации не проверены целиком |
 | [CLAUDE.md](../CLAUDE.md) — AutoCare Hub Claude Code Instructions | текущий документ / статус реализации не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [FRONTEND_REVIEW.md](../FRONTEND_REVIEW.md) — Legacy cabinet-booking Frontend Baseline Review | текущий документ / статус реализации не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [GEMINI.md](../GEMINI.md) — AutoCare Hub Project Instructions | текущий документ / статус реализации не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
@@ -82,7 +89,7 @@ text/spec документ, PlantUML и SVG/HTML reference; статус ука�
 | [docs/FINANCIAL_DATA_RETENTION.md](FINANCIAL_DATA_RETENTION.md) — Financial Data Retention Contract | текущий документ / статус реализации не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [docs/INCIDENT_RUNBOOK.md](INCIDENT_RUNBOOK.md) — AutoCare Hub Incident Runbook | текущий документ / статус реализации не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [docs/MAP_PROVIDER.md](MAP_PROVIDER.md) — Catalog Map Provider | текущий документ / статус реализации не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
-| [docs/MIGRATION_AUDIT.md](MIGRATION_AUDIT.md) — Legacy Cabinet Booking -> AutoCare Hub Migration Audit | текущий документ / статус реализации не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
+| [docs/MIGRATION_AUDIT.md](MIGRATION_AUDIT.md) — Legacy Cabinet Booking -> AutoCare Hub Migration Audit | исторический аудит с датированными снимками | inventory 179 источников подтверждён локально | Applied inventory staging не проверен; код: server/src/database/migrations. |
 | [docs/OBSERVABILITY.md](OBSERVABILITY.md) — Observability Runbook | текущий документ / статус реализации не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [docs/PHASE_L_DESIGN_QA.md](PHASE_L_DESIGN_QA.md) — Phase L Design QA Checklist | текущий документ / статус реализации не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [docs/PRODUCTION_READINESS.md](PRODUCTION_READINESS.md) — Production Readiness Checklist | текущий документ / статус реализации не сверён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
@@ -137,10 +144,10 @@ text/spec документ, PlantUML и SVG/HTML reference; статус ука�
 | [docs/adr/0007-portable-geospatial-discovery.md](adr/0007-portable-geospatial-discovery.md) — ADR-0007: Portable indexed geospatial discovery for the launch | ADR / историческое решение | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [docs/architecture/AUTOCARE_RESPONSIBILITIES.md](architecture/AUTOCARE_RESPONSIBILITIES.md) — AutoCare responsibility map | архитектурный контракт / reference; текущий статус не обобщён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [docs/architecture/FUTURE_DATA_RESIDENCY.md](architecture/FUTURE_DATA_RESIDENCY.md) — Будущая региональная архитектура и резидентность данных | архитектурный контракт / reference; текущий статус не обобщён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
-| [docs/architecture/autocare-api-v1.yaml](architecture/autocare-api-v1.yaml) — autocare-api-v1 | архитектурный контракт / reference; текущий статус не обобщён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
-| [docs/architecture/delivery-plan.yaml](architecture/delivery-plan.yaml) — delivery-plan | предложенный архитектурный план / reference | синтаксис проверен; семантика частично | PROJECT_PLAN.md; YAML line 28 исправлена |
-| [docs/architecture/domain-model.yaml](architecture/domain-model.yaml) — domain-model | архитектурный контракт / reference; текущий статус не обобщён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
-| [docs/architecture/legacy-migration-map.yaml](architecture/legacy-migration-map.yaml) — legacy-migration-map | архитектурный контракт / reference; текущий статус не обобщён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
+| [docs/architecture/autocare-api-v1.yaml](architecture/autocare-api-v1.yaml) — autocare-api-v1 | историческое предложение; коммерческое условие исключено из scope | частичная семантическая сверка | Действующий scope: PILOT_SCOPE_FREEZE.md; текущие API маршруты сверять с кодом. |
+| [docs/architecture/delivery-plan.yaml](architecture/delivery-plan.yaml) — delivery-plan | историческое предложение; фаза подписок исключена из пилотного scope | синтаксис проверен; семантика частично | Действующий scope: PILOT_SCOPE_FREEZE.md. |
+| [docs/architecture/domain-model.yaml](architecture/domain-model.yaml) — domain-model | историческое предложение; подписки не входят в текущий продукт | семантика подписок сверена с freeze | Действующий scope: PILOT_SCOPE_FREEZE.md; это не ORM схема. |
+| [docs/architecture/legacy-migration-map.yaml](architecture/legacy-migration-map.yaml) — legacy-migration-map | рабочая карта удаления наследия | частичная семантическая сверка коммерческой границы | Runtime-удаление старых комиссий проверяется legacy-cleanup manifest; исторические миграции сохранены. |
 
 ## Дизайн и продукт
 

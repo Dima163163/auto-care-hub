@@ -187,7 +187,7 @@ replace:
 
 quarantine_then_delete:
   - current_area: server/src/modules/commission
-    reason: legacy_customer_booking_commission_conflicts_with_subscription_model
+    reason: legacy_customer_booking_commission_is_outside_current_autocare_scope
     may_reuse:
       - none
     deletion_status:

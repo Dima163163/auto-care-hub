@@ -1,5 +1,22 @@
 # Current finding disposition — 2026-10-04
 
+**Локальный preflight, 06.11:** backend `qs`/TypeORM `glob` обновлены до
+6.16.1/14.0.2, backend audit 0. Web `minimatch`/`glob` 11.0.1/14.0.2,
+остаются 4 low advisory от build-only Vite PWA цепочки `deepmerge` без
+доступного patched release; production-only audits 0 для web/API. Full local
+MVP gate, `quality:backend`, Vite build, PWA browser 12/12, API build/unit 463/1723 и seeded
+PostgreSQL/Redis integration 30 файлов/153 PASS/1 skip. Disposable fresh и
+repeat migration 179/179, 30 constraints; encrypted synthetic backup/restore
+179 миграций, 112 таблиц. Пять групп внешней конфигурации preflight BLOCKED.
+Это локальное evidence, не staging/KMS/real-data acceptance.
+
+**Protected release, 06.11:** timeout fix прошёл PR #50 и вошёл в `dev`
+`ba95bca`; его push Quality/Application CI PASS. Bot PR #51 прошёл
+собственный Quality/Application CI, независимое review и повторный promotion
+run. Merge в `main` — `8417792`, второй родитель `ba95bca`, деревья равны.
+Отдельного main push Quality не было после bot merge через `GITHUB_TOKEN`.
+Датированные записи ниже сохраняют исторический статус на момент проверки.
+
 **Promotion wait, 05.11:** PR #48 вошёл в `dev` как `20c578a`; его push
 Quality/Application CI и собственный PR #49 Quality/Application CI PASS.
 Bot PR #49 потребовал ручного разрешения запуска. Promotion job завершился

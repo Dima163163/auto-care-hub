@@ -131,6 +131,10 @@
   },
   "overrides": {
     "brace-expansion": "2.1.7",
-    "find-my-way": "9.9.0"
+    "find-my-way": "9.9.0",
+    "qs": "6.16.1",
+    "typeorm": {
+      "glob": "14.0.2"
+    }
   }
 }

@@ -1,5 +1,18 @@
 # Legacy Cabinet Booking -> AutoCare Hub Migration Audit
 
+> Current inventory note (2026-11-06): this file records the original
+> migration audit and its dated 2026-08-27 update. The repository now has
+> 179 migration source files; the 123-file count below is a historical
+> snapshot. Current checks are `npm run check:migration-inventory`,
+> `npm run check:migration-checksum`, and isolated database migration/integrity
+> runs. Deployed applied-migration inventory remains environment evidence.
+
+> Local rehearsal (2026-11-06): 179 migrations applied to a disposable
+> PostgreSQL 17, second migration run found no pending changes, and 30
+> deferred constraints validated. An encrypted synthetic backup restored to
+> another database with 179 migrations and 112 tables. This does not validate
+> staging applied history, live KMS, media, PITR, or real-data recovery.
+
 > Date: 2026-08-12
 >
 > Scope: read-only repository/product audit before implementation

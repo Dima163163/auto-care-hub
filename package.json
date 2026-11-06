@@ -195,6 +195,8 @@
   },
   "overrides": {
     "baseline-browser-mapping": "2.11.0",
-    "sharp": "0.35.5"
+    "sharp": "0.35.5",
+    "minimatch": "11.0.1",
+    "glob": "14.0.2"
   }
 }

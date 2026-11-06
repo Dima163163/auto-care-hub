@@ -121,6 +121,13 @@ A–D и согласие участников, затем выполняютс�
 `npm run quality:backend`, `npm test -- --run`, `npm run lint`, `npm run build` и
 `git diff --check` на конкретном commit SHA.
 
+Локальный повтор 06.11.2026 на изолированной ветке: `check:local-mvp` PASS,
+Vite PWA browser 12/12, API unit 1723/1723, seeded PostgreSQL/Redis
+integration 153 PASS/1 skip; fresh/repeat migrations 179/179 и synthetic
+encrypted restore PASS. Эти результаты не меняют формальные статусы таблицы:
+staging applied inventory, реальные ключи и данные, ручная и независимая
+приёмка остаются условиями закрытия соответствующих ID.
+
 ## 4. Контур B — ручная MVP-приёмка
 
 **Текущий статус: 0/2 закрыто.** Автоматизация подготовлена, но подпись человека не
