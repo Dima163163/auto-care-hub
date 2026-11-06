@@ -147,7 +147,7 @@ text/spec документ, PlantUML и SVG/HTML reference; статус ука�
 | [docs/architecture/autocare-api-v1.yaml](architecture/autocare-api-v1.yaml) — autocare-api-v1 | историческое предложение; коммерческое условие исключено из scope | частичная семантическая сверка | Действующий scope: PILOT_SCOPE_FREEZE.md; текущие API маршруты сверять с кодом. |
 | [docs/architecture/delivery-plan.yaml](architecture/delivery-plan.yaml) — delivery-plan | историческое предложение; фаза подписок исключена из пилотного scope | синтаксис проверен; семантика частично | Действующий scope: PILOT_SCOPE_FREEZE.md. |
 | [docs/architecture/domain-model.yaml](architecture/domain-model.yaml) — domain-model | историческое предложение; подписки не входят в текущий продукт | семантика подписок сверена с freeze | Действующий scope: PILOT_SCOPE_FREEZE.md; это не ORM схема. |
-| [docs/architecture/legacy-migration-map.yaml](architecture/legacy-migration-map.yaml) — legacy-migration-map | архитектурный контракт / reference; текущий статус не обобщён | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
+| [docs/architecture/legacy-migration-map.yaml](architecture/legacy-migration-map.yaml) — legacy-migration-map | рабочая карта удаления наследия | частичная семантическая сверка коммерческой границы | Runtime-удаление старых комиссий проверяется legacy-cleanup manifest; исторические миграции сохранены. |
 
 ## Дизайн и продукт
 
