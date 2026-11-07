@@ -1,8 +1,10 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
 
 import type { AutoCareApiProvider } from '@/entities/automotive-service'
-import { readFormDraft } from '@/shared/lib/form-draft'
+import { useGetMeQuery } from '@/features/auth'
+import { clearFormDraft, readFormDraft } from '@/shared/lib/form-draft'
+import { getAccountScopedStorageKey } from '@/shared/lib/get-account-scoped-storage-key'
 import { useFormDraft } from '@/shared/lib/useFormDraft'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { FormDraftNotice } from '@/shared/ui/form-draft-notice/FormDraftNotice'
@@ -18,10 +20,19 @@ type Props = {
 const numberOrZero = (value: FormDataEntryValue | null) => Math.max(0, Number.parseInt(String(value ?? '0'), 10) || 0)
 const strings = (value: FormDataEntryValue | null) => [...new Set(String(value ?? '').split(',').map((item) => item.trim()).filter(Boolean))]
 
-export function OwnerProviderProfileChangeForm({ provider, disabled, onSubmit }: Props) {
+export function OwnerProviderProfileChangeForm(props: Props) {
+    const { data: user } = useGetMeQuery()
+    const storageKey = getAccountScopedStorageKey('autocare-owner-profile-change', user?.id, props.provider.id)
+
+    if (!storageKey) return null
+
+    return <AccountScopedOwnerProviderProfileChangeForm key={storageKey} {...props} storageKey={storageKey} />
+}
+
+function AccountScopedOwnerProviderProfileChangeForm({ provider, disabled, onSubmit, storageKey }: Props & { storageKey: string }) {
     const { t } = useTranslation()
     const formRef = useRef<HTMLFormElement>(null)
-    const storageKey = `autocare-owner-profile-change:${provider.id}`
+    useEffect(() => clearFormDraft(`autocare-owner-profile-change:${provider.id}`), [provider.id])
     const initialDraft = useMemo(() => readFormDraft(storageKey, parseOwnerProviderProfileDraft), [storageKey])
     const initialText: OwnerProviderProfileDraftText = initialDraft?.text ?? {
         name: provider.name,

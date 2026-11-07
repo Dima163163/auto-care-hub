@@ -27,6 +27,17 @@
 следующий. Статусы в этом файле — детализация выполнения; canonical progress
 остаётся в `PILOT_SCOPE_FREEZE.md`.
 
+Локальный replay 06.11.2026: Next mock browser проверил Moscow и
+New York browser timezones, переход московской даты через полночь и DST,
+а также смену client → owner с Back на desktop/mobile/tablet. Черновики трёх
+owner-форм теперь имеют ключ с account ID и контекстом; поздняя подготовка
+медиа не запускает upload/create после смены аккаунта, pending create abort
+проверен unit-тестами. Реальный staging и ручная приёмка этим не закрыты.
+Дополнительно 6 focused race tests проверяют pending client request create,
+attachment, stale provider cache и late FileReader. Browser mock replay
+проверил slow create при navigation/logout/provider switch (3/3); это закрывает
+локальные 72–75. Реальный API и staging остаются отдельными pilot gates.
+
 ## BLOCK-01 — локальный код, replay и evidence (100 шагов)
 
 Основание: `V2-MVP-02`, `V2-MVP-05…V2-MVP-10`, `CHANGE-C001…C014`.
@@ -62,10 +73,10 @@
 29. `[x]` Проверить, что availability отдаёт server `startsAt` (`C004`).
 30. `[x]` Проверить сохранение service timezone в API type (`C004`).
 31. `[x]` Проверить отправку выбранного `startsAt` без browser-local conversion (`C004`).
-32. `[~]` Прогнать Moscow browser / service timezone scenario (`C004`).
-33. `[~]` Прогнать New York browser / Moscow service scenario (`C004`).
-34. `[~]` Прогнать DST boundary scenario (`C004`).
-35. `[~]` Прогнать midnight service-date scenario (`C004`).
+32. `[x]` Прогнать Moscow browser / service timezone scenario (`C004`).
+33. `[x]` Прогнать New York browser / Moscow service scenario (`C004`).
+34. `[x]` Прогнать DST boundary scenario (`C004`).
+35. `[x]` Прогнать midnight service-date scenario (`C004`).
 36. `[x]` Прогнать malformed date/slot response (`C004`).
 37. `[x]` Проверить отображение timezone рядом с выбранным временем (`C004`).
 38. `[x]` Проверить booking persistence именно выбранного instant (`C004`).
@@ -76,8 +87,8 @@
 43. `[x]` Прогнать logout при HTTP 500 (`C009`).
 44. `[x]` Проверить блокировку refresh после logout (`C009`).
 45. `[x]` Проверить generation guard позднего refresh (`C009`).
-46. `[~]` Прогнать switch identity A → B (`C009`).
-47. `[~]` Проверить, что Back не восстанавливает identity A (`C009`).
+46. `[x]` Прогнать switch identity A → B (`C009`).
+47. `[x]` Проверить, что Back не восстанавливает identity A (`C009`).
 48. `[x]` Проверить очистку PWA/private cache после logout (`C009`).
 49. `[x]` Проверить session-expired redirect и recoverable alert (`C009`).
 50. `[x]` Зафиксировать auth race evidence (`C009`).
@@ -102,10 +113,10 @@
 69. `[x]` Проверить vehicle identity в draft key (`C014`).
 70. `[x]` Проверить reset draft при смене identity (`C014`).
 71. `[x]` Проверить reset draft при смене provider/location (`C014`).
-72. `[~]` Прогнать slow create → navigation (`C014`).
-73. `[~]` Прогнать slow create → logout (`C014`).
-74. `[~]` Прогнать slow create → новый provider (`C014`).
-75. `[~]` Прогнать slow FileReader → context switch (`C014`).
+72. `[x]` Прогнать slow create → navigation (`C014`).
+73. `[x]` Прогнать slow create → logout (`C014`).
+74. `[x]` Прогнать slow create → новый provider (`C014`).
+75. `[x]` Прогнать slow FileReader → context switch (`C014`).
 76. `[x]` Проверить duplicate-submit guard (`C014`).
 77. `[x]` Проверить upload partial-failure isolation (`C014`).
 78. `[x]` Зафиксировать request-generation evidence (`C014`).

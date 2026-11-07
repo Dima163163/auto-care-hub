@@ -1,5 +1,5 @@
 import type { FormEvent } from 'react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -9,8 +9,10 @@ import {
     useGetVehicleCatalogQuery,
     vehicleCatalog,
 } from '@/entities/automotive-service'
+import { useGetMeQuery } from '@/features/auth'
 import { getApiErrorMessage } from '@/shared/api/getApiErrorMessage'
-import { readFormDraft } from '@/shared/lib/form-draft'
+import { clearFormDraft, readFormDraft } from '@/shared/lib/form-draft'
+import { getAccountScopedStorageKey } from '@/shared/lib/get-account-scoped-storage-key'
 import { useFormDraft } from '@/shared/lib/useFormDraft'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { FormDraftNotice } from '@/shared/ui/form-draft-notice/FormDraftNotice'
@@ -28,11 +30,30 @@ type Props = {
     onCreated: () => void
 }
 
-export function OwnerFleetVehicleForm({ fleetId, onCancel, onCreated }: Props) {
+export function OwnerFleetVehicleForm(props: Props) {
+    const { data: user } = useGetMeQuery()
+    const storageKey = getAccountScopedStorageKey('autocare-owner-fleet-vehicle', user?.id, props.fleetId)
+
+    if (!storageKey) return null
+
+    return <AccountScopedOwnerFleetVehicleForm key={storageKey} {...props} storageKey={storageKey} />
+}
+
+function AccountScopedOwnerFleetVehicleForm({ fleetId, onCancel, onCreated, storageKey }: Props & { storageKey: string }) {
     const { locale, t } = useTranslation()
+    const activeRef = useRef(true)
+    const pendingCreateRef = useRef<{ abort?: () => void } | null>(null)
     const catalogQuery = useGetVehicleCatalogQuery()
     const [createVehicle, createState] = useCreateAutoCareFleetVehicleMutation()
-    const storageKey = `autocare-owner-fleet-vehicle:${fleetId}`
+    useEffect(() => clearFormDraft(`autocare-owner-fleet-vehicle:${fleetId}`), [fleetId])
+    useEffect(() => {
+        activeRef.current = true
+        return () => {
+            activeRef.current = false
+            pendingCreateRef.current?.abort?.()
+            pendingCreateRef.current = null
+        }
+    }, [])
     const [brandId, setBrandId] = useState('')
     const [modelId, setModelId] = useState('')
     const [year, setYear] = useState('')
@@ -93,7 +114,7 @@ export function OwnerFleetVehicleForm({ fleetId, onCancel, onCreated }: Props) {
         const make = getVehicleBrandLabel(selectedBrand, locale)
         const model = selectedModel?.label ?? null
         try {
-            await createVehicle({
+            const request = createVehicle({
                 fleetId,
                 label: [make, model].filter(Boolean).join(' '),
                 vehicleSnapshot: {
@@ -106,11 +127,17 @@ export function OwnerFleetVehicleForm({ fleetId, onCancel, onCreated }: Props) {
                     internalReference: internalReference.trim() || null,
                     vin: vin.trim() || null,
                 },
-            }).unwrap()
+            })
+            pendingCreateRef.current = request
+            await request.unwrap()
+            pendingCreateRef.current = null
+            if (!activeRef.current) return
             clearDraft()
             toast.success(t('autocare.ownerFleetVehicleSuccess'))
             onCreated()
         } catch (error) {
+            pendingCreateRef.current = null
+            if (!activeRef.current) return
             toast.error(getApiErrorMessage(error, t('autocare.ownerFleetVehicleError')))
         }
     }

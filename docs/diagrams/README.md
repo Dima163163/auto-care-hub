@@ -1,5 +1,16 @@
 # Карта проекта AutoCare Hub
 
+**Owner draft scope, 2026-11-06:** `03-frontend.puml` отражает три owner
+черновика, изолированные по account ID и market/provider/fleet контексту.
+Смена контекста remount формы; legacy shared keys удаляются, late media
+prepare и pending provider creation/media и fleet vehicle create не
+продолжают старую форму.
+Browser mock timezone/identity replay и focused owner form tests прошли
+локально; staging и ручная визуальная приёмка остаются открытыми.
+Request page дополнительно abort pending create/attachment при смене
+контекста; late FileReader не начинает attachment в старой странице. Route ID
+изолирует submitted state и скрывает stale cached provider profile.
+
 **Dependency anchor refresh, 2026-11-06:** проверены изменения только
 `package.json` и `server/package.json`: transitive overrides `glob`,
 `minimatch`, `qs` без изменения runtime links/routes/data flows. Обновлены

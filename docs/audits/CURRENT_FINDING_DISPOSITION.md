@@ -1,5 +1,27 @@
 # Current finding disposition — 2026-10-04
 
+**Local acceptance follow-up, 06.11:** новый локально подтверждённый C014
+gap: owner provider create/profile change/fleet vehicle drafts использовали
+общие localStorage keys без account ID. В локальном кандидате ключи теперь
+account + market/provider/fleet scoped, старые общие ключи не восстанавливаются,
+а смена аккаунта remount формы. Late media prepare и pending provider
+creation/media и fleet vehicle create после unmount не продолжают
+создание/не меняют новую форму.
+Owner unit 11/11, browser timezone/identity 4/4, final local MVP gate PASS;
+опубликованный CI и staging replay кандидата ещё открыты.
+
+**Client request race, 06.11:** pending create/attachment mutations теперь
+abort при navigation/logout/provider switch; late FileReader не может начать
+attachment после ухода со страницы. Focused race tests 6/6; browser slow
+create navigation/logout/provider switch 3/3. Реальный API остаётся открытым.
+Дополнительно исправлено сохранение старого submitted request/шага/summary
+при переходе к другому provider; stale cached profile скрыт до новой data.
+
+**Visual evidence, 06.11:** optional `test:e2e:visual` не проходит на
+текущем UI: сохранённые снимки отражают прежнюю композицию/контент и потому
+не могут служить актуальным baseline. Новый дизайн и эталонные снимки не
+утверждались в этом пакете; V2-MVP-09 и manual visual acceptance открыты.
+
 **Локальный preflight, 06.11:** backend `qs`/TypeORM `glob` обновлены до
 6.16.1/14.0.2, backend audit 0. Web `minimatch`/`glob` 11.0.1/14.0.2,
 остаются 4 low advisory от build-only Vite PWA цепочки `deepmerge` без

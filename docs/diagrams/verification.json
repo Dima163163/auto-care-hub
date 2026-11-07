@@ -125,11 +125,11 @@
     {
       "scope": "frontend",
       "source": "03-frontend.puml",
-      "sourceSha256": "0f3419ad9dc0d7af65948f7c984620ac24a23a3e719fa18a49b4aa9c07ff30ea",
+      "sourceSha256": "1153c3fdb4bf2bad3a437719cdb86ac46939a203fb93c5e4a8ad7003afbf63d2",
       "preview": "rendered/03-frontend.svg",
-      "previewSha256": "f886e7ea9a6ad75828f734feb7c82e1bb6d4673b3f0aaba11f13ab1ab9394ff6",
-      "width": "2098px",
-      "height": "1282px"
+      "previewSha256": "11f395b2bf4b47cde04273b8e70460feb007aa494ec7117aa876131add50d966",
+      "width": "2789px",
+      "height": "1450px"
     },
     {
       "scope": "backend",
@@ -840,6 +840,19 @@
       "svgRender": "PASS",
       "svgXmlParse": "PASS",
       "pngVisualInspection": "PASS: 03-frontend"
+    },
+    {
+      "date": "2026-11-06",
+      "branch": "fix/local-pilot-acceptance",
+      "scope": "frontend",
+      "change": "Document account-scoped owner drafts and request unmount cancellation; add four source anchors at dev baseline 30dd6b3",
+      "sourceAnchorCount": 375,
+      "renderer": "Maven Central PlantUML 1.2026.8 / existing WebStorm JetBrains Runtime",
+      "rendererJarSha256": "0f77e5f769836b3dee340e207fe497c3e4c43e973d559e3c306915da9c32e34c",
+      "syntaxCheck": "PASS: all 9 PlantUML diagrams",
+      "svgRender": "PASS: 03-frontend",
+      "svgXmlParse": "PASS: 03-frontend",
+      "pngVisualInspection": "PASS: 03-frontend; no clipping observed"
     }
   ],
   "limitations": [
