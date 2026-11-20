@@ -125,19 +125,19 @@
     {
       "scope": "frontend",
       "source": "03-frontend.puml",
-      "sourceSha256": "025db92b4cb51c6f5b41431e1a6725f2097abb54dba404c27e2ce90f2e13f7d0",
+      "sourceSha256": "46b75c7a89117f8b188a86a073e82837e00ba682a68a807ba8415410c607a84f",
       "preview": "rendered/03-frontend.svg",
-      "previewSha256": "9392d1e20c800eeac136a03b89c16c941f205fa7c8e8e0b4767de783e9b53157",
+      "previewSha256": "51af66c7dd332a36d6746947e65aada3708d20626556886e0d80c222d1f2d9a4",
       "width": "2738px",
-      "height": "1392px"
+      "height": "1407px"
     },
     {
       "scope": "backend",
       "source": "04-backend.puml",
-      "sourceSha256": "8606358456d979d8f0e181d0f3731274ea5b272859d7020d310df2c87d25b867",
+      "sourceSha256": "dede97598c581935cee26e43ad6f4c16e82617af94329afa7cea01cbda9ff31e",
       "preview": "rendered/04-backend.svg",
-      "previewSha256": "65db4fd23648dd4c09f7e884ff3208ac1ebaa330502dfe46778fa435acb556b3",
-      "width": "2076px",
+      "previewSha256": "9e2b1e70fc5550034d49ad707ff75efceca198537c3157ddee79076fa1680b51",
+      "width": "2514px",
       "height": "827px"
     },
     {
@@ -161,11 +161,11 @@
     {
       "scope": "auth",
       "source": "07-auth-session.puml",
-      "sourceSha256": "fddc335838b16c5a40c1c1ff91016c818151ceccf267e856167c4d56cf9b8c95",
+      "sourceSha256": "1efe6fb9278bad0af14d5c7fe65ab800afdec416afa98dd5d79e94d53326d1d5",
       "preview": "rendered/07-auth-session.svg",
-      "previewSha256": "d3bd62141ce5bd981433276d4abe3a9f1a3b76ef9740e48284cf303c36c0cc17",
-      "width": "1330px",
-      "height": "2426px"
+      "previewSha256": "0fa16e530f127b311b57540a740c3ae2c6b7b0e1cbfbb365eb8cc4193e85dfc4",
+      "width": "1338px",
+      "height": "2544px"
     },
     {
       "scope": "outbox",
@@ -860,6 +860,17 @@
       "scope": "frontend,data,outbox",
       "change": "Preference storage fallback, legacy fixture retirement, exhausted outbox recovery",
       "sourceAnchorCount": 383,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS"
+    },
+    {
+      "date": "2026-11-20",
+      "branch": "audit/project-recheck-2026-11-20",
+      "scope": "frontend,backend,auth",
+      "change": "Direct locale SSR, bounded cabinet listing, temporary session refresh recovery",
+      "sourceAnchorCount": 387,
       "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
       "syntaxCheck": "PASS",
       "svgRender": "PASS",

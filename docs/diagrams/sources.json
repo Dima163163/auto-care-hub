@@ -60,7 +60,7 @@
     },
     {
       "path": "next.config.ts",
-      "sha256": "5601817bf22b81e9494f113795908a7b1cc76d92f0ae3c0db3bc4fcfef3280d8",
+      "sha256": "d56f5713d7eacdc69ff128c4d4b79bd070928fcfa59c4307bac7ffda80b30de5",
       "scopes": [
         "context",
         "runtime"
@@ -68,7 +68,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "6858e93a463cdea5edcaf7e95e07992b43c330feaa245301015e1a8c83006803",
+      "sha256": "14b9a89dbf424218976899f6e554e076f9b08c5121adc09864d46351cdf71071",
       "scopes": [
         "frontend"
       ]
@@ -493,14 +493,14 @@
     },
     {
       "path": "src/app/next/NextApp.tsx",
-      "sha256": "06b8e77e9c323103bce9c24607b9615332712706dcef75e19f31ab8feb63b152",
+      "sha256": "8b73f8bde880b6f03488c8037d6e708fd8558d2ef394be18eb099542f5b60df3",
       "scopes": [
         "frontend"
       ]
     },
     {
       "path": "src/app/next/NextClientApp.tsx",
-      "sha256": "919ccea8c5ad5229e20c25fc737a61775cd71092417c66694c79aa23acfce157",
+      "sha256": "1b86c1b8c9e266cb87d4dd205fa7fa5383a170e3cecaef9bc430a603841a69ad",
       "scopes": [
         "frontend"
       ]
@@ -607,7 +607,7 @@
     },
     {
       "path": "src/shared/api/baseApi.ts",
-      "sha256": "8ef01b24521b625f29bf277bc8fcf6eb9e9643d07162516f8d0a6e59bfecdc25",
+      "sha256": "0bdd46054d2eda664dfdb8158d5adb33e16b4be03a88b628c30f17780ad904f1",
       "scopes": [
         "frontend",
         "auth"
@@ -615,7 +615,7 @@
     },
     {
       "path": "src/shared/api/refresh-access-token.ts",
-      "sha256": "1b36b8888e7e871b80f8bda739370110ba43dd05ec17aca30ea9709b50d7f4c3",
+      "sha256": "e8be0d075d48f7f5c43e6b496a008a2e60c580d79793007ab4ab02d5169c697e",
       "scopes": [
         "auth"
       ]
@@ -629,7 +629,7 @@
     },
     {
       "path": "src/shared/lib/auth-token.ts",
-      "sha256": "fa5a5a7cfb85f7c71abac25ee18b11d1e5d05f35f580cca9580803beabcdd55b",
+      "sha256": "a80703c499fac46ad93309ceb1f53be6ec5597131bf458f6351a556806758129",
       "scopes": [
         "auth"
       ]
@@ -721,7 +721,7 @@
     },
     {
       "path": ".github/workflows/quality.yml",
-      "sha256": "d4be440de000e590fab8379aa99906d1eaadeb3764caff427e62f2c358befc5e",
+      "sha256": "835e9ee0440e51da35c34e18800899638abfcdd66cb055ab6ee56ac9dbd2f790",
       "scopes": [
         "frontend"
       ]
@@ -840,7 +840,7 @@
     },
     {
       "path": "src/app/metadata.ts",
-      "sha256": "ff1c9458572f28e702b40b4988598f47f36c63cf88bfa021de020b00a23c377d",
+      "sha256": "b8975292aeede07bd66e1dc57157749c01ddc6aa5e86d6de8e4fa01b2f4e1cbf",
       "scopes": [
         "frontend"
       ]
@@ -966,7 +966,7 @@
     },
     {
       "path": "server/src/routes/openapi.route.ts",
-      "sha256": "8e02e9adad892ed6a96537982dac139199705294187fd27265983d84f8d541c8",
+      "sha256": "d34b96f179f626c77b91aaecac919b8b4c6f4aab22a2f169668c11dfd6ca412e",
       "scopes": [
         "backend"
       ]
@@ -2643,7 +2643,7 @@
     },
     {
       "path": "src/app/App.tsx",
-      "sha256": "5f1a370e1a8f772f74d8c6111b4201cb080076197c5f0460d82b177fbccbbb2f",
+      "sha256": "13790df4862e6209c654df19b17b2b0cedc8cc39d810c18b715f61eb0580dfa0",
       "scopes": [
         "frontend"
       ]
@@ -2923,7 +2923,7 @@
     },
     {
       "path": "src/shared/config/i18n.ts",
-      "sha256": "b7e5afaa2eae12ef2baf9ec952e4457c92dcb34873cb18c081030207298a0606",
+      "sha256": "f7cbc74d425e39c81cbf064249253c975237a7b3fb2a9630a501461d9295faf0",
       "scopes": [
         "frontend"
       ]
@@ -2940,6 +2940,35 @@
       "sha256": "b1f9082f094fdbbbde59e33bdedefa0e484cd7c0066c18c3a9e4b7ccaeaf3399",
       "scopes": [
         "frontend"
+      ]
+    },
+    {
+      "path": "src/proxy.js",
+      "sha256": "64f616aa047c55a9f9bb88a6037ecf47bf59cc9d08bf320e21181b910a662f3d",
+      "scopes": [
+        "runtime",
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/features/auth/ui/require-auth/RequireAuth.tsx",
+      "sha256": "812a51e010e05e11476911edcb36fe7290f5ee4ffd11b384796f125bc00bd307",
+      "scopes": [
+        "auth"
+      ]
+    },
+    {
+      "path": "server/src/modules/cabinets/cabinet-availability-sql.ts",
+      "sha256": "f9fda53c5a9041d9b43afa7cc0f55f746767f4e5c8a044f66760ddd21a1a93d3",
+      "scopes": [
+        "backend"
+      ]
+    },
+    {
+      "path": "server/src/modules/cabinets/cabinets.service.ts",
+      "sha256": "486653e03e21284d6074fce022c5282078d4243776328117659b4e278884d85d",
+      "scopes": [
+        "backend"
       ]
     }
   ],
