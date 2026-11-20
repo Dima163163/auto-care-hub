@@ -1,5 +1,13 @@
 # Индекс документации AutoCare Hub
 
+**Повторная проверка 20 ноября:** [отчёт о текущих рисках](audits/PROJECT_RECHECK_2026-11-20.md)
+фиксирует новый P1 в миграциях начальных учётных записей и demo-объявлений,
+а также пробел проверки Next artifact. PR #56 вошёл в `main`; дерево кода
+`main` и `dev` совпадает. Пилот с реальными данными остаётся NO-GO.
+Полная семантическая сверка документов по таблицам ниже по-прежнему открыта.
+
+Следующий абзац сохранён как исторический срез состояния 6 ноября:
+
 Релиз PR #51 вошёл в `main` `8417792` 6 ноября после PR #50 в `dev`,
 проверок Quality/Application CI, review и повторного promotion run.
 Предыдущие релизные заметки ниже — датированные снимки. Действующая граница
@@ -121,6 +129,7 @@ text/spec документ, PlantUML и SVG/HTML reference; статус ука�
 | [docs/audits/FINAL_REHEARSAL_2026-09-26.md](audits/FINAL_REHEARSAL_2026-09-26.md) — Финальная репетиция ролей и сценариев — 26 сентября 2026 | audit/evidence history | не проверено | Связь с конкретной реализацией не сверена в этом проходе. |
 | [docs/audits/FULL_PROJECT_AUDIT_2026-10-03.md](audits/FULL_PROJECT_AUDIT_2026-10-03.md) — Дополнительный полный аудит AutoCare Hub — 3 октября 2026 | рабочий реестр / текущая disposition / новый отчёт | сверено частично | evidence/2026-10-20/; server/src/modules/ |
 | [docs/audits/PILOT_READINESS_RECHECK_2026-10-21.md](audits/PILOT_READINESS_RECHECK_2026-10-21.md) — Итоговая локальная проверка для пилота | текущий локальный аудит / pilot disposition | проверено в указанном объёме | quality logs, U14 PostgreSQL smoke, npm audit, 54-gate scope |
+| [docs/audits/PROJECT_RECHECK_2026-11-20.md](audits/PROJECT_RECHECK_2026-11-20.md) — Повторная проверка проекта — 20 ноября 2026 | текущий аудит / подтверждённые риски и пределы проверки | проверено в указанном объёме; семантика остальных документов открыта | initial seed migrations, auth, cabinet catalog, Next fixture gate, local checks |
 | [docs/audits/REPOSITORY_FILE_RECHECK_2026-10-21.md](audits/REPOSITORY_FILE_RECHECK_2026-10-21.md) — Повторная проверка всех отслеживаемых файлов | текущий локальный audit/inventory | проверено в указанном объёме; semantic review ограничен | Git inventory, syntax/build/tests, security source, docs links |
 | [docs/audits/PRODUCT_AUDIT_2026-09-25.md](audits/PRODUCT_AUDIT_2026-09-25.md) — Продуктовый аудит AutoCare Hub — 25 сентября 2026 | audit/evidence history | сверено частично | src/pages/autocare-results/; src/pages/autocare-request/ |
 | [docs/audits/RUNTIME_VERIFICATION_2026-10-13.md](audits/RUNTIME_VERIFICATION_2026-10-13.md) — Продолжение аудита: PostgreSQL, Redis, recovery и live API — 13 октября 2026 | audit/evidence history | сверено частично | package-lock.json; server/package-lock.json |

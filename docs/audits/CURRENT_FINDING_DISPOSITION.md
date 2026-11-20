@@ -1,5 +1,13 @@
 # Current finding disposition — 2026-10-04
 
+**Повторная проверка, 20.11:** новый P1 release blocker: историческая
+миграция создаёт активные client/owner/admin записи с известным паролем на
+пустой базе; ещё две миграции добавляют 23 активных demo-кабинета в публичный
+каталог. Next production artifact без явного real API mode содержит demo
+fixtures; CI пока сканирует только Vite artifact. Полное доказательство,
+ограничения и план устранения: [PROJECT_RECHECK_2026-11-20.md](PROJECT_RECHECK_2026-11-20.md).
+Пилот с реальными данными остаётся NO-GO.
+
 **Local acceptance follow-up, 06.11:** новый локально подтверждённый C014
 gap: owner provider create/profile change/fleet vehicle drafts использовали
 общие localStorage keys без account ID. В локальном кандидате ключи теперь
