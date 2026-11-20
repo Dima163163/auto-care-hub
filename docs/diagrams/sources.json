@@ -607,7 +607,7 @@
     },
     {
       "path": "src/shared/api/baseApi.ts",
-      "sha256": "0bdd46054d2eda664dfdb8158d5adb33e16b4be03a88b628c30f17780ad904f1",
+      "sha256": "d04be21b716c25642d79357e18549c5b253131d5ff1cc24a845149e4886d6adc",
       "scopes": [
         "frontend",
         "auth"
@@ -622,14 +622,14 @@
     },
     {
       "path": "src/shared/lib/auth-session-state.ts",
-      "sha256": "86850556d40c6c6902cccbbbc03225094304a6284bf09591e86b9553172a9b00",
+      "sha256": "9e363e2fef9c060fcc3a130e1618c4a89174ba00a13132b574ffdc6dbe8e2bfc",
       "scopes": [
         "auth"
       ]
     },
     {
       "path": "src/shared/lib/auth-token.ts",
-      "sha256": "a80703c499fac46ad93309ceb1f53be6ec5597131bf458f6351a556806758129",
+      "sha256": "902a7386fa20701ffcb6b353aedd2b3f3f8b246032e2f52d3a3ccfaed7d2e063",
       "scopes": [
         "auth"
       ]
@@ -2952,7 +2952,7 @@
     },
     {
       "path": "src/features/auth/ui/require-auth/RequireAuth.tsx",
-      "sha256": "812a51e010e05e11476911edcb36fe7290f5ee4ffd11b384796f125bc00bd307",
+      "sha256": "81e3e43b06a5bd6072414e6a19043f86d83be14808cfe467418fee7b7529ebb5",
       "scopes": [
         "auth"
       ]

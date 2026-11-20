@@ -7,7 +7,7 @@ import type { UserRole } from '@/entities/user'
 import { useGetOwnerAutoCareWorkspaceAccessQuery } from '@/entities/automotive-service'
 import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
-import { hasSessionExpired, useLogoutInProgress } from '@/shared/lib/auth-session-state'
+import { useLogoutInProgress, useSessionExpired } from '@/shared/lib/auth-session-state'
 import { QueryStateCard } from '@/shared/ui/query-state-card'
 
 import { useGetMeQuery } from '../../api/authApi'
@@ -23,6 +23,7 @@ export function RequireAuth({ children, allowedRoles, allowOwnerWorkspace = fals
     const { t } = useTranslation()
     const location = useLocation()
     const logoutInProgress = useLogoutInProgress()
+    const sessionExpired = useSessionExpired()
 
     const {
         data: user,
@@ -38,6 +39,10 @@ export function RequireAuth({ children, allowedRoles, allowOwnerWorkspace = fals
 
     if (logoutInProgress) {
         return null
+    }
+
+    if (sessionExpired) {
+        return <Navigate to={`${ROUTES.login}?reason=session-expired`} replace state={{ from: location }} />
     }
 
     if (isLoading) {
@@ -64,9 +69,8 @@ export function RequireAuth({ children, allowedRoles, allowOwnerWorkspace = fals
         )
     }
 
-    const sessionExpired = hasSessionExpired()
     const unauthorized = error && 'status' in error && error.status === 401
-    if (isError && !sessionExpired && !unauthorized) {
+    if (isError && !unauthorized) {
         return <main className="min-h-screen bg-background px-4 py-10">
             <QueryStateCard state="error" error={error} onRetry={refetch} className="mx-auto max-w-3xl" />
         </main>
@@ -75,7 +79,7 @@ export function RequireAuth({ children, allowedRoles, allowOwnerWorkspace = fals
     if (isError || !user) {
         return (
             <Navigate
-                to={sessionExpired ? `${ROUTES.login}?reason=session-expired` : ROUTES.login}
+                to={ROUTES.login}
                 replace
                 state={{
                     from: location,

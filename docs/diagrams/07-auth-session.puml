@@ -74,6 +74,8 @@ else access token no longer accepted, including privileged sessionless token
 end
 note over Front
   Session hint и expiry hint не содержат access token.
+  Подтверждённое истечение сразу закрывает protected route.
+  Повторный terminal 401 не сбрасывает кэш заново.
   Denied sessionStorage не прерывает in-memory cleanup;
   expiry hint имеет fallback в памяти вкладки.
 end note

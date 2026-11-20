@@ -72,4 +72,15 @@ describe('session refresh transport', () => {
         expect(getAccessToken()).toBeNull()
         expect(hasSessionExpired()).toBe(true)
     })
+
+    it('lets a repeated terminal response settle after the session cache is cleared', async () => {
+        startAuthSession('stale-fixture-token')
+        const fetch = vi.fn(async () => json({ code: 'SESSION_EXPIRED' }, 401))
+        vi.stubGlobal('fetch', fetch)
+        const request = makeRequest()
+        await request().catch(() => undefined)
+        await expect(request()).rejects.toMatchObject({ status: 401, data: { code: 'SESSION_EXPIRED' } })
+        expect(fetch).toHaveBeenCalledTimes(2)
+        expect(hasSessionExpired()).toBe(true)
+    })
 })

@@ -28,7 +28,7 @@ import {
 } from './security-response-schema'
 import { parseApiErrorData } from './api-error-shape'
 import { clearIdentityScopedPwaCaches } from '@/shared/pwa/identity-cache'
-import { markSessionExpired } from '@/shared/lib/auth-session-state'
+import { clearSessionExpired, markSessionExpired } from '@/shared/lib/auth-session-state'
 import { requestPrivilegedStepUpCode } from '@/shared/lib/privileged-step-up'
 
 const AUTH_SECURITY_ERROR_CODES = new Set([
@@ -187,11 +187,14 @@ function shouldSkipRefresh(args: string | FetchArgs) {
 function clearAuthenticatedClientState(
     api: Parameters<typeof rawBaseQuery>[1],
 ) {
+    // Resetting RTK Query can start a new /auth/me immediately. A repeated
+    // terminal 401 must not reset that new query before it can settle.
+    if (authRefreshBlocked) return
     authRefreshBlocked = true
     clearAccessToken()
     clearCsrfToken()
-    api.dispatch(baseApi.util.resetApiState())
     markSessionExpired()
+    api.dispatch(baseApi.util.resetApiState())
     void clearIdentityScopedPwaCaches()
 }
 
@@ -436,6 +439,7 @@ const baseQueryWithReauth: BaseQueryFn<
     }
 
     setAccessToken(refreshed.accessToken)
+    clearSessionExpired()
     authRefreshBlocked = false
 
     result = await baseQueryWithStepUp(args, api, extraOptions)

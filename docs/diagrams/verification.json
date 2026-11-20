@@ -161,11 +161,11 @@
     {
       "scope": "auth",
       "source": "07-auth-session.puml",
-      "sourceSha256": "1efe6fb9278bad0af14d5c7fe65ab800afdec416afa98dd5d79e94d53326d1d5",
+      "sourceSha256": "94b7677d657ea2f9c0fa903539921ec7d90cc87f96d5eb2fefce70f87cdd3a47",
       "preview": "rendered/07-auth-session.svg",
-      "previewSha256": "0fa16e530f127b311b57540a740c3ae2c6b7b0e1cbfbb365eb8cc4193e85dfc4",
-      "width": "1338px",
-      "height": "2544px"
+      "previewSha256": "5351c10d5682b45a6f8108ce860c5173e099e8e098efd7ceb080b55e40816851",
+      "width": "1352px",
+      "height": "2574px"
     },
     {
       "scope": "outbox",
@@ -870,6 +870,17 @@
       "branch": "audit/project-recheck-2026-11-20",
       "scope": "frontend,backend,auth",
       "change": "Direct locale SSR, bounded cabinet listing, temporary session refresh recovery",
+      "sourceAnchorCount": 387,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS"
+    },
+    {
+      "date": "2026-11-20",
+      "branch": "audit/project-recheck-2026-11-20",
+      "scope": "auth",
+      "change": "Terminal session expiry redirects during auth loading and resets caches once",
       "sourceAnchorCount": 387,
       "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
       "syntaxCheck": "PASS",

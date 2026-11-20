@@ -1,3 +1,5 @@
+import { clearSessionExpired } from './auth-session-state'
+
 /**
  * In-memory access token storage.
  * 
@@ -71,6 +73,7 @@ export function setAccessToken(accessToken: string) {
 export function startAuthSession(accessToken: string) {
     _authGeneration += 1
     setAccessToken(accessToken)
+    clearSessionExpired()
 }
 
 export function clearAccessToken() {
