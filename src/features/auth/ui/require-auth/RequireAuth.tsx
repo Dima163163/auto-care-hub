@@ -8,6 +8,7 @@ import { useGetOwnerAutoCareWorkspaceAccessQuery } from '@/entities/automotive-s
 import { ROUTES } from '@/shared/constants/routes'
 import { useTranslation } from '@/shared/lib/useTranslation'
 import { hasSessionExpired, useLogoutInProgress } from '@/shared/lib/auth-session-state'
+import { QueryStateCard } from '@/shared/ui/query-state-card'
 
 import { useGetMeQuery } from '../../api/authApi'
 import { getDefaultRouteByRole } from '../../lib/getDefaultRouteByRole'
@@ -26,7 +27,9 @@ export function RequireAuth({ children, allowedRoles, allowOwnerWorkspace = fals
     const {
         data: user,
         isLoading,
-        isError
+        isError,
+        error,
+        refetch,
     } = useGetMeQuery()
     const workspaceAccess = useGetOwnerAutoCareWorkspaceAccessQuery(undefined, {
         skip: !allowOwnerWorkspace || !user || user.role === 'owner',
@@ -61,10 +64,18 @@ export function RequireAuth({ children, allowedRoles, allowOwnerWorkspace = fals
         )
     }
 
+    const sessionExpired = hasSessionExpired()
+    const unauthorized = error && 'status' in error && error.status === 401
+    if (isError && !sessionExpired && !unauthorized) {
+        return <main className="min-h-screen bg-background px-4 py-10">
+            <QueryStateCard state="error" error={error} onRetry={refetch} className="mx-auto max-w-3xl" />
+        </main>
+    }
+
     if (isError || !user) {
         return (
             <Navigate
-                to={hasSessionExpired() ? `${ROUTES.login}?reason=session-expired` : ROUTES.login}
+                to={sessionExpired ? `${ROUTES.login}?reason=session-expired` : ROUTES.login}
                 replace
                 state={{
                     from: location,
