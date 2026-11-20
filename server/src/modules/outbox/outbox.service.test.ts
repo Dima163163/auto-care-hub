@@ -6,7 +6,7 @@ import { AppDataSource } from '../../database/data-source.js'
 import { NotificationCategory, NotificationEntity } from '../../entities/notification/notification.entity.js'
 import { OutboxEventEntity, OutboxEventStatus } from '../../entities/outbox/outbox-event.entity.js'
 import { UserEntity, UserRole, UserStatus } from '../../entities/user/user.entity.js'
-import { enqueueOutboxEvent, processOutboxBatch } from './outbox.service.js'
+import { enqueueOutboxEvent, OUTBOX_MAX_ATTEMPTS, processOutboxBatch } from './outbox.service.js'
 import { encryptOutboxSecret } from './outbox-secret.js'
 import { createEmailBlindIndex } from '../../shared/security/data-encryption/field-encryption.js'
 
@@ -39,6 +39,41 @@ describe('outbox processing', () => {
         if (userId) {
             await AppDataSource.getRepository(NotificationEntity).delete({ userId })
             await AppDataSource.getRepository(UserEntity).delete({ id: userId })
+        }
+    })
+
+    it('moves an expired final delivery attempt to dead letter without resending the email', async () => {
+        const idempotencyKey = `test-expired-final-attempt:${randomUUID()}`
+        const repository = AppDataSource.getRepository(OutboxEventEntity)
+        const event = await enqueueOutboxEvent({
+            type: 'email.send',
+            idempotencyKey,
+            payload: {
+                template: 'password_reset',
+                email: 'outbox-final-attempt@example.test',
+                expiresAt: new Date(Date.now() + 3_600_000).toISOString(),
+                frontendOrigin: 'https://autocarehub.example.com',
+                encryptedToken: encryptOutboxSecret('synthetic-final-attempt-token'),
+                locale: null,
+            },
+        })
+        await repository.update(event.id, {
+            status: OutboxEventStatus.Processing,
+            attempts: OUTBOX_MAX_ATTEMPTS,
+            lockedAt: new Date(Date.now() - 11 * 60_000),
+        })
+
+        const send = vi.fn(async () => undefined)
+        try {
+            await processOutboxBatch({ send, verify: vi.fn(async () => undefined) })
+            const updated = await repository.findOneByOrFail({ id: event.id })
+            expect(updated).toMatchObject({ status: OutboxEventStatus.DeadLetter, lockedAt: null, attempts: OUTBOX_MAX_ATTEMPTS })
+            expect(updated.payload).not.toHaveProperty('encryptedToken')
+            expect(send).not.toHaveBeenCalledWith(
+                expect.objectContaining({ to: 'outbox-final-attempt@example.test' }),
+            )
+        } finally {
+            await repository.delete(event.id)
         }
     })
 
