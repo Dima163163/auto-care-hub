@@ -86,6 +86,7 @@ end note
 note right of Client
   Vite — compatibility/development entry.
   Реальный production graph исключает MSW fixtures.
+  При отказе localStorage язык и тема используют настройки браузера.
 end note
 note right of Seo
   N34: SEO lifecycle живёт выше всех layouts.

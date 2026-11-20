@@ -1,3 +1,5 @@
+import { readBrowserPreference } from '../lib/browser-preferences-storage'
+
 export const SUPPORTED_LOCALES = [
     'en',
     'ru',
@@ -92,8 +94,8 @@ export function getStoredLocale(): SupportedLocale {
     }
 
     const savedLocale = normalizeLocale(
-        window.localStorage.getItem(LOCALE_STORAGE_KEY) ??
-        window.localStorage.getItem(LEGACY_LOCALE_STORAGE_KEY) ??
+        readBrowserPreference(LOCALE_STORAGE_KEY) ??
+        readBrowserPreference(LEGACY_LOCALE_STORAGE_KEY) ??
         undefined,
     )
 
