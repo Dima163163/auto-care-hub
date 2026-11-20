@@ -634,7 +634,7 @@ export function getOpenApiDocument() {
                 get: { operationId: 'listPublicCabinets', security: [], parameters: cursorParameters, responses: { '200': { description: 'Paginated public cabinet catalog.' } } },
             },
             '/cabinets/all': {
-                get: { operationId: 'listAllPublicCabinets', security: [], responses: { '200': { description: 'Flat active public cabinet catalog for legacy and native clients.' } } },
+                get: { operationId: 'listAllPublicCabinets', security: [], deprecated: true, responses: { '200': { description: 'Flat active public cabinet catalog, at most 50 entries.' }, '409': { description: 'Larger catalogs must use the paginated GET /cabinets endpoint.' } } },
             },
             '/bookings/my': {
                 get: { operationId: 'listMyBookings', parameters: cursorParameters, responses: { '200': { description: 'Authenticated client bookings.' } } },
