@@ -92,6 +92,7 @@ note right of Seo
   N34: SEO lifecycle живёт выше всех layouts.
   Auth SSR и client navigation используют общие copy/noindex;
   provider-specific metadata сохраняется после hydration.
+  Прямой URL с lang=en или lang=ru задаёт SSR язык через proxy.
 end note
 note right of Shared
   Admin CSV transport keeps 403 JSON error codes intact

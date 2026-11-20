@@ -111,7 +111,7 @@ export function NextClientApp({ initialPathname = '/', initialPublicProviderProf
             try {
                 await Promise.all([
                     enableMocking(),
-                    loadTranslations(initialPublicProviderProfile ? initialProviderLocale : getInitialLocale()),
+                    loadTranslations(getInitialLocale()),
                 ])
                 if (initialPublicProviderProfile) {
                     await store.dispatch(autoCareApi.util.upsertQueryData('getAutoCareProviderProfile', initialPublicProviderProfile.id, initialPublicProviderProfile))
@@ -122,7 +122,7 @@ export function NextClientApp({ initialPathname = '/', initialPublicProviderProf
                 setReady(true)
             }
         })()
-    }, [initialProviderLocale, initialPublicProviderProfile])
+    }, [initialPublicProviderProfile])
 
     useEffect(() => {
         // Nonvisual lifecycle signal: DOMContentLoaded may still show BootShell
