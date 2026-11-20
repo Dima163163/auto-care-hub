@@ -1,5 +1,8 @@
 # AutoCare Hub
 
+`npm run build` builds Next for the real API by default. Use
+`npm run build:next:mock` for a local build with demo data.
+
 AutoCare Hub is a web-first aggregator for automotive service providers:
 workshops, tire services, oil-change services, diagnostics, detailing, car
 washes, body repair, painting, air-conditioning work, and related categories.

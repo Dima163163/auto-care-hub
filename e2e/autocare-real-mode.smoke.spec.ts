@@ -274,6 +274,18 @@ test.describe('AutoCare real API smoke', () => {
         const providers = payload.items?.map((item) => item.provider).filter((provider): provider is NonNullable<typeof provider> => Boolean(provider?.id)) ?? []
         const byMode = new Map(providers.map((provider) => [provider.communicationMode, provider]))
 
+        const onlineProvider = byMode.get('online')
+        expect(onlineProvider?.id).toBeTruthy()
+        const direct = await request.get(`/services/${onlineProvider!.id}?lang=ru`, {
+            headers: { 'accept-language': 'en-US', 'x-autocare-request-locale': 'en' },
+        })
+        expect(direct.ok()).toBe(true)
+        const html = await direct.text()
+        expect(html).toContain('<html lang="ru"')
+        expect(html).toContain('Услуги и цены')
+        expect(html).toMatch(/<link rel="canonical" href="[^"]+\/services\/[0-9a-f-]+"/i)
+        expect(html).not.toMatch(/<meta[^>]+name="robots"[^>]+content="[^"]*noindex/i)
+
         for (const mode of ['online', 'request_then_confirm', 'phone_only'] as const) {
             const provider = byMode.get(mode)
             expect(provider, `No real provider was seeded for communication mode ${mode}.`).toBeTruthy()

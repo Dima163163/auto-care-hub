@@ -133,11 +133,20 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          NEXT_PUBLIC_API_MODE: real
+          NEXT_PUBLIC_API_BASE_URL: /api
+
+      - name: Check production Next artifact for fixture leakage
+        run: npm run check:production-fixture-leakage -- --format next --dist-dir .next
 
       - name: Test production CSP checker
         run: node --test scripts/check-next-csp.test.mjs
 
       - name: Verify CSP on the production Next artifact
+        env:
+          # Provider pages are checked against seeded PostgreSQL by real-full-stack.
+          SEO_PROVIDER_PATHS: ''
         run: |
           npm run start -- --hostname 127.0.0.1 --port 4197 > "$RUNNER_TEMP/next-csp.log" 2>&1 &
           NEXT_CSP_PID=$!
