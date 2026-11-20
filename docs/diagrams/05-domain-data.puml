@@ -656,5 +656,9 @@ note bottom of Evidence
   Snapshot и FK нельзя восстанавливать из этой сокращённой карты:
   authoritative schema — entities + migrations.
 end note
+note left of User
+  178682: известный пароль старого demo seed отозван.
+  Сессии этих аккаунтов и исходные demo-объявления отключены.
+end note
 footer Полная schema также содержит market hierarchy / vehicles / capacity / appeals / audit
 @enduml

@@ -69,6 +69,7 @@ import {
     SecurityEventType,
 } from '../../entities/security-event/security-event.entity.js'
 import { recordSecurityActivitySafely } from './security-event-stream.js'
+import { DEMO_USERS } from '../../scripts/demo-fixtures.js'
 
 type AuthResponse = {
     user: PublicUser
@@ -668,7 +669,7 @@ export async function authRoutes(
         app.post<{ Reply: AuthResponse }>(
             '/auth/google/mock',
             async (request, reply) => {
-                const result = await loginMockUser('client@example.com', {
+                const result = await loginMockUser(DEMO_USERS.client.email, {
                     userAgent: request.headers['user-agent'],
                     ipAddress: request.ip,
                 })
@@ -685,7 +686,7 @@ export async function authRoutes(
         app.post<{ Reply: AuthResponse }>(
             '/auth/yandex/mock',
             async (request, reply) => {
-                const result = await loginMockUser('client@example.com', {
+                const result = await loginMockUser(DEMO_USERS.client.email, {
                     userAgent: request.headers['user-agent'],
                     ipAddress: request.ip,
                 })
