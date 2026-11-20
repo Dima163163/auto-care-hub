@@ -125,11 +125,11 @@
     {
       "scope": "frontend",
       "source": "03-frontend.puml",
-      "sourceSha256": "1153c3fdb4bf2bad3a437719cdb86ac46939a203fb93c5e4a8ad7003afbf63d2",
+      "sourceSha256": "025db92b4cb51c6f5b41431e1a6725f2097abb54dba404c27e2ce90f2e13f7d0",
       "preview": "rendered/03-frontend.svg",
-      "previewSha256": "11f395b2bf4b47cde04273b8e70460feb007aa494ec7117aa876131add50d966",
-      "width": "2789px",
-      "height": "1450px"
+      "previewSha256": "9392d1e20c800eeac136a03b89c16c941f205fa7c8e8e0b4767de783e9b53157",
+      "width": "2738px",
+      "height": "1392px"
     },
     {
       "scope": "backend",
@@ -143,11 +143,11 @@
     {
       "scope": "data",
       "source": "05-domain-data.puml",
-      "sourceSha256": "7765c6fb1b871a3c5516aa33314c827fbdac2077e3aa5279bd709a6fccfd404b",
+      "sourceSha256": "87360a5167795ff17203c649399e6722ba4a381beb83a16d5df21b52571bd9de",
       "preview": "rendered/05-domain-data.svg",
-      "previewSha256": "3d051e95663bb3e1dae399e2999dcae96f8d96f0c047735bd921e4d4458cdf19",
-      "width": "2473px",
-      "height": "914px"
+      "previewSha256": "ef78008f982da410c7ac7fb4995e69be2b303dfe1189ce78822b40f0d40d1298",
+      "width": "4324px",
+      "height": "3788px"
     },
     {
       "scope": "requests",
@@ -170,11 +170,11 @@
     {
       "scope": "outbox",
       "source": "08-outbox-maintenance.puml",
-      "sourceSha256": "da904f08625daf6e0e44361b5199b2860e3c75ec26fbc7c2acf4a2c1c68ec92b",
+      "sourceSha256": "3cd484dfb9628652ce8abe7c462bcf777c7ef396aa5c4fcc0e9a08533f65999d",
       "preview": "rendered/08-outbox-maintenance.svg",
-      "previewSha256": "cd5d208226f9a9f7e29c5fb0e6426615d8fe49a32566c16de6d56e23a89c0ae7",
-      "width": "1646px",
-      "height": "1304px"
+      "previewSha256": "5e2a4eb9492407462b52816f1c751aeda5fb83c5d761421a6faf0fb9c5f7fc15",
+      "width": "1919px",
+      "height": "1565px"
     },
     {
       "scope": "security",
@@ -853,6 +853,17 @@
       "svgRender": "PASS: 03-frontend",
       "svgXmlParse": "PASS: 03-frontend",
       "pngVisualInspection": "PASS: 03-frontend; no clipping observed"
+    },
+    {
+      "date": "2026-11-20",
+      "branch": "audit/project-recheck-2026-11-20",
+      "scope": "frontend,data,outbox",
+      "change": "Preference storage fallback, legacy fixture retirement, exhausted outbox recovery",
+      "sourceAnchorCount": 383,
+      "renderer": "Existing WebStorm PlantUML MIT 1.2026.2 / JetBrains Runtime",
+      "syntaxCheck": "PASS",
+      "svgRender": "PASS",
+      "svgXmlParse": "PASS"
     }
   ],
   "limitations": [
