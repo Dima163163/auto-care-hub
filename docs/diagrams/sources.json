@@ -500,7 +500,7 @@
     },
     {
       "path": "src/app/next/NextClientApp.tsx",
-      "sha256": "1b86c1b8c9e266cb87d4dd205fa7fa5383a170e3cecaef9bc430a603841a69ad",
+      "sha256": "2f5654ce2a40b93e1215ed58f0217e3eb49bdcb0cfbd15f889d5f7f7ab19f134",
       "scopes": [
         "frontend"
       ]
@@ -840,7 +840,7 @@
     },
     {
       "path": "src/app/metadata.ts",
-      "sha256": "b8975292aeede07bd66e1dc57157749c01ddc6aa5e86d6de8e4fa01b2f4e1cbf",
+      "sha256": "e90cc5c450d19487c22bac120b90d400c5c5c78dafc564a8aea3a43c81031116",
       "scopes": [
         "frontend"
       ]
@@ -854,7 +854,7 @@
     },
     {
       "path": "src/shared/config/route-metadata-policy.ts",
-      "sha256": "f9b7f8b86744cd1c1aceb39ffc034473555e502e626b2b3a1e999fff10e6818a",
+      "sha256": "7bd942420c6e07b4d0ac358a024dcf778e3f0692cb43d036494517cbafea18b5",
       "scopes": [
         "frontend"
       ]
@@ -2923,7 +2923,7 @@
     },
     {
       "path": "src/shared/config/i18n.ts",
-      "sha256": "f7cbc74d425e39c81cbf064249253c975237a7b3fb2a9630a501461d9295faf0",
+      "sha256": "4d064e196a441d544a4a0e21ea97fc2840b32a84255fe6c4f13e204ce347ed19",
       "scopes": [
         "frontend"
       ]
@@ -2944,7 +2944,7 @@
     },
     {
       "path": "src/proxy.js",
-      "sha256": "64f616aa047c55a9f9bb88a6037ecf47bf59cc9d08bf320e21181b910a662f3d",
+      "sha256": "acf62f624f644d987bbe509fee5772f53f66defc7c864c1655c155c0c5fd6ebf",
       "scopes": [
         "runtime",
         "frontend"

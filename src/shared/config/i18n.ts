@@ -33,6 +33,8 @@ export const DEFAULT_LOCALE: SupportedLocale = 'en'
  * SEO and existing data compatibility, but are intentionally not selectable.
  */
 export const VISIBLE_LOCALES = ['en', 'ru'] as const satisfies ReadonlyArray<SupportedLocale>
+const SERVER_LOCALES = [...VISIBLE_LOCALES, 'es', 'ro'] as const
+export type ServerLocale = typeof SERVER_LOCALES[number]
 
 export const LOCALE_STORAGE_KEY = 'autocare-hub-locale'
 export const REQUEST_LOCALE_HEADER = 'x-autocare-request-locale'
@@ -92,6 +94,11 @@ export function normalizeLocale(value: string | undefined): SupportedLocale | un
 export function normalizePublicLocale(value: string | null | undefined): 'en' | 'ru' | undefined {
     const locale = normalizeLocale(value ?? undefined)
     return locale === 'en' || locale === 'ru' ? locale : undefined
+}
+
+export function normalizeServerLocale(value: string | null | undefined): ServerLocale | undefined {
+    const locale = normalizeLocale(value ?? undefined)
+    return SERVER_LOCALES.find((candidate) => candidate === locale)
 }
 
 export function getStoredLocale(): SupportedLocale {
