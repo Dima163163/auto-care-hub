@@ -707,14 +707,14 @@
     },
     {
       "path": "src/shared/config/translations/en.ts",
-      "sha256": "4f7ba57c418d45bb619e4ae430f21d783c894124a43952680f62e1e819320ba1",
+      "sha256": "f614c44ce3182c95f0353d9f96299624a95a3dd7b92a82f01117eb600a69c428",
       "scopes": [
         "frontend"
       ]
     },
     {
       "path": "src/shared/config/translations/ru-part-3-admin.ts",
-      "sha256": "aeea0ec7a0219c427851303abbf5157ca672958ab83b6cc0e0a01dbaef1e38c2",
+      "sha256": "6f187a5c170683c47a11440339f711a6b338ce33db3a7bf84b1f8f4817c12f5a",
       "scopes": [
         "frontend"
       ]
@@ -2612,7 +2612,7 @@
     },
     {
       "path": "src/shared/config/translations/ru-part-4.ts",
-      "sha256": "003705b935f103ec1f55b16c975591308710f4f769e73dc4b8849ffbfd4a366a",
+      "sha256": "465072c7afed3059dcac9b4b1c872142dd77bc37c00216437300a530627e3066",
       "scopes": [
         "frontend"
       ]
