@@ -44,7 +44,7 @@ export function PublicProviderFirstPaint({ profile, locale, selectedServiceId }:
                 {[labels.services, labels.about, labels.location, labels.reviews].map((label, index) => <a key={label} href={['#services', '#about', '#location', '#reviews'][index]} className="inline-flex shrink-0 items-center rounded-[var(--radius-control)] px-3 py-2 text-xs font-black text-muted-foreground hover:bg-secondary hover:text-primary">{label}</a>)}
             </div>
         </nav>
-        <main className="mx-auto grid max-w-[var(--layout-public-wide-max)] gap-6 px-[var(--layout-public-gutter)] py-7 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.42fr)]">
+        <div className="mx-auto grid max-w-[var(--layout-public-wide-max)] gap-6 px-[var(--layout-public-gutter)] py-7 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.42fr)]">
             <div className="grid content-start gap-6">
                 <section id="services" className="overflow-hidden rounded-[var(--radius-panel)] border border-border bg-card shadow-sm">
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4 sm:px-6"><h2 className="text-xl font-black tracking-tight text-foreground">{labels.services}</h2><span className="rounded-[var(--radius-control)] bg-secondary px-3 py-1.5 text-xs font-bold text-muted-foreground">{profile.offers.length}</span></div>
@@ -67,7 +67,7 @@ export function PublicProviderFirstPaint({ profile, locale, selectedServiceId }:
                 {selectedOffer && <p className="mt-2 text-xl font-black text-foreground">{formatOfferPrice(selectedOffer, locale, labels.priceFrom, labels.quote)}</p>}
                 <a href={`/services/${encodeURIComponent(profile.id)}/request?service=${encodeURIComponent(selectedOffer ? getOfferServiceId(selectedOffer) : '')}&market=${encodeURIComponent(profile.location.marketId)}`} className="mt-4 inline-flex min-h-10 items-center justify-center rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground">{labels.book}</a>
             </aside>
-        </main>
+        </div>
     </>
 }
 

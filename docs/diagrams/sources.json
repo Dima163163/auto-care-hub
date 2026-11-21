@@ -636,7 +636,7 @@
     },
     {
       "path": "src/shared/ui/confirm-dialog/ConfirmDialog.tsx",
-      "sha256": "aad8da5afa89e0c32fa134646e1984de96f9c5d5fc2b93b63a263a5e54fb0cbf",
+      "sha256": "97751cc115090da32f7f2088fe56d82bb8b5db314cd412926aeaaafbd0a65b18",
       "scopes": [
         "frontend"
       ]

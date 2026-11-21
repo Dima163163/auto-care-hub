@@ -72,18 +72,27 @@ describe('ConfirmDialog', () => {
         const onCancel = vi.fn()
         const onConfirm = vi.fn()
 
-        render(
+        const dialog = (isLoading: boolean) => (
             <I18nProvider>
+                <button type="button">Background action</button>
                 <ConfirmDialog
                     isOpen
-                    isLoading
+                    isLoading={isLoading}
                     title="Delete cabinet?"
                     description="This action cannot be undone."
                     onCancel={onCancel}
                     onConfirm={onConfirm}
                 />
-            </I18nProvider>,
+            </I18nProvider>
         )
+        const { rerender } = render(dialog(true))
+        const panel = screen.getByRole('dialog', { name: 'Delete cabinet?' })
+        expect(panel).toHaveFocus()
+        expect(panel).toHaveAttribute('aria-busy', 'true')
+
+        await user.tab()
+        await user.tab({ shift: true })
+        expect(panel).toHaveFocus()
 
         await user.keyboard('{Escape}')
         await user.click(screen.getByRole('button', { name: 'Saving...' }))
@@ -91,6 +100,9 @@ describe('ConfirmDialog', () => {
         expect(onCancel).not.toHaveBeenCalled()
         expect(onConfirm).not.toHaveBeenCalled()
         expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled()
+
+        rerender(dialog(false))
+        expect(screen.getByRole('button', { name: 'Cancel' })).toHaveFocus()
     })
 
     it('keeps keyboard focus inside a dialog with long content', async () => {

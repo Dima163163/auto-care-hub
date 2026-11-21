@@ -66,13 +66,24 @@ export function ConfirmDialog({
         }
     }, [isOpen])
 
+    useEffect(() => {
+        if (!isOpen) return
+        if (isLoading) {
+            dialogRef.current?.focus()
+        } else if (document.activeElement === dialogRef.current) {
+            cancelButtonRef.current?.focus()
+        }
+    }, [isOpen, isLoading])
+
     if (!isOpen) {
         return null
     }
 
     const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-        if (event.key === 'Escape' && !isLoading) {
-            onCancel()
+        if (event.key === 'Escape') {
+            event.preventDefault()
+            event.stopPropagation()
+            if (!isLoading) onCancel()
             return
         }
 
@@ -80,18 +91,24 @@ export function ConfirmDialog({
             return
         }
 
-        const focusableElements = dialogRef.current?.querySelectorAll<HTMLElement>(
-            'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        const controls = dialogRef.current?.querySelectorAll<HTMLElement>('a[href], button, textarea, input, select, [tabindex]')
+        const focusableElements = Array.from(controls ?? []).filter((element) =>
+            element.tabIndex >= 0
+            && !element.matches(':disabled, input[type="hidden"]')
+            && !element.closest('[hidden], [inert]'),
         )
+        const firstElement = focusableElements[0]
+        const lastElement = focusableElements.at(-1)
 
-        if (!focusableElements || focusableElements.length === 0) {
+        if (!firstElement || !lastElement) {
+            event.preventDefault()
             return
         }
 
-        const firstElement = focusableElements.item(0)
-        const lastElement = focusableElements.item(focusableElements.length - 1)
-
-        if (!firstElement || !lastElement) {
+        if (document.activeElement === dialogRef.current) {
+            event.preventDefault()
+            const target = event.shiftKey ? lastElement : firstElement
+            target.focus()
             return
         }
 
@@ -115,7 +132,9 @@ export function ConfirmDialog({
             <div
                 ref={dialogRef}
                 role="dialog"
+                tabIndex={-1}
                 aria-modal="true"
+                aria-busy={isLoading || undefined}
                 aria-labelledby={titleId}
                 aria-describedby={descriptionId}
                 className="max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto overscroll-contain rounded-lg border bg-card p-6 shadow-lg"
