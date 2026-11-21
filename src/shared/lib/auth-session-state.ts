@@ -5,6 +5,12 @@ const SESSION_EXPIRED_KEY = 'autocare-session-expired'
 let logoutInProgress = false
 let sessionExpiredInMemory = false
 const logoutListeners = new Set<() => void>()
+const expiryListeners = new Set<() => void>()
+
+function subscribeToSessionExpiry(listener: () => void) {
+    expiryListeners.add(listener)
+    return () => { expiryListeners.delete(listener) }
+}
 
 function notifyLogoutListeners() {
     logoutListeners.forEach((listener) => listener())
@@ -53,6 +59,7 @@ export function markSessionExpired() {
     } catch {
         // The hint is optional; private browsing or storage policy can deny it.
     }
+    expiryListeners.forEach((listener) => listener())
 }
 
 export function hasSessionExpired() {
@@ -65,6 +72,10 @@ export function hasSessionExpired() {
     }
 }
 
+export function useSessionExpired() {
+    return useSyncExternalStore(subscribeToSessionExpiry, hasSessionExpired, () => false)
+}
+
 export function clearSessionExpired() {
     sessionExpiredInMemory = false
     if (typeof window === 'undefined') return
@@ -73,4 +84,5 @@ export function clearSessionExpired() {
     } catch {
         // In-memory state is already cleared.
     }
+    expiryListeners.forEach((listener) => listener())
 }

@@ -60,7 +60,7 @@
     },
     {
       "path": "next.config.ts",
-      "sha256": "5601817bf22b81e9494f113795908a7b1cc76d92f0ae3c0db3bc4fcfef3280d8",
+      "sha256": "d56f5713d7eacdc69ff128c4d4b79bd070928fcfa59c4307bac7ffda80b30de5",
       "scopes": [
         "context",
         "runtime"
@@ -68,7 +68,7 @@
     },
     {
       "path": "package.json",
-      "sha256": "6858e93a463cdea5edcaf7e95e07992b43c330feaa245301015e1a8c83006803",
+      "sha256": "14b9a89dbf424218976899f6e554e076f9b08c5121adc09864d46351cdf71071",
       "scopes": [
         "frontend"
       ]
@@ -435,7 +435,7 @@
     },
     {
       "path": "server/src/modules/outbox/outbox.service.ts",
-      "sha256": "df31a9498ff3da5978fb8daab3d02cfadf3fea8347c78ddd22324f7b23d9487c",
+      "sha256": "776c08a24f128ad33b6cea1ba5120d0b5f68d32cdc2ed1b9e0c2be076798f483",
       "scopes": [
         "outbox"
       ]
@@ -493,14 +493,14 @@
     },
     {
       "path": "src/app/next/NextApp.tsx",
-      "sha256": "06b8e77e9c323103bce9c24607b9615332712706dcef75e19f31ab8feb63b152",
+      "sha256": "8b73f8bde880b6f03488c8037d6e708fd8558d2ef394be18eb099542f5b60df3",
       "scopes": [
         "frontend"
       ]
     },
     {
       "path": "src/app/next/NextClientApp.tsx",
-      "sha256": "44e36e11aaa16d39cacbf063d81f840632e3b265c0a925ce6c62d316e1fcb830",
+      "sha256": "1b86c1b8c9e266cb87d4dd205fa7fa5383a170e3cecaef9bc430a603841a69ad",
       "scopes": [
         "frontend"
       ]
@@ -607,7 +607,7 @@
     },
     {
       "path": "src/shared/api/baseApi.ts",
-      "sha256": "8ef01b24521b625f29bf277bc8fcf6eb9e9643d07162516f8d0a6e59bfecdc25",
+      "sha256": "d04be21b716c25642d79357e18549c5b253131d5ff1cc24a845149e4886d6adc",
       "scopes": [
         "frontend",
         "auth"
@@ -615,21 +615,21 @@
     },
     {
       "path": "src/shared/api/refresh-access-token.ts",
-      "sha256": "1b36b8888e7e871b80f8bda739370110ba43dd05ec17aca30ea9709b50d7f4c3",
+      "sha256": "e8be0d075d48f7f5c43e6b496a008a2e60c580d79793007ab4ab02d5169c697e",
       "scopes": [
         "auth"
       ]
     },
     {
       "path": "src/shared/lib/auth-session-state.ts",
-      "sha256": "86850556d40c6c6902cccbbbc03225094304a6284bf09591e86b9553172a9b00",
+      "sha256": "9e363e2fef9c060fcc3a130e1618c4a89174ba00a13132b574ffdc6dbe8e2bfc",
       "scopes": [
         "auth"
       ]
     },
     {
       "path": "src/shared/lib/auth-token.ts",
-      "sha256": "fa5a5a7cfb85f7c71abac25ee18b11d1e5d05f35f580cca9580803beabcdd55b",
+      "sha256": "902a7386fa20701ffcb6b353aedd2b3f3f8b246032e2f52d3a3ccfaed7d2e063",
       "scopes": [
         "auth"
       ]
@@ -721,7 +721,7 @@
     },
     {
       "path": ".github/workflows/quality.yml",
-      "sha256": "d4be440de000e590fab8379aa99906d1eaadeb3764caff427e62f2c358befc5e",
+      "sha256": "835e9ee0440e51da35c34e18800899638abfcdd66cb055ab6ee56ac9dbd2f790",
       "scopes": [
         "frontend"
       ]
@@ -840,7 +840,7 @@
     },
     {
       "path": "src/app/metadata.ts",
-      "sha256": "ff1c9458572f28e702b40b4988598f47f36c63cf88bfa021de020b00a23c377d",
+      "sha256": "b8975292aeede07bd66e1dc57157749c01ddc6aa5e86d6de8e4fa01b2f4e1cbf",
       "scopes": [
         "frontend"
       ]
@@ -966,7 +966,7 @@
     },
     {
       "path": "server/src/routes/openapi.route.ts",
-      "sha256": "8e02e9adad892ed6a96537982dac139199705294187fd27265983d84f8d541c8",
+      "sha256": "d34b96f179f626c77b91aaecac919b8b4c6f4aab22a2f169668c11dfd6ca412e",
       "scopes": [
         "backend"
       ]
@@ -2535,7 +2535,7 @@
     },
     {
       "path": "server/src/modules/auth/auth.routes.ts",
-      "sha256": "c7294238ba48250d81ceeea7f26715de7f18b21b49bf311aee8d4bc1b0d2d171",
+      "sha256": "4d9f3b02568f50afc5e63da9307e67f9afb6af6cac9c432f97c02f893a42e797",
       "scopes": [
         "auth"
       ]
@@ -2643,7 +2643,7 @@
     },
     {
       "path": "src/app/App.tsx",
-      "sha256": "5f1a370e1a8f772f74d8c6111b4201cb080076197c5f0460d82b177fbccbbb2f",
+      "sha256": "13790df4862e6209c654df19b17b2b0cedc8cc39d810c18b715f61eb0580dfa0",
       "scopes": [
         "frontend"
       ]
@@ -2881,6 +2881,94 @@
       "scopes": [
         "auth",
         "security"
+      ]
+    },
+    {
+      "path": "server/src/database/migrations/1786820000000-DisableLegacyDemoDefaults.ts",
+      "sha256": "95b8d269d660325f362558a485405cfb49e38ef3bcb72b5337bbfb34467562a1",
+      "scopes": [
+        "data",
+        "auth"
+      ]
+    },
+    {
+      "path": "server/src/scripts/demo-seed-target.ts",
+      "sha256": "47706d2a22aec86dc3cd658f8606a043b671b9efa2369e15ea7b2653511da30b",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/scripts/demo-seed-target-policy.ts",
+      "sha256": "3817bee837021204597ee8d8965611b951dab86313576687fce4c6d49d46fc7f",
+      "scopes": [
+        "data",
+        "security"
+      ]
+    },
+    {
+      "path": "server/src/modules/admin/outbox-monitor.service.ts",
+      "sha256": "ca4f2e4baa973e51b0ac643126c03bd0a7d4ffdfc370ece8e04b6c4e144dc45b",
+      "scopes": [
+        "outbox"
+      ]
+    },
+    {
+      "path": "src/shared/lib/browser-preferences-storage.ts",
+      "sha256": "81febcc09688e7720cd83ee9346105185a286982fa15d31e8832cb0fa268075e",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/shared/config/i18n.ts",
+      "sha256": "f7cbc74d425e39c81cbf064249253c975237a7b3fb2a9630a501461d9295faf0",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/shared/lib/i18n-provider.tsx",
+      "sha256": "84f25e7483fe81535eb3d16d18aa413f66621b8472d89124e542e699b691ee66",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/shared/lib/theme-provider.tsx",
+      "sha256": "b1f9082f094fdbbbde59e33bdedefa0e484cd7c0066c18c3a9e4b7ccaeaf3399",
+      "scopes": [
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/proxy.js",
+      "sha256": "64f616aa047c55a9f9bb88a6037ecf47bf59cc9d08bf320e21181b910a662f3d",
+      "scopes": [
+        "runtime",
+        "frontend"
+      ]
+    },
+    {
+      "path": "src/features/auth/ui/require-auth/RequireAuth.tsx",
+      "sha256": "81e3e43b06a5bd6072414e6a19043f86d83be14808cfe467418fee7b7529ebb5",
+      "scopes": [
+        "auth"
+      ]
+    },
+    {
+      "path": "server/src/modules/cabinets/cabinet-availability-sql.ts",
+      "sha256": "f9fda53c5a9041d9b43afa7cc0f55f746767f4e5c8a044f66760ddd21a1a93d3",
+      "scopes": [
+        "backend"
+      ]
+    },
+    {
+      "path": "server/src/modules/cabinets/cabinets.service.ts",
+      "sha256": "486653e03e21284d6074fce022c5282078d4243776328117659b4e278884d85d",
+      "scopes": [
+        "backend"
       ]
     }
   ],

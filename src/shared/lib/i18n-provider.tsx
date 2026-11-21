@@ -17,6 +17,7 @@ import {
 import { loadTranslations } from '@/shared/config/translations'
 import { t as translate } from '@/shared/lib/i18n'
 import { I18nContext, type I18nContextValue } from '@/shared/lib/i18n-context'
+import { saveBrowserPreference } from './browser-preferences-storage'
 
 type I18nProviderProps = {
     children: ReactNode
@@ -54,7 +55,7 @@ export function I18nProvider({ children }: I18nProviderProps) {
     }, [])
 
     useEffect(() => {
-        window.localStorage.setItem(LOCALE_STORAGE_KEY, locale)
+        saveBrowserPreference(LOCALE_STORAGE_KEY, locale)
         const secure = window.location.protocol === 'https:' ? '; Secure' : ''
         document.cookie = `${LOCALE_STORAGE_KEY}=${locale}; Path=/; Max-Age=31536000; SameSite=Lax${secure}`
         document.documentElement.lang = locale

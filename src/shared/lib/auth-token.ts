@@ -1,3 +1,5 @@
+import { clearSessionExpired } from './auth-session-state'
+
 /**
  * In-memory access token storage.
  * 
@@ -55,7 +57,7 @@ export function getAccessToken() {
 }
 
 /**
- * Changes only when local credentials are invalidated. A refresh may finish
+ * Changes when a session starts or its credentials are invalidated. A refresh may finish
  * after logout or account switching; callers use this generation to prevent
  * that late response from restoring the old identity.
  */
@@ -66,6 +68,12 @@ export function getAuthGeneration() {
 export function setAccessToken(accessToken: string) {
     _accessToken = accessToken
     setAuthSessionHint()
+}
+
+export function startAuthSession(accessToken: string) {
+    _authGeneration += 1
+    setAccessToken(accessToken)
+    clearSessionExpired()
 }
 
 export function clearAccessToken() {

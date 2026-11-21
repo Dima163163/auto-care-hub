@@ -28,7 +28,7 @@ import {
 } from './security-response-schema'
 import { parseApiErrorData } from './api-error-shape'
 import { clearIdentityScopedPwaCaches } from '@/shared/pwa/identity-cache'
-import { markSessionExpired } from '@/shared/lib/auth-session-state'
+import { clearSessionExpired, markSessionExpired } from '@/shared/lib/auth-session-state'
 import { requestPrivilegedStepUpCode } from '@/shared/lib/privileged-step-up'
 
 const AUTH_SECURITY_ERROR_CODES = new Set([
@@ -187,11 +187,14 @@ function shouldSkipRefresh(args: string | FetchArgs) {
 function clearAuthenticatedClientState(
     api: Parameters<typeof rawBaseQuery>[1],
 ) {
+    // Resetting RTK Query can start a new /auth/me immediately. A repeated
+    // terminal 401 must not reset that new query before it can settle.
+    if (authRefreshBlocked) return
     authRefreshBlocked = true
     clearAccessToken()
     clearCsrfToken()
-    api.dispatch(baseApi.util.resetApiState())
     markSessionExpired()
+    api.dispatch(baseApi.util.resetApiState())
     void clearIdentityScopedPwaCaches()
 }
 
@@ -361,6 +364,7 @@ const baseQueryWithReauth: BaseQueryFn<
     }
 
     const accessTokenAtStart = getAccessToken()
+    const authGenerationAtStart = getAuthGeneration()
     let result = await baseQueryWithStepUp(args, api, extraOptions)
 
     logAuthSecurityError(args, result.error, 'base-query')
@@ -368,7 +372,10 @@ const baseQueryWithReauth: BaseQueryFn<
     // Keep the explicit server contract visible in mock and real modes. A
     // plain 401 can be retried, but SESSION_EXPIRED is a terminal UI state.
     if (result.error?.status === 401 && getApiErrorCode(result.error) === 'SESSION_EXPIRED') {
-        markSessionExpired()
+        if (authGenerationAtStart === getAuthGeneration() && accessTokenAtStart === getAccessToken()) {
+            clearAuthenticatedClientState(api)
+        }
+        return result
     }
 
     if (
@@ -376,13 +383,18 @@ const baseQueryWithReauth: BaseQueryFn<
         || shouldSkipRefresh(args)
         || authRefreshBlocked
         || !IS_REAL_API
+        || authGenerationAtStart !== getAuthGeneration()
         || (!accessTokenAtStart && !hasAuthSessionHint() && !(getRequestPath(args) === '/auth/me' && isProtectedRouteNavigation()))
     ) {
         return result
     }
 
-    const refreshGeneration = getAuthGeneration()
-    const refreshedAccessToken = await refreshAccessTokenSingleFlight(async () => {
+    if (getAccessToken() && accessTokenAtStart !== getAccessToken()) {
+        // A request using the same session already refreshed the token.
+        return baseQueryWithStepUp(args, api, extraOptions)
+    }
+
+    const refreshed = await refreshAccessTokenSingleFlight(authGenerationAtStart, async () => {
         const refreshResult = await baseQueryWithCsrf(
             {
                 url: '/auth/refresh',
@@ -392,17 +404,24 @@ const baseQueryWithReauth: BaseQueryFn<
             extraOptions
         )
 
-        return parseAccessTokenResponse(refreshResult.data)
+        if (refreshResult.error?.status === 401) return { status: 'rejected' }
+        if (refreshResult.error) return { status: 'unavailable', error: refreshResult.error }
+        const accessToken = parseAccessTokenResponse(refreshResult.data)
+        return accessToken
+            ? { status: 'refreshed', accessToken }
+            : { status: 'unavailable', error: { status: 'CUSTOM_ERROR', error: 'Invalid session refresh response.' } }
     })
 
-    if (!refreshedAccessToken) {
+    if (refreshed.status === 'unavailable') return { error: refreshed.error }
+
+    if (refreshed.status === 'rejected') {
         // A public /auth/me request can start a refresh while the user is
         // signing in. If that stale refresh finishes after login, its failed
         // result must not clear the newly-issued in-memory access token or
         // reset the authenticated RTK state. Likewise, a concurrent logout
         // already invalidated the generation and needs no second cleanup.
         const authStateChangedDuringRefresh =
-            refreshGeneration !== getAuthGeneration()
+            authGenerationAtStart !== getAuthGeneration()
             || getAccessToken() !== accessTokenAtStart
 
         if (!authStateChangedDuringRefresh) {
@@ -412,13 +431,15 @@ const baseQueryWithReauth: BaseQueryFn<
         return result
     }
 
-    if (refreshGeneration !== getAuthGeneration()) {
+    if (authGenerationAtStart !== getAuthGeneration()
+        || (accessTokenAtStart !== getAccessToken() && refreshed.accessToken !== getAccessToken())) {
         // Logout, account deletion or another terminal auth action won the
         // race while refresh was in flight. Never restore that old identity.
         return result
     }
 
-    setAccessToken(refreshedAccessToken)
+    setAccessToken(refreshed.accessToken)
+    clearSessionExpired()
     authRefreshBlocked = false
 
     result = await baseQueryWithStepUp(args, api, extraOptions)

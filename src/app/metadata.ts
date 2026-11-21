@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import { getAuthRouteCopy, shouldNoIndexRoute } from '../shared/config/route-metadata-policy'
+import { normalizePublicLocale, REQUEST_LOCALE_HEADER } from '../shared/config/i18n'
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
@@ -141,9 +142,14 @@ export function getAppMetadata(locale: 'en' | 'ru' = 'en'): Metadata {
     }
 }
 
-export async function getRequestLocale(): Promise<'en' | 'ru'> {
-    const requestHeaders = await headers()
+export function resolveRequestLocale(requestHeaders: Pick<Headers, 'get'>): 'en' | 'ru' {
+    const urlLocale = normalizePublicLocale(requestHeaders.get(REQUEST_LOCALE_HEADER))
+    if (urlLocale) return urlLocale
     const savedLanguage = /(?:^|;\s*)autocare-hub-locale=(en|ru)(?:;|$)/i.exec(requestHeaders.get('cookie') ?? '')?.[1]?.toLowerCase()
     if (savedLanguage === 'ru' || savedLanguage === 'en') return savedLanguage
     return /(?:^|[,;\s])ru(?:[-,;\s]|$)/i.test(requestHeaders.get('accept-language') ?? '') ? 'ru' : 'en'
+}
+
+export async function getRequestLocale(): Promise<'en' | 'ru'> {
+    return resolveRequestLocale(await headers())
 }

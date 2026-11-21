@@ -1,6 +1,7 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { NextConfig } from 'next'
+import { PHASE_PRODUCTION_BUILD } from 'next/constants'
 
 const apiOrigin = process.env.NEXT_PUBLIC_API_ORIGIN ?? 'http://127.0.0.1:4000'
 const repoRoot = path.dirname(fileURLToPath(import.meta.url))
@@ -40,4 +41,19 @@ const nextConfig: NextConfig = {
     },
 }
 
-export default nextConfig
+export default function config(phase: string): NextConfig {
+    if (phase !== PHASE_PRODUCTION_BUILD) return nextConfig
+
+    const mode = process.env.NEXT_PUBLIC_API_MODE ?? 'real'
+    const localMock = process.env.AUTOCARE_LOCAL_MOCK_BUILD === 'true'
+    if (mode !== 'real' && !(localMock && mode === 'mock')) {
+        throw new Error('Specify NEXT_PUBLIC_API_MODE=real for release builds, or use npm run build:next:mock locally.')
+    }
+    return {
+        ...nextConfig,
+        env: {
+            NEXT_PUBLIC_API_MODE: mode,
+            NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL ?? '/api',
+        },
+    }
+}

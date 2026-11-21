@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 import type { User } from '@/entities/user'
 import { userSchema } from '@/entities/user/lib/user-response-schema'
-import { setAccessToken } from '@/shared/lib/auth-token'
+import { startAuthSession } from '@/shared/lib/auth-token'
 import type {
     EmailVerificationTokenResponse,
     DeploymentCapabilities,
@@ -83,7 +83,7 @@ export function normalizeAuthResponse(value: unknown): User {
     }
 
     const user = parseUserResponse(value.user)
-    setAccessToken(value.accessToken)
+    startAuthSession(value.accessToken)
 
     return user
 }

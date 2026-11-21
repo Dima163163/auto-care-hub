@@ -4,6 +4,7 @@ import { Toaster } from 'sonner'
 import { useEffect, useRef } from 'react'
 
 import { AppRouter } from '@/app/routes/AppRouter'
+import { getUrlLocale } from '@/shared/config/i18n'
 import { useGetMeQuery } from '@/features/auth'
 import { I18nProvider } from '@/shared/lib/i18n-provider'
 import { ThemeProvider } from '@/shared/lib/theme-provider'
@@ -25,7 +26,7 @@ function AccountLocaleSync() {
 
         if (user.locale && appliedUserId.current !== user.id) {
             appliedUserId.current = user.id
-            if (user.locale !== locale) {
+            if (!getUrlLocale() && user.locale !== locale) {
                 setLocale(user.locale)
             }
         }

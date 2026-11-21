@@ -8,6 +8,7 @@ import {
     UserStatus,
 } from '../entities/user/user.entity.js'
 import { DEMO_PASSWORD, DEMO_USERS } from './demo-fixtures.js'
+import { withDemoSeedTarget } from './demo-seed-target.js'
 
 type DemoUserInput = {
     name: string
@@ -42,9 +43,7 @@ async function upsertDemoUser(input: DemoUserInput, passwordHash: string) {
  * wellness services or legacy bookings.
  */
 async function seedDemoUsers() {
-    await AppDataSource.initialize()
-
-    try {
+    await withDemoSeedTarget(async () => {
         const passwordHash = await hash(DEMO_PASSWORD, 10)
         await Promise.all([
             upsertDemoUser({ name: DEMO_USERS.client.name, email: DEMO_USERS.client.email, role: UserRole.Client }, passwordHash),
@@ -56,9 +55,7 @@ async function seedDemoUsers() {
 
         console.info('AutoCare demo users seeded successfully.')
         console.info(`Demo password for all seeded users: ${DEMO_PASSWORD}`)
-    } finally {
-        await AppDataSource.destroy()
-    }
+    })
 }
 
 seedDemoUsers().catch((error: unknown) => {

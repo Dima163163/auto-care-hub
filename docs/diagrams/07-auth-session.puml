@@ -52,7 +52,7 @@ alt valid session and resource scope allowed
   API --> Front : authorized DTO
 else access token no longer accepted, including privileged sessionless token
   API --> Front : 401
-  Front -> Front : refresh-access-token single flight
+  Front -> Front : refresh-access-token single flight по поколению сессии
   Front -> API : /auth/refresh\nrefresh cookie + CSRF/Origin policy
   API -> Auth : validate current role / sessionId / rotate refresh session
   alt current admin/super-admin without sessionId
@@ -63,14 +63,19 @@ else access token no longer accepted, including privileged sessionless token
     alt refresh succeeds
       API --> Front : new access DTO + rotated cookie\nMax-Age <= remaining JWT lifetime
       Front -> API : retry original request
-    else refresh fails
+    else refresh rejected with 401
       API --> Front : unauthorized / session-expired
       Front -> Front : clear identity/cache / login navigation
+    else refresh temporarily unavailable
+      API --> Front : network / rate limit / upstream failure
+      Front -> Front : keep existing session / expose retryable error
     end
   end
 end
 note over Front
   Session hint и expiry hint не содержат access token.
+  Подтверждённое истечение сразу закрывает protected route.
+  Повторный terminal 401 не сбрасывает кэш заново.
   Denied sessionStorage не прерывает in-memory cleanup;
   expiry hint имеет fallback в памяти вкладки.
 end note

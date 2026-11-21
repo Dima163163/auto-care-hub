@@ -1,15 +1,10 @@
-import { In } from 'typeorm'
 import { AppDataSource } from '../../database/data-source.js'
-import { BookingEntity, BookingStatus } from '../../entities/booking/booking.entity.js'
+import { BookingEntity } from '../../entities/booking/booking.entity.js'
 import {
     CabinetEntity,
     CabinetStatus,
 } from '../../entities/cabinet/cabinet.entity.js'
 import { UserEntity } from '../../entities/user/user.entity.js'
-import { ServiceEntity } from '../../entities/service/service.entity.js'
-import { CabinetScheduleEntity } from '../../entities/cabinet/cabinet-schedule.entity.js'
-import { CabinetScheduleExceptionEntity } from '../../entities/cabinet/cabinet-schedule-exception.entity.js'
-import { CabinetBlockedPeriodEntity } from '../../entities/cabinet/cabinet-blocked-period.entity.js'
 import { AppError } from '../../shared/errors/app-error.js'
 import { ERROR_CODES } from '../../shared/errors/error-codes.js'
 import {
@@ -20,16 +15,13 @@ import {
 import { assertCabinetOwner } from './cabinet-owner-access.js'
 import { toOwnerCabinet, toPublicCabinet } from './cabinets.mappers.js'
 import type { PublicCabinet } from './cabinets.types.js'
-import { getWeekday, getZonedDateTime } from '../../shared/date-time/cabinet-timezone.js'
-import { isTimeRangeBlocked } from './cabinet-blocked-period.js'
-import { getAvailableTodayCandidateSql } from './available-today-candidate.js'
 import { normalizeCabinetTitle } from './cabinet-input-policy.js'
-import { getCabinetPagination } from './cabinet-pagination-policy.js'
+import { getCabinetSlotsSql } from './cabinet-availability-sql.js'
+import { getCabinetPagination, MAX_CABINET_PAGE_SIZE } from './cabinet-pagination-policy.js'
 import { normalizeCabinetSearchTerm } from './cabinet-search-policy.js'
 import { assertCabinetNumericFilters } from './cabinet-filter-policy.js'
 import { assertCabinetPhotoList } from './cabinet-photo-policy.js'
 import { assertCabinetSort } from './cabinet-sort-policy.js'
-import { getAvailabilityQueryLimits } from './availability-query-policy.js'
 import {
     assertCabinetPrice,
     MAX_OWNER_CABINETS,
@@ -61,93 +53,34 @@ function formatTime(minutes: number) {
     return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`
 }
 
-function timeToMinutes(value: string) {
-    const [hours = '0', minutes = '0'] = value.slice(0, 5).split(':')
-    return Number(hours) * 60 + Number(minutes)
-}
-
-async function getAvailabilityPreview(
-    cabinets: CabinetEntity[],
-    services: ServiceEntity[],
-    bookings: BookingEntity[],
-    options?: {
-        date?: string
-        durationMinutes?: number
-    },
+async function getAvailabilityPreviews(
+    cabinetIds: string[],
+    date: string | null,
+    duration: number | null,
+    now: Date,
 ) {
-    const limits = getAvailabilityQueryLimits()
-    const cabinetIds = cabinets.map((cabinet) => cabinet.id)
-    const activeBookings = bookings.filter((booking) =>
-        [BookingStatus.Pending, BookingStatus.Confirmed].includes(booking.status)
-    )
-    const schedules = await AppDataSource.getRepository(CabinetScheduleEntity).find({
-        where: { cabinetId: In(cabinetIds) },
-        take: limits.schedules,
-    })
-    const exceptions = await AppDataSource.getRepository(CabinetScheduleExceptionEntity).find({
-        where: { cabinetId: In(cabinetIds) },
-        take: limits.schedules,
-    })
-    const blockedPeriods = await AppDataSource.getRepository(CabinetBlockedPeriodEntity).find({
-        where: { cabinetId: In(cabinetIds) },
-        take: limits.schedules,
-    })
-    const previews = new Map<string, PublicCabinet['availabilityPreview']>()
+    const previews = new Map<string, NonNullable<PublicCabinet['availabilityPreview']>>()
+    if (!cabinetIds.length) return previews
 
-    for (const cabinetId of cabinetIds) {
-        const cabinet = cabinets.find((item) => item.id === cabinetId)
-        if (!cabinet) continue
-        const zonedNow = getZonedDateTime(cabinet.timezone)
-        const durations = services
-            .filter((service) => service.cabinetId === cabinetId && service.isActive)
-            .map((service) => service.durationMinutes)
-        const durationMinutes = options?.durationMinutes ?? Math.min(...durations)
+    const rows: Array<{ id: string; date: string; start_minute: number; end_minute: number }> =
+        await AppDataSource.query(`
+            SELECT cabinet.id, slot.*
+            FROM cabinets AS cabinet
+            CROSS JOIN LATERAL (${getCabinetSlotsSql('positional')}) AS slot
+            WHERE cabinet.id = ANY($1::uuid[])
+            ORDER BY cabinet.id, slot.start_minute
+        `, [cabinetIds, date, duration, now])
 
-        if (!Number.isFinite(durationMinutes)) {
-            previews.set(cabinetId, null)
+    for (const row of rows) {
+        const slot = { startTime: formatTime(row.start_minute), endTime: formatTime(row.end_minute) }
+        const preview = previews.get(row.id)
+        if (!preview) {
+            previews.set(row.id, { date: row.date, ...slot, freeSlots: 1, slots: [slot] })
             continue
         }
-
-        let freeSlots = 0
-        let firstSlot: { date: string; startTime: string; endTime: string } | null = null
-        const slots: Array<{ startTime: string; endTime: string }> = []
-
-        const dateString = options?.date ?? zonedNow.date
-        const isPastDate = dateString < zonedNow.date
-        const occupied = activeBookings
-            .filter((booking) => booking.cabinetId === cabinetId && booking.date === dateString)
-            .map((booking) => ({
-                start: booking.startTime.slice(0, 5),
-                end: booking.endTime.slice(0, 5),
-            }))
-
-        const schedule = schedules.find((item) => item.cabinetId === cabinetId && item.weekday === getWeekday(dateString))
-        const exception = exceptions.find((item) => item.cabinetId === cabinetId && item.date === dateString)
-        const dateBlockedPeriods = blockedPeriods.filter((item) =>
-            item.cabinetId === cabinetId && item.date === dateString
-        )
-        const startMinutes = exception?.isClosed ? 0 : exception?.openTime ? timeToMinutes(exception.openTime) : schedule?.isOpen === false ? 0 : schedule ? timeToMinutes(schedule.openTime) : 8 * 60
-        const endMinutes = exception?.isClosed ? 0 : exception?.closeTime ? timeToMinutes(exception.closeTime) : schedule?.isOpen === false ? 0 : schedule ? timeToMinutes(schedule.closeTime) : 22 * 60
-
-        for (let start = startMinutes; start + durationMinutes <= endMinutes; start += 30) {
-            const slotStart = formatTime(start)
-            const slotEnd = formatTime(start + durationMinutes)
-            const isPast = isPastDate || (dateString === zonedNow.date && start <= zonedNow.minutes)
-            const isOccupied = occupied.some((slot) => slotStart < slot.end && slotEnd > slot.start)
-            const isBlocked = isTimeRangeBlocked(slotStart, slotEnd, dateBlockedPeriods)
-
-            if (!isPast && !isOccupied && !isBlocked) {
-                freeSlots += 1
-                if (slots.length < 4) {
-                    slots.push({ startTime: slotStart, endTime: slotEnd })
-                }
-                firstSlot ??= { date: dateString, startTime: slotStart, endTime: slotEnd }
-            }
-        }
-
-        previews.set(cabinetId, firstSlot ? { ...firstSlot, freeSlots, slots } : null)
+        preview.freeSlots += 1
+        if (preview.slots.length < 4) preview.slots.push(slot)
     }
-
     return previews
 }
 
@@ -265,10 +198,6 @@ export async function getPublicCabinets(input?: GetPublicCabinetsInput) {
         })
     }
 
-    if (input?.availableToday && !input.availabilityDate) {
-        query.andWhere(getAvailableTodayCandidateSql())
-    }
-
     if (sortBy === 'popular') {
         query.addSelect(`(
             (SELECT COUNT(*) FROM reviews review WHERE review."cabinetId" = cabinet.id AND review.status = 'approved') * 3
@@ -284,76 +213,50 @@ export async function getPublicCabinets(input?: GetPublicCabinetsInput) {
         query.orderBy('cabinet.createdAt', 'DESC')
     }
 
+    query.addOrderBy('cabinet.id', 'ASC')
     const { page, limit } = getCabinetPagination(input?.page, input?.limit)
-    const skip = (page - 1) * limit
-    const needsAvailability = Boolean(
-        input?.availableToday || input?.availabilityDate || input?.durationMinutes,
-    )
-    const candidates = needsAvailability
-        ? await query.take(getAvailabilityQueryLimits().candidates).getMany()
-        : null
-    const [cabinets, total] = candidates
-        ? [candidates, candidates.length]
-        : await query.skip(skip).take(limit).getManyAndCount()
-    const cabinetIds = cabinets.map((cabinet) => cabinet.id)
-    const serviceRepository = AppDataSource.getRepository(ServiceEntity)
-    const bookingRepository = AppDataSource.getRepository(BookingEntity)
-    const limits = getAvailabilityQueryLimits()
-    const [services, bookings] = cabinetIds.length === 0
-        ? [[], []]
-        : await Promise.all([
-            serviceRepository.find({
-                where: { cabinetId: In(cabinetIds), isActive: true },
-                take: limits.services,
-            }),
-            bookingRepository.find({
-                where: { cabinetId: In(cabinetIds), status: In([BookingStatus.Pending, BookingStatus.Confirmed]) },
-                select: ['cabinetId', 'date', 'startTime', 'endTime', 'status'],
-                take: limits.bookings,
-            }),
-        ])
-    const availabilityPreviews = await getAvailabilityPreview(cabinets, services, bookings, {
-        date: input?.availabilityDate,
-        durationMinutes: input?.durationMinutes,
-    })
-    const filteredCabinets = needsAvailability
-        ? cabinets.filter((cabinet) => (availabilityPreviews.get(cabinet.id)?.freeSlots ?? 0) > 0)
-        : cabinets
-    const paginatedCabinets = needsAvailability
-        ? filteredCabinets.slice(skip, skip + limit)
-        : filteredCabinets
-    const imageManifests = await ensureCabinetImageManifests(
-        paginatedCabinets.flatMap((cabinet) => cabinet.photos),
-    )
+    const now = new Date()
+    const date = input?.availabilityDate ?? null
+    const duration = input?.durationMinutes ?? null
+    if (input?.availableToday && !date && duration !== null) {
+        query.andWhere(`EXISTS (
+            SELECT 1 FROM services AS active_service
+            WHERE active_service."cabinetId" = cabinet.id AND active_service."isActive" = true
+        )`)
+    }
+    if (input?.availableToday || date || duration !== null) {
+        query.andWhere(`EXISTS (${getCabinetSlotsSql('named')})`, {
+            availabilityDate: date,
+            availabilityDuration: duration,
+            availabilityNow: now,
+        })
+    }
+
+    const [cabinets, total] = await query.skip((page - 1) * limit).take(limit).getManyAndCount()
+    const [availabilityPreviews, imageManifests] = await Promise.all([
+        getAvailabilityPreviews(cabinets.map((cabinet) => cabinet.id), date, duration, now),
+        ensureCabinetImageManifests(cabinets.flatMap((cabinet) => cabinet.photos)),
+    ])
 
     return {
-        items: paginatedCabinets.map((cabinet) => toPublicCabinet(
-            cabinet,
-            availabilityPreviews.get(cabinet.id),
-            imageManifests,
-        )),
-        total: needsAvailability ? filteredCabinets.length : total,
+        items: cabinets.map((cabinet) => toPublicCabinet(cabinet, availabilityPreviews.get(cabinet.id), imageManifests)),
+        total,
         page,
-        totalPages: Math.ceil((needsAvailability ? filteredCabinets.length : total) / limit),
+        totalPages: Math.ceil(total / limit),
     }
 }
 
-/**
- * Legacy flat catalog contract used by the browser mock and by older clients.
- * Keep it public, but never expose drafts or blocked cabinets: those records
- * are owner/admin workflow state and must not leak through a catalog endpoint.
- */
+/** Preserve the legacy response shape without traversing the entire catalog. */
 export async function getAllPublicCabinets() {
-    const pageSize = 50
-    const firstPage = await getPublicCabinets({ page: 1, limit: pageSize })
-    const pages = [firstPage.items]
-
-    for (let page = 2; page <= firstPage.totalPages; page += 1) {
-        const nextPage = await getPublicCabinets({ page, limit: pageSize })
-        pages.push(nextPage.items)
+    const result = await getPublicCabinets({ page: 1, limit: MAX_CABINET_PAGE_SIZE })
+    if (result.total > MAX_CABINET_PAGE_SIZE) {
+        throw new AppError({
+            statusCode: 409,
+            code: ERROR_CODES.Conflict,
+            message: 'Use the paginated /cabinets endpoint for catalogs with more than 50 entries.',
+        })
     }
-
-    return pages.flat()
+    return result.items
 }
 
 export async function getPublicCabinetById(id: string) {
@@ -374,25 +277,11 @@ export async function getPublicCabinetById(id: string) {
         })
     }
 
-    const serviceRepository = AppDataSource.getRepository(ServiceEntity)
-    const bookingRepository = AppDataSource.getRepository(BookingEntity)
-    const limits = getAvailabilityQueryLimits()
-    const [services, bookings] = await Promise.all([
-        serviceRepository.find({ where: { cabinetId: cabinet.id, isActive: true }, take: limits.services }),
-        bookingRepository.find({
-            where: { cabinetId: cabinet.id, status: In([BookingStatus.Pending, BookingStatus.Confirmed]) },
-            select: ['cabinetId', 'date', 'startTime', 'endTime', 'status'],
-            take: limits.bookings,
-        }),
+    const [availabilityPreviews, imageManifests] = await Promise.all([
+        getAvailabilityPreviews([cabinet.id], null, null, new Date()),
+        ensureCabinetImageManifests(cabinet.photos),
     ])
-
-    const imageManifests = await ensureCabinetImageManifests(cabinet.photos)
-
-    return toPublicCabinet(
-        cabinet,
-        (await getAvailabilityPreview([cabinet], services, bookings)).get(cabinet.id),
-        imageManifests,
-    )
+    return toPublicCabinet(cabinet, availabilityPreviews.get(cabinet.id), imageManifests)
 }
 
 export async function getOwnerCabinets(owner: UserEntity) {

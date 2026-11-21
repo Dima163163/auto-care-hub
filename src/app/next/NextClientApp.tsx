@@ -12,6 +12,7 @@ import { loadTranslations } from '@/shared/config/translations'
 import { IS_MOCK_API } from '@/shared/config/api'
 import { readPublicEnv } from '@/shared/config/runtime-env'
 import { installChunkLoadRecovery } from '@/shared/lib/chunk-load-recovery'
+import { readBrowserPreference } from '@/shared/lib/browser-preferences-storage'
 import { BootShell, type BootWorkspaceRole } from '@/shared/ui/boot-shell/BootShell'
 import { PublicProviderFirstPaint } from './PublicProviderFirstPaint'
 import type { AutoCareApiProviderProfile } from '@/entities/automotive-service'
@@ -94,7 +95,7 @@ export function NextClientApp({ initialPathname = '/', initialPublicProviderProf
         applyTheme(
             document.documentElement,
             getInitialTheme(
-                window.localStorage.getItem(THEME_STORAGE_KEY),
+                readBrowserPreference(THEME_STORAGE_KEY),
                 window.matchMedia('(prefers-color-scheme: dark)').matches,
             ),
         )
@@ -110,7 +111,7 @@ export function NextClientApp({ initialPathname = '/', initialPublicProviderProf
             try {
                 await Promise.all([
                     enableMocking(),
-                    loadTranslations(initialPublicProviderProfile ? initialProviderLocale : getInitialLocale()),
+                    loadTranslations(getInitialLocale()),
                 ])
                 if (initialPublicProviderProfile) {
                     await store.dispatch(autoCareApi.util.upsertQueryData('getAutoCareProviderProfile', initialPublicProviderProfile.id, initialPublicProviderProfile))
@@ -121,7 +122,7 @@ export function NextClientApp({ initialPathname = '/', initialPublicProviderProf
                 setReady(true)
             }
         })()
-    }, [initialProviderLocale, initialPublicProviderProfile])
+    }, [initialPublicProviderProfile])
 
     useEffect(() => {
         // Nonvisual lifecycle signal: DOMContentLoaded may still show BootShell

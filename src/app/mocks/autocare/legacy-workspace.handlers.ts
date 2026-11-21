@@ -160,7 +160,14 @@ export const legacyWorkspaceHandlers = [
         })
     }) },
 { order: 165, handler: http.get('/api/cabinets/all', () => {
-        return HttpResponse.json(mockCabinets.filter((cabinet) => cabinet.status === 'active'))
+        const cabinets = mockCabinets.filter((cabinet) => cabinet.status === 'active')
+        if (cabinets.length > 50) {
+            return HttpResponse.json({
+                code: 'CONFLICT',
+                message: 'Use the paginated /cabinets endpoint for catalogs with more than 50 entries.',
+            }, { status: 409 })
+        }
+        return HttpResponse.json(cabinets)
     }) },
 { order: 175, handler: http.get('/api/cabinets/:id', ({ params }) => {
         const cabinetId = String(params.id)
