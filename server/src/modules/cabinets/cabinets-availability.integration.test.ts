@@ -29,14 +29,21 @@ it('filters availability before pagination and refuses large flat catalogs', asy
             SELECT id, DATE '2099-02-15', true FROM created WHERE "pricePerHour" < 1001
         `, [owner.id, city])
 
-        const result = await getPublicCabinets({
-            city, sortBy: 'price_asc', availabilityDate: '2099-02-15', durationMinutes: 60, page: 1, limit: 1,
-        })
+        const filters = {
+            city, sortBy: 'price_asc', availabilityDate: '2099-02-15', durationMinutes: 60, limit: 1,
+        } as const
+        const result = await getPublicCabinets({ ...filters, page: 1 })
         expect(result).toMatchObject({ total: 1, totalPages: 1 })
         expect(result.items).toMatchObject([{
             title: 'Cabinet 1001',
             availabilityPreview: { date: '2099-02-15', startTime: '08:00', freeSlots: 27 },
         }])
+        await expect(getPublicCabinets({ ...filters, page: 2 })).resolves.toMatchObject({
+            items: [], total: 1, page: 2, totalPages: 1,
+        })
+        await expect(getPublicCabinets({ ...filters, availabilityDate: '2000-02-15', page: 1 })).resolves.toMatchObject({
+            items: [], total: 0, page: 1, totalPages: 0,
+        })
         await expect(getAllPublicCabinets()).rejects.toMatchObject({ statusCode: 409 })
     } finally {
         await AppDataSource.query('DELETE FROM cabinets WHERE "ownerId" = $1', [owner.id])

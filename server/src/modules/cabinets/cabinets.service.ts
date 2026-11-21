@@ -224,7 +224,8 @@ export async function getPublicCabinets(input?: GetPublicCabinetsInput) {
             WHERE active_service."cabinetId" = cabinet.id AND active_service."isActive" = true
         )`)
     }
-    if (input?.availableToday || date || duration !== null) {
+    const filterByAvailability = Boolean(input?.availableToday || date || duration !== null)
+    if (filterByAvailability) {
         query.andWhere(`EXISTS (${getCabinetSlotsSql('named')})`, {
             availabilityDate: date,
             availabilityDuration: duration,
@@ -232,7 +233,19 @@ export async function getPublicCabinets(input?: GetPublicCabinetsInput) {
         })
     }
 
-    const [cabinets, total] = await query.skip((page - 1) * limit).take(limit).getManyAndCount()
+    query.skip((page - 1) * limit).take(limit)
+    let result: [CabinetEntity[], number]
+    if (filterByAvailability) {
+        const { entities, raw } = await query
+            .addSelect('COUNT(*) OVER ()', 'available_total')
+            .getRawAndEntities<{ available_total: string }>()
+        // An out-of-range page has no row carrying the window count.
+        const total = raw[0] ? Number(raw[0].available_total) : (page === 1 ? 0 : await query.getCount())
+        result = [entities, total]
+    } else {
+        result = await query.getManyAndCount()
+    }
+    const [cabinets, total] = result
     const [availabilityPreviews, imageManifests] = await Promise.all([
         getAvailabilityPreviews(cabinets.map((cabinet) => cabinet.id), date, duration, now),
         ensureCabinetImageManifests(cabinets.flatMap((cabinet) => cabinet.photos)),

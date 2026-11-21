@@ -2966,7 +2966,7 @@
     },
     {
       "path": "server/src/modules/cabinets/cabinets.service.ts",
-      "sha256": "486653e03e21284d6074fce022c5282078d4243776328117659b4e278884d85d",
+      "sha256": "686fd5acba44d8a0773ea58f7023e952c6163732d49970c22330b61cf90d7205",
       "scopes": [
         "backend"
       ]
