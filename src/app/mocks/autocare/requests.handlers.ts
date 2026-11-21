@@ -1,6 +1,5 @@
 import { http, HttpResponse } from "msw"
-import { automotiveServices } from "@/entities/automotive-service"
-import { providerPreviews } from "@/entities/automotive-service/model/autocareMockProviders"
+import { z } from "zod"
 import { emitMockServiceChatEvent, type ServiceChatMessage } from "@/entities/automotive-service/lib/service-chat"
 import { isMockEmpty, mockScenarioResponse } from ".././mock-scenario"
 import { currentMockUser, hasMockProviderPermission } from './mock-access'
@@ -12,6 +11,23 @@ import type { MockAutoCareServiceRequest } from './mock-fixtures'
 import { pushMockAutoCareNotification } from './mock-notifications'
 import { expireMockAutoCareQuotes } from './mock-requests'
 import { invalidMockBodyResponse } from './mock-validation'
+
+// Demo fixtures use readable IDs while the real API uses UUIDs.
+const mockCreateServiceRequestSchema = z.object({
+    providerId: z.string().min(1),
+    locationId: z.string().min(1),
+    offeringId: z.string().min(1),
+    preferredAt: z.iso.datetime({ offset: true }),
+    vehicleId: z.string().nullable().optional(),
+    vehicleSnapshot: z.record(z.string(), z.union([z.string(), z.number(), z.null()])).nullable().optional(),
+    contactSnapshot: z.object({
+        name: z.string().trim().min(2).max(120),
+        email: z.string().trim().email().max(320),
+        phone: z.string().trim().min(5).max(32),
+    }).strict(),
+    note: z.string().trim().max(4_000).nullable().optional(),
+    dataProcessingConsent: z.literal(true),
+})
 
 function mockRequestListResponse<T extends { id: string; createdAt: string }>(items: T[], request: Request) {
     const params = new URL(request.url).searchParams
@@ -32,46 +48,38 @@ function mockRequestListResponse<T extends { id: string; createdAt: string }>(it
 export const requestsHandlers = [
 { order: 97, handler: http.post('/api/v1/service-requests', async ({ request }) => {
         const user = currentMockUser()
-        if (!user) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
-        if (user.role !== 'client') return HttpResponse.json({ message: 'Only clients can create service requests.' }, { status: 403 })
-        const body = await request.json() as {
-            providerId?: string
-            locationId?: string
-            offeringId?: string
-            preferredAt?: string
-            vehicleId?: string | null
-            vehicleSnapshot?: Record<string, string | number | null> | null
-            contactSnapshot?: Record<string, string | number | null>
-            note?: string | null
-            dataProcessingConsent?: boolean
+        if (!user) return HttpResponse.json({ code: 'UNAUTHORIZED', message: 'Unauthorized' }, { status: 401 })
+        if (!user.emailVerifiedAt) return HttpResponse.json({ code: 'EMAIL_VERIFICATION_REQUIRED', message: 'Email verification is required to perform this action.' }, { status: 403 })
+        const parsed = mockCreateServiceRequestSchema.safeParse(await request.json().catch(() => null))
+        if (!parsed.success) return HttpResponse.json({ code: 'VALIDATION_ERROR', message: 'Validation failed.' }, { status: 400 })
+        const body = parsed.data
+        const idempotencyKey = request.headers.get('Idempotency-Key')?.trim() ?? null
+        if (idempotencyKey !== null && !/^[a-zA-Z0-9_-]{8,128}$/.test(idempotencyKey)) {
+            return HttpResponse.json({ code: 'BAD_REQUEST', message: 'Idempotency-Key must contain 8-128 safe characters.' }, { status: 400 })
         }
-        const idempotencyKey = request.headers.get('Idempotency-Key')
+        if (user.role !== 'client') return HttpResponse.json({ code: 'FORBIDDEN', message: 'Only clients can create service requests.' }, { status: 403 })
         const fingerprint = JSON.stringify({ providerId: body.providerId, locationId: body.locationId, offeringId: body.offeringId, preferredAt: body.preferredAt, vehicleId: body.vehicleId ?? null, vehicleSnapshot: body.vehicleSnapshot ?? null, contactSnapshot: body.contactSnapshot, note: body.note ?? null })
         if (idempotencyKey) {
-            if (!/^[a-zA-Z0-9_-]{8,128}$/.test(idempotencyKey)) return HttpResponse.json({ message: 'Invalid Idempotency-Key.' }, { status: 400 })
             const existing = mockAutoCareServiceRequests.find((item) => item.clientId === user.id && item.idempotencyKey === idempotencyKey)
             if (existing) {
-                if (existing.idempotencyFingerprint !== fingerprint) return HttpResponse.json({ message: 'Idempotency key was already used for another service request.' }, { status: 409 })
+                if (existing.idempotencyFingerprint !== fingerprint) return HttpResponse.json({ code: 'CONFLICT', message: 'Idempotency key was already used for another service request.' }, { status: 409 })
                 const { clientId: _clientId, idempotencyKey: _idempotencyKey, idempotencyFingerprint: _fingerprint, ...response } = existing
                 return HttpResponse.json(response)
             }
         }
         const provider = autoCareProviders.find((item) => item.id === body.providerId || item.id.replace('api-', '') === body.providerId)
-        const source = provider ? providerPreviews.find((item) => item.id === provider.id.replace('api-', '')) : undefined
-        const service = automotiveServices.find((item) => body.offeringId?.endsWith(`-${item.id}`)) ?? automotiveServices[0]
-        const definition = autoCareDefinitions.find((item) => item.slug === service?.id) ?? autoCareDefinitions[0]
-        const offer = provider?.offers?.find((item) => item.id === body.offeringId)
-        if (!provider || !body.locationId || !body.offeringId || !body.preferredAt || !body.contactSnapshot || !body.dataProcessingConsent || !definition) {
-            return HttpResponse.json({ message: 'Invalid service request.' }, { status: 400 })
-        }
+        if (!provider || provider.location.id !== body.locationId) return HttpResponse.json({ code: 'NOT_FOUND', message: 'Automotive service location or provider not found.' }, { status: 404 })
+        const offer = provider.offers?.find((item) => item.id === body.offeringId && item.active)
+        if (!offer) return HttpResponse.json({ code: 'NOT_FOUND', message: 'Automotive service offering not found.' }, { status: 404 })
+        const definition = autoCareDefinitions.find((item) => item.id === offer.serviceDefinitionId)
+        if (!definition) return HttpResponse.json({ code: 'NOT_FOUND', message: 'Automotive service definition not found.' }, { status: 404 })
+
         const timezone = provider.location.timezone ?? 'UTC'
         const requestedInstant = new Date(body.preferredAt)
-        if (!Number.isFinite(requestedInstant.getTime())) return HttpResponse.json({ message: 'Invalid requested visit time.' }, { status: 400 })
         const requestedParts = getMockZonedDateTimeParts(requestedInstant, timezone)
-        const durationMinutes = provider.offers?.find((offer) => offer.id === body.offeringId)?.durationMinutes ?? 60
-        const slotIsAvailable = body.locationId === provider.location.id && getMockProviderAvailabilitySlots(provider, requestedParts.date, Date.now(), durationMinutes)
+        const slotIsAvailable = getMockProviderAvailabilitySlots(provider, requestedParts.date, Date.now(), offer.durationMinutes)
             .some((slot) => Date.parse(slot.startsAt) === requestedInstant.getTime())
-        if (!slotIsAvailable) return HttpResponse.json({ message: 'The requested visit time is no longer available.' }, { status: 409 })
+        if (!slotIsAvailable) return HttpResponse.json({ code: 'SLOT_UNAVAILABLE', message: 'The requested visit time is no longer available.' }, { status: 409 })
 
         const now = new Date().toISOString()
         const result: MockAutoCareServiceRequest = {
@@ -83,11 +91,11 @@ export const requestsHandlers = [
             definitionId: definition.id,
             serviceSlug: definition.slug,
             serviceLabels: definition.labels,
-            serviceDescription: offer?.description ?? null,
+            serviceDescription: offer.description ?? null,
             offeringId: body.offeringId,
-            priceFromMinor: offer?.priceFromMinor ?? (source?.price ? source.price * 100 : null),
-            currencyCode: offer?.currencyCode ?? 'RUB',
-            offeringSnapshot: offer ? {
+            priceFromMinor: offer.priceFromMinor,
+            currencyCode: offer.currencyCode,
+            offeringSnapshot: {
                 serviceSlug: offer.serviceSlug ?? definition.slug,
                 serviceLabels: offer.serviceLabels ?? definition.labels,
                 description: offer.description ?? null,
@@ -98,7 +106,7 @@ export const requestsHandlers = [
                 inclusions: offer.inclusions,
                 warrantyText: offer.warrantyText,
                 priceType: offer.priceType ?? definition.priceType,
-            } : null,
+            },
             preferredAt: body.preferredAt,
             timezone,
             vehicleId: body.vehicleId ?? null,

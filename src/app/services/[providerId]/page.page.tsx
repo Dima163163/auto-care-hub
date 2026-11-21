@@ -33,9 +33,13 @@ export async function generateMetadata({ params }: ProviderPageProps): Promise<M
     if (!profile) return { ...metadata, robots: { index: false, follow: false } }
 
     const title = `${profile.name} | AutoCare Hub`
-    const description = profile.description?.trim() || (locale === 'ru'
-        ? `Услуги, цены и варианты записи в автосервисе «${profile.name}».`
-        : `Compare published service offers, customer reviews and appointment options from ${profile.name}.`)
+    const fallbackDescription = {
+        en: `Compare published service offers, customer reviews and appointment options from ${profile.name}.`,
+        ru: `Услуги, цены и варианты записи в автосервисе «${profile.name}».`,
+        es: `Consulta los servicios, opiniones y opciones de cita de ${profile.name}.`,
+        ro: `Consultă serviciile, recenziile și opțiunile de programare la ${profile.name}.`,
+    }
+    const description = profile.description?.trim() || fallbackDescription[locale]
     const imageUrl = getPublicImageUrl(profile.coverImageUrl)
     return {
         ...metadata,

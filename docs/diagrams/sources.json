@@ -500,7 +500,7 @@
     },
     {
       "path": "src/app/next/NextClientApp.tsx",
-      "sha256": "1b86c1b8c9e266cb87d4dd205fa7fa5383a170e3cecaef9bc430a603841a69ad",
+      "sha256": "2f5654ce2a40b93e1215ed58f0217e3eb49bdcb0cfbd15f889d5f7f7ab19f134",
       "scopes": [
         "frontend"
       ]
@@ -636,7 +636,7 @@
     },
     {
       "path": "src/shared/ui/confirm-dialog/ConfirmDialog.tsx",
-      "sha256": "aad8da5afa89e0c32fa134646e1984de96f9c5d5fc2b93b63a263a5e54fb0cbf",
+      "sha256": "97751cc115090da32f7f2088fe56d82bb8b5db314cd412926aeaaafbd0a65b18",
       "scopes": [
         "frontend"
       ]
@@ -707,14 +707,14 @@
     },
     {
       "path": "src/shared/config/translations/en.ts",
-      "sha256": "4f7ba57c418d45bb619e4ae430f21d783c894124a43952680f62e1e819320ba1",
+      "sha256": "f614c44ce3182c95f0353d9f96299624a95a3dd7b92a82f01117eb600a69c428",
       "scopes": [
         "frontend"
       ]
     },
     {
       "path": "src/shared/config/translations/ru-part-3-admin.ts",
-      "sha256": "aeea0ec7a0219c427851303abbf5157ca672958ab83b6cc0e0a01dbaef1e38c2",
+      "sha256": "6f187a5c170683c47a11440339f711a6b338ce33db3a7bf84b1f8f4817c12f5a",
       "scopes": [
         "frontend"
       ]
@@ -840,7 +840,7 @@
     },
     {
       "path": "src/app/metadata.ts",
-      "sha256": "b8975292aeede07bd66e1dc57157749c01ddc6aa5e86d6de8e4fa01b2f4e1cbf",
+      "sha256": "e90cc5c450d19487c22bac120b90d400c5c5c78dafc564a8aea3a43c81031116",
       "scopes": [
         "frontend"
       ]
@@ -854,7 +854,7 @@
     },
     {
       "path": "src/shared/config/route-metadata-policy.ts",
-      "sha256": "f9b7f8b86744cd1c1aceb39ffc034473555e502e626b2b3a1e999fff10e6818a",
+      "sha256": "7bd942420c6e07b4d0ac358a024dcf778e3f0692cb43d036494517cbafea18b5",
       "scopes": [
         "frontend"
       ]
@@ -1058,7 +1058,7 @@
     },
     {
       "path": "src/app/mocks/autocare/requests.handlers.ts",
-      "sha256": "000ce23e29fbe565a3bc0a6cc885cdfaabf36de4d1f4659cfb68bc8a46a48802",
+      "sha256": "bbb101cc306b29b39bc9558173a83a860836d72a1b7f079b4b97f0dafac80174",
       "scopes": [
         "frontend"
       ]
@@ -2612,7 +2612,7 @@
     },
     {
       "path": "src/shared/config/translations/ru-part-4.ts",
-      "sha256": "003705b935f103ec1f55b16c975591308710f4f769e73dc4b8849ffbfd4a366a",
+      "sha256": "465072c7afed3059dcac9b4b1c872142dd77bc37c00216437300a530627e3066",
       "scopes": [
         "frontend"
       ]
@@ -2923,7 +2923,7 @@
     },
     {
       "path": "src/shared/config/i18n.ts",
-      "sha256": "f7cbc74d425e39c81cbf064249253c975237a7b3fb2a9630a501461d9295faf0",
+      "sha256": "4d064e196a441d544a4a0e21ea97fc2840b32a84255fe6c4f13e204ce347ed19",
       "scopes": [
         "frontend"
       ]
@@ -2944,7 +2944,7 @@
     },
     {
       "path": "src/proxy.js",
-      "sha256": "64f616aa047c55a9f9bb88a6037ecf47bf59cc9d08bf320e21181b910a662f3d",
+      "sha256": "acf62f624f644d987bbe509fee5772f53f66defc7c864c1655c155c0c5fd6ebf",
       "scopes": [
         "runtime",
         "frontend"
@@ -2966,7 +2966,7 @@
     },
     {
       "path": "server/src/modules/cabinets/cabinets.service.ts",
-      "sha256": "486653e03e21284d6074fce022c5282078d4243776328117659b4e278884d85d",
+      "sha256": "686fd5acba44d8a0773ea58f7023e952c6163732d49970c22330b61cf90d7205",
       "scopes": [
         "backend"
       ]

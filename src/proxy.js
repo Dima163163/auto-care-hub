@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { createContentSecurityPolicy } from './shared/config/content-security-policy'
-import { normalizePublicLocale, REQUEST_LOCALE_HEADER } from './shared/config/i18n'
+import { normalizeServerLocale, REQUEST_LOCALE_HEADER } from './shared/config/i18n'
 
 export function proxy(request) {
     const nonce = randomBytes(24).toString('base64')
@@ -12,7 +12,7 @@ export function proxy(request) {
     const headers = new Headers(request.headers)
     // Always replace caller-supplied values before passing headers into SSR.
     headers.delete(REQUEST_LOCALE_HEADER)
-    const urlLocale = normalizePublicLocale(request.nextUrl.searchParams.get('lang'))
+    const urlLocale = normalizeServerLocale(request.nextUrl.searchParams.get('lang'))
     if (urlLocale) headers.set(REQUEST_LOCALE_HEADER, urlLocale)
     headers.set('x-nonce', nonce)
     headers.set('Content-Security-Policy', policy)

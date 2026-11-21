@@ -7,6 +7,7 @@ import { NextApp } from '@/app/next/NextApp'
 import { StoreProvider, store } from '@/app/store'
 import { autoCareApi } from '@/entities/automotive-service/api/autocareApi'
 import { getInitialLocale, getLocaleOption } from '@/shared/config/i18n'
+import type { ServerLocale } from '@/shared/config/i18n'
 import { ROUTES } from '@/shared/constants/routes'
 import { loadTranslations } from '@/shared/config/translations'
 import { IS_MOCK_API } from '@/shared/config/api'
@@ -69,7 +70,7 @@ async function enableMocking() {
 type NextClientAppProps = {
     initialPathname?: string
     initialPublicProviderProfile?: AutoCareApiProviderProfile
-    initialProviderLocale?: 'en' | 'ru'
+    initialProviderLocale?: ServerLocale
     initialProviderSelectedServiceId?: string
 }
 

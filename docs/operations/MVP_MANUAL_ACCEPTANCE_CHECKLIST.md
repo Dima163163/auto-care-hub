@@ -1,8 +1,7 @@
 # AutoCare Hub — ручная приёмка локального MVP
 
-**Версия:** companion checklist к `PILOT_SCOPE_FREEZE.md` v1.0  
-**Дата:** 30 августа 2026  
-**Назначение:** воспроизводимо закрыть внешние gates `MVP-05` и `MVP-06` после автоматических mock/API-проверок.
+Чек-лист к `PILOT_SCOPE_FREEZE.md` v2. Актуализирован 21 ноября 2026.
+Связан с условиями `V2-MANUAL-01` и `V2-MANUAL-02`.
 
 Этот файл не расширяет обязательный scope и не меняет проценты. Единственный источник обязательных условий — [`PILOT_SCOPE_FREEZE.md`](./PILOT_SCOPE_FREEZE.md). Здесь фиксируются только шаги приёмки и доказательства уже перечисленных в нём условий.
 
@@ -13,19 +12,20 @@
 3. При дефекте записать маршрут, ширину, тему, браузер, шаг воспроизведения и ссылку на screenshot/video в журнал доказательств.
 4. Один и тот же сценарий повторить в светлой и тёмной теме, если в строке явно не указано иное.
 
-## Обязательные автоматические предпосылки
+## Автоматические проверки перед ручным прогоном
 
-- [x] `npm run check:local-mvp -- --json` — актуальный full local gate **41/41 PASS** на clean commit `8ad66fb955a9`; frontend **149 файлов / 471 тест**, Next/backend build, contracts и production Next responsive matrix **30/30 PASS** на ширинах 360–1440 px.
-- [x] `npm run test:e2e -- e2e/autocare-release-audit.spec.ts --project=chromium` — актуальный mock release audit **21/21 PASS**, включая exact-width route matrix 390–1440 px, public/protected keyboard order, Axe, themes, Space/Escape и locale/overflow checks.
+Числа ниже относятся к августовским прогонам. Для нового кандидата
+сверьте результаты команд на его коммите.
+
+- [x] `npm run check:local-mvp -- --json` — **41/41 PASS** на августовском коммите `8ad66fb955a9`; frontend **149 файлов / 471 тест**, Next/backend build, contracts и production Next responsive matrix **30/30 PASS** на ширинах 360–1440 px.
+- [x] `npm run test:e2e -- e2e/autocare-release-audit.spec.ts --project=chromium` — августовский mock release audit **21/21 PASS**, включая exact-width route matrix 390–1440 px, public/protected keyboard order, Axe, themes, Space/Escape и locale/overflow checks.
 - [x] `npm run check:state-matrix` — mock loading/error/offline/timeout/permission/suspended contract.
 - [x] `npm run test:e2e -- e2e/autocare-release-audit.spec.ts --project=chromium --grep "theme switcher and discovery focus"` — rounded focus и переключение темы.
 - [x] `npm run test:e2e -- e2e/autocare-release-audit.spec.ts --project=chromium --grep "protected workspaces satisfy"` — Axe для защищённых кабинетов.
 - [x] Public и protected keyboard smoke из `e2e/autocare-release-audit.spec.ts`.
 - [x] `MVP-01` clean PostgreSQL reset → migrations → seed → health/read smoke — закрыто 31.08.2026: локальные PostgreSQL/Redis подняты, `demo:reset` → `demo:seed` → `autocare:seed` и health/catalog/read smoke прошли без ручной коррекции.
 
-Автоматические предпосылки закрытых сценариев `MVP-02` и `MVP-04` зафиксированы в `PILOT_SCOPE_FREEZE.md`: real browser smoke **23/23** группами плюс owner/admin recoverable-state **1/1** и PostgreSQL/Redis integration **14 файлов / 60 тестов PASS**. Ручной раздел ниже не заменяет эти evidence и не откладывает их повторно.
-
-## MVP-05 — visual и keyboard acceptance
+## V2-MANUAL-01 — визуальная проверка и клавиатура
 
 ### Маршруты и ширины
 
@@ -74,7 +74,7 @@
 - [ ] Ни один disabled-контрол не получает focus и не запускает запрос.
 - [ ] Введённые значения формы не теряются после retry/error и при закрытии временного overlay.
 
-## MVP-06 — screen reader и реальные устройства
+## V2-MANUAL-02 — скринридеры на реальных устройствах
 
 Этот раздел закрывается только ручным прогоном владельца продукта на физических устройствах. Desktop Axe не заменяет VoiceOver/TalkBack.
 

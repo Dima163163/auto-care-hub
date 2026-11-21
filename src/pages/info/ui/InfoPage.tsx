@@ -330,10 +330,10 @@ export function HelpPage() {
                             {t('info.help.contactDescription')}
                         </p>
                         <div className="mt-5 grid gap-2">
-                            <a href="mailto:info@autocarehub.ru" className="inline-flex items-center gap-2 text-sm font-black text-primary hover:underline">
+                            <Link to={ROUTES.chats} className="inline-flex items-center gap-2 text-sm font-black text-primary hover:underline">
                                 <Mail className="size-4" aria-hidden="true" />
-                                {t('info.help.contactAction')}
-                            </a>
+                                {t('autocare.chatWorkspaceSupport')}
+                            </Link>
                             <Link to={ROUTES.contacts} className="inline-flex items-center gap-2 text-sm font-black text-primary hover:underline">
                                 <ArrowRight className="size-4" aria-hidden="true" />
                                 {t('info.help.contactPageAction')}
