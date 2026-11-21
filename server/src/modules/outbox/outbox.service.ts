@@ -18,7 +18,6 @@ import { serializeError } from '../../shared/observability/logger.js'
 import { assertOutboxPayloadWithinBounds } from './outbox-payload.js'
 import { getOutboxFailureDisposition } from './outbox-dead-letter.js'
 import { assertSupportedOutboxEventType } from './outbox-event-registry.js'
-import { getStaleOutboxRecoveryStatus } from './outbox-lease.js'
 import { getOutboxRetryDelayMs } from './outbox-retry-policy.js'
 import { normalizeOutboxIdempotencyKey } from './outbox-idempotency-policy.js'
 import { getOutboxBatchSize } from './outbox-batch-policy.js'
@@ -197,6 +196,26 @@ async function claimOutboxBatch() {
     return AppDataSource.transaction(async (manager) => {
         const repository = manager.getRepository(OutboxEventEntity)
         const staleLockBefore = new Date(Date.now() - STALE_LOCK_MS)
+        const exhausted = await repository
+            .createQueryBuilder('event')
+            .where('event.status = :processingStatus AND event.lockedAt < :staleLockBefore', {
+                processingStatus: OutboxEventStatus.Processing,
+                staleLockBefore,
+            })
+            .andWhere('event.attempts >= :maxAttempts', { maxAttempts: OUTBOX_MAX_ATTEMPTS })
+            .orderBy('event.lockedAt', 'ASC')
+            .setLock('pessimistic_write')
+            .setOnLocked('skip_locked')
+            .take(BATCH_SIZE)
+            .getMany()
+        for (const event of exhausted) {
+            event.status = OutboxEventStatus.DeadLetter
+            event.payload = redactOutboxSecrets(event.payload)
+            event.lockedAt = null
+            event.lastError = 'Worker stopped before recording the final delivery result.'
+        }
+        if (exhausted.length) await repository.save(exhausted)
+
         const events = await repository
             .createQueryBuilder('event')
             .where(`(
@@ -217,11 +236,6 @@ async function claimOutboxBatch() {
 
         const lockedAt = new Date()
         for (const event of events) {
-            if (event.status === OutboxEventStatus.Processing) {
-                event.status = getStaleOutboxRecoveryStatus(event.attempts, OUTBOX_MAX_ATTEMPTS) === 'dead_letter'
-                    ? OutboxEventStatus.DeadLetter
-                    : OutboxEventStatus.Failed
-            }
             event.status = OutboxEventStatus.Processing
             event.lockedAt = lockedAt
             event.attempts += 1
@@ -313,6 +327,7 @@ export async function processOutboxBatch(
     mailer?: Mailer,
     assertLease?: () => void,
 ) {
+    assertLease?.()
     const events = await claimOutboxBatch()
     const repository = AppDataSource.getRepository(OutboxEventEntity)
     let completed = 0

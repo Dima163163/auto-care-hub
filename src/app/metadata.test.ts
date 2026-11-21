@@ -1,9 +1,36 @@
 import { describe, expect, it } from 'vitest'
 
-import { getAppMetadata, getRouteMetadata } from './metadata'
+import { getAppMetadata, getRouteMetadata, resolveRequestLocale } from './metadata'
 import { getAuthRouteCopy, shouldNoIndexRoute } from '../shared/config/route-metadata-policy'
 
 describe('route metadata SEO boundaries', () => {
+    it('uses the validated URL locale before the stored language and browser preference', () => {
+        const headers = new Headers({
+            'x-autocare-request-locale': 'ru',
+            cookie: 'autocare-hub-locale=en',
+            'accept-language': 'en-US',
+        })
+        expect(resolveRequestLocale(headers)).toBe('ru')
+        headers.set('x-autocare-request-locale', 'unsupported')
+        expect(resolveRequestLocale(headers)).toBe('en')
+    })
+
+    it.each([
+        ['es-MX', 'es', 'Encuentra talleres de confianza', 'Iniciar sesión'],
+        ['ro-RO', 'ro', 'Găsește service-uri auto de încredere', 'Autentificare'],
+    ] as const)('localizes server metadata for a direct %s link', (value, locale, discoveryTitle, loginTitle) => {
+        const headers = new Headers({
+            'x-autocare-request-locale': value,
+            cookie: 'autocare-hub-locale=ru',
+            'accept-language': 'ru',
+        })
+        expect(resolveRequestLocale(headers)).toBe(locale)
+        expect(getRouteMetadata('/services', { locale })).toMatchObject({ title: { absolute: `${discoveryTitle} | AutoCare Hub` } })
+        expect(getRouteMetadata('/login', { locale })).toMatchObject({
+            title: { absolute: `${loginTitle} | AutoCare Hub` },
+            robots: { index: false },
+        })
+    })
     it('indexes the canonical service discovery landing page', () => {
         expect(getRouteMetadata('/services').robots).toMatchObject({ index: true, follow: true })
     })

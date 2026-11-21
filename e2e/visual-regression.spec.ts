@@ -77,6 +77,7 @@ async function signIn(page: Page, role: VisualRole) {
 
 async function waitForStableVisual(page: Page) {
     await page.waitForLoadState('domcontentloaded')
+    await expect(page.locator('html[data-autocare-ready="ready"]')).toHaveCount(1, { timeout: 30_000 })
     await expect(page.getByRole('main')).toBeVisible({ timeout: 30_000 })
     await expect(page.getByRole('main').getByRole('heading').first()).toBeVisible({ timeout: 30_000 })
     await page.evaluate(() => document.fonts?.ready)

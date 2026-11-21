@@ -99,6 +99,24 @@ async function signInAs(page: Page, email: string) {
 }
 
 test.describe('Next.js direct route runtime', () => {
+    test('renders Spanish and Romanian provider links before JavaScript loads', async ({ browser, baseURL }) => {
+        const context = await browser.newContext({ baseURL, javaScriptEnabled: false })
+        try {
+            const page = await context.newPage()
+            for (const { locale, heading } of [
+                { locale: 'es', heading: 'Servicios y precios' },
+                { locale: 'ro', heading: 'Servicii și prețuri' },
+            ]) {
+                await page.goto(`/services/api-proservice-moscow?lang=${locale}`)
+                await expect(page.locator('html')).toHaveAttribute('lang', locale)
+                await expect(page.getByRole('main')).toHaveCount(1)
+                await expect(page.getByRole('heading', { name: heading })).toBeVisible()
+            }
+        } finally {
+            await context.close()
+        }
+    })
+
     test('serves every representative route through the Next shell', async ({ request }) => {
         for (const route of directRoutes) {
             const response = await request.get(route)

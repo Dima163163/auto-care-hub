@@ -8,6 +8,7 @@ import { StoreProvider } from '@/app/store'
 import { getInitialLocale } from '@/shared/config/i18n'
 import { loadTranslations } from '@/shared/config/translations'
 import { installChunkLoadRecovery } from '@/shared/lib/chunk-load-recovery'
+import { readBrowserPreference } from '@/shared/lib/browser-preferences-storage'
 import {
     applyTheme,
     getInitialTheme,
@@ -25,7 +26,7 @@ const SHOULD_ENABLE_MSW =
 applyTheme(
     document.documentElement,
     getInitialTheme(
-        window.localStorage.getItem(THEME_STORAGE_KEY),
+        readBrowserPreference(THEME_STORAGE_KEY),
         window.matchMedia('(prefers-color-scheme: dark)').matches,
     ),
 )

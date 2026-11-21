@@ -1,6 +1,7 @@
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
 import { setupServer } from 'msw/node'
 
+import { mockUsers } from './data'
 import { handlers } from './handlers'
 import { clearMockSession, setMockSession } from './session'
 
@@ -12,7 +13,70 @@ afterEach(() => {
 })
 afterAll(() => server.close())
 
+const booking = {
+    providerId: 'api-proservice-moscow',
+    locationId: 'location-proservice-moscow',
+    offeringId: 'offer-api-proservice-moscow-oil-change',
+    preferredAt: '2026-09-27T06:30:00.000Z',
+    contactSnapshot: { name: 'Mock Client', phone: '+49 151 00000001', email: 'client@example.test' },
+    dataProcessingConsent: true,
+}
+
+function submitBooking(body: string, idempotencyKey?: string) {
+    const headers = new Headers({ 'content-type': 'application/json' })
+    if (idempotencyKey) headers.set('Idempotency-Key', idempotencyKey)
+    return fetch('http://localhost:3000/api/v1/service-requests', { method: 'POST', headers, body })
+}
+
 describe('mock service request workflow', () => {
+    it('uses the server status and error code for invalid input, role and missing offers', async () => {
+        const denied = await submitBooking(JSON.stringify(booking))
+        expect(denied.status).toBe(401)
+        expect(await denied.json()).toMatchObject({ code: 'UNAUTHORIZED' })
+
+        setMockSession({ currentUserId: 'user-owner-1', currentRole: 'owner' })
+        const forbidden = await submitBooking(JSON.stringify(booking))
+        expect(forbidden.status).toBe(403)
+        expect(await forbidden.json()).toMatchObject({ code: 'FORBIDDEN' })
+
+        setMockSession({ currentUserId: 'user-client-1', currentRole: 'client' })
+        for (const invalidBody of ['null', JSON.stringify({ ...booking, dataProcessingConsent: false })]) {
+            const invalid = await submitBooking(invalidBody)
+            expect(invalid.status).toBe(400)
+            expect(await invalid.json()).toMatchObject({ code: 'VALIDATION_ERROR' })
+        }
+        const missing = await submitBooking(JSON.stringify({ ...booking, offeringId: 'unknown-offering' }))
+        expect(missing.status).toBe(404)
+        expect(await missing.json()).toMatchObject({ code: 'NOT_FOUND' })
+    })
+
+    it('requires verified email before making a request', async () => {
+        const index = mockUsers.findIndex(({ id }) => id === 'user-client-1')
+        const client = mockUsers[index]!
+        mockUsers[index] = { ...client, emailVerifiedAt: null }
+        try {
+            setMockSession({ currentUserId: client.id, currentRole: 'client' })
+            const response = await submitBooking(JSON.stringify(booking))
+            expect(response.status).toBe(403)
+            expect(await response.json()).toMatchObject({ code: 'EMAIL_VERIFICATION_REQUIRED' })
+        } finally {
+            mockUsers[index] = client
+        }
+    })
+
+    it('replays an identical request and rejects changes under the same key', async () => {
+        vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-09-26T12:33:00.000Z'))
+        setMockSession({ currentUserId: 'user-client-1', currentRole: 'client' })
+        const key = 'mock-service-request-replay'
+        const initial = await submitBooking(JSON.stringify(booking), key)
+        expect(initial.status).toBe(201)
+        const replay = await submitBooking(JSON.stringify(booking), key)
+        expect(replay.status).toBe(200)
+        expect(await replay.json()).toEqual(await initial.json())
+        const conflict = await submitBooking(JSON.stringify({ ...booking, note: 'Different request' }), key)
+        expect(conflict.status).toBe(409)
+        expect(await conflict.json()).toMatchObject({ code: 'CONFLICT' })
+    })
     it('omits past slots and respects the service weekly schedule', async () => {
         vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-09-26T12:53:00.000Z'))
 

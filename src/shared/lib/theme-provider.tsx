@@ -15,6 +15,7 @@ import {
     ThemeContext,
     type ThemeContextValue,
 } from '@/shared/lib/theme-context'
+import { readBrowserPreference, saveBrowserPreference } from './browser-preferences-storage'
 
 function readInitialTheme(): Theme {
     if (typeof window === 'undefined') {
@@ -22,7 +23,7 @@ function readInitialTheme(): Theme {
     }
 
     return getInitialTheme(
-        window.localStorage.getItem(THEME_STORAGE_KEY),
+        readBrowserPreference(THEME_STORAGE_KEY),
         window.matchMedia('(prefers-color-scheme: dark)').matches,
     )
 }
@@ -35,7 +36,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     const [theme, setTheme] = useState<Theme>(readInitialTheme)
 
     useEffect(() => {
-        window.localStorage.setItem(THEME_STORAGE_KEY, theme)
+        saveBrowserPreference(THEME_STORAGE_KEY, theme)
         applyTheme(document.documentElement, theme)
     }, [theme])
 

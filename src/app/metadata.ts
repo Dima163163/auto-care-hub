@@ -1,6 +1,9 @@
 import type { Metadata } from 'next'
 import { headers } from 'next/headers'
 import { getAuthRouteCopy, shouldNoIndexRoute } from '../shared/config/route-metadata-policy'
+import { normalizePublicLocale, normalizeServerLocale, REQUEST_LOCALE_HEADER } from '../shared/config/i18n'
+
+import type { ServerLocale } from '../shared/config/i18n'
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'
 
@@ -60,11 +63,56 @@ const russianPublicCopy: Record<string, { title: string; description: string }> 
     '/privacy': { title: 'Политика конфиденциальности | AutoCare Hub', description: 'Как AutoCare Hub обрабатывает данные аккаунта, автомобиля, заявок, переписки, фотографий и отзывов.' },
 }
 
+const additionalPublicCopy: Record<'es' | 'ro', Record<string, { title: string; description: string }>> = {
+    es: {
+        '/': { title: 'AutoCare Hub — Talleres de confianza', description: 'Compara precios, valoraciones y citas disponibles en talleres cercanos.' },
+        '/services': { title: 'Encuentra talleres de confianza | AutoCare Hub', description: 'Busca y compara talleres por zona, precio, valoración y disponibilidad.' },
+        '/for-owners': { title: 'Para propietarios de talleres | AutoCare Hub', description: 'Crea el perfil de tu taller y recibe solicitudes de clientes.' },
+        '/about': { title: 'Sobre AutoCare Hub', description: 'Ayudamos a los conductores a comparar talleres de automoción.' },
+        '/reviews': { title: 'Opiniones de clientes | AutoCare Hub', description: 'Consulta opiniones sobre talleres y servicios de automoción.' },
+        '/help': { title: 'Ayuda e información | AutoCare Hub', description: 'Encuentra respuestas sobre talleres, solicitudes y citas.' },
+        '/features': { title: 'Funciones de AutoCare Hub', description: 'Compara talleres, consulta opiniones y solicita citas.' },
+        '/agreement': { title: 'Acuerdo de usuario | AutoCare Hub', description: 'Consulta las reglas para las cuentas y servicios de AutoCare Hub.' },
+        '/rules': { title: 'Condiciones de uso | AutoCare Hub', description: 'Consulta las condiciones del catálogo, las solicitudes y las opiniones.' },
+        '/privacy': { title: 'Política de privacidad | AutoCare Hub', description: 'Descubre cómo tratamos los datos de cuentas, vehículos, solicitudes y mensajes.' },
+    },
+    ro: {
+        '/': { title: 'AutoCare Hub — Service-uri auto de încredere', description: 'Compară prețurile, evaluările și programările disponibile la service-uri din apropiere.' },
+        '/services': { title: 'Găsește service-uri auto de încredere | AutoCare Hub', description: 'Caută și compară service-uri auto după zonă, preț, evaluări și disponibilitate.' },
+        '/for-owners': { title: 'Pentru proprietarii de service-uri | AutoCare Hub', description: 'Creează profilul service-ului și primește solicitări de la clienți.' },
+        '/about': { title: 'Despre AutoCare Hub', description: 'Ajutăm șoferii să compare service-uri auto.' },
+        '/reviews': { title: 'Recenziile clienților | AutoCare Hub', description: 'Citește recenzii despre service-uri și servicii auto.' },
+        '/help': { title: 'Ajutor și informații | AutoCare Hub', description: 'Găsește răspunsuri despre căutare, solicitări și programări.' },
+        '/features': { title: 'Funcțiile AutoCare Hub', description: 'Compară service-uri, citește recenzii și trimite solicitări de programare.' },
+        '/agreement': { title: 'Acordul utilizatorului | AutoCare Hub', description: 'Consultă regulile pentru conturile și serviciile AutoCare Hub.' },
+        '/rules': { title: 'Condiții de utilizare | AutoCare Hub', description: 'Consultă condițiile pentru catalog, solicitări și recenzii.' },
+        '/privacy': { title: 'Politica de confidențialitate | AutoCare Hub', description: 'Află cum gestionăm datele despre conturi, vehicule, solicitări și mesaje.' },
+    },
+}
+
+const publicCopyByLocale = { en: publicCopy, ru: russianPublicCopy, ...additionalPublicCopy }
+const providerCopy = {
+    en: { title: 'Trusted automotive service | AutoCare Hub', description: 'View services, prices, ratings and appointment options from a trusted automotive provider.' },
+    ru: { title: 'Автосервис | AutoCare Hub', description: 'Услуги, цены, отзывы и варианты записи в автосервис.' },
+    es: { title: 'Taller de confianza | AutoCare Hub', description: 'Consulta los servicios, precios, opiniones y opciones de cita del taller.' },
+    ro: { title: 'Service auto de încredere | AutoCare Hub', description: 'Vezi serviciile, prețurile, recenziile și opțiunile de programare.' },
+}
+const imageAlt = {
+    en: 'AutoCare Hub automotive service map', ru: 'Карта автосервисов AutoCare Hub',
+    es: 'Mapa de talleres de AutoCare Hub', ro: 'Harta service-urilor AutoCare Hub',
+}
+const keywords = {
+    en: ['auto service', 'car repair', 'oil change', 'tire service', 'detailing', 'vehicle maintenance'],
+    ru: ['автосервис', 'ремонт автомобиля', 'замена масла', 'шиномонтаж', 'обслуживание автомобиля'],
+    es: ['taller mecánico', 'reparación de vehículos', 'cambio de aceite'],
+    ro: ['service auto', 'reparații auto', 'schimb de ulei'],
+}
+
 const indexRobots = { index: true, follow: true, other: { 'max-image-preview': 'large' } }
 
 type RouteMetadataOptions = {
     hasSearchParams?: boolean
-    locale?: 'en' | 'ru'
+    locale?: ServerLocale
 }
 
 function normalizePathname(pathname: string) {
@@ -76,15 +124,9 @@ export function getRouteMetadata(pathname: string, options: RouteMetadataOptions
     const path = normalizePathname(pathname)
     const isNoIndex = shouldNoIndexRoute(path, options.hasSearchParams)
     const isProvider = path.startsWith('/services/') && path !== '/services'
-    const localizedCopy = options.locale === 'ru' ? russianPublicCopy : publicCopy
-    const copy = getAuthRouteCopy(path, options.locale ?? 'en') ?? localizedCopy[path] ?? (isProvider
-        ? {
-            title: options.locale === 'ru' ? 'Автосервис | AutoCare Hub' : 'Trusted automotive service | AutoCare Hub',
-            description: options.locale === 'ru'
-                ? 'Услуги, цены, отзывы и варианты записи в автосервис.'
-                : 'View services, prices, ratings and appointment options from a trusted automotive provider.',
-        }
-        : localizedCopy['/'])
+    const locale = options.locale ?? 'en'
+    const localizedCopy = publicCopyByLocale[locale]
+    const copy = getAuthRouteCopy(path, locale) ?? localizedCopy[path] ?? (isProvider ? providerCopy[locale] : localizedCopy['/'])
     const canonical = new URL(path, siteUrl).toString()
 
     return {
@@ -98,7 +140,7 @@ export function getRouteMetadata(pathname: string, options: RouteMetadataOptions
             title: copy.title,
             description: copy.description,
             url: canonical,
-            images: [{ url: '/images/autocare/hero-map-generated.webp', alt: options.locale === 'ru' ? 'Карта автосервисов AutoCare Hub' : 'AutoCare Hub automotive service map' }],
+            images: [{ url: '/images/autocare/hero-map-generated.webp', alt: imageAlt[locale] }],
         },
         twitter: {
             card: 'summary_large_image',
@@ -109,16 +151,14 @@ export function getRouteMetadata(pathname: string, options: RouteMetadataOptions
     }
 }
 
-export function getAppMetadata(locale: 'en' | 'ru' = 'en'): Metadata {
-    const copy = locale === 'ru' ? russianPublicCopy['/'] : publicCopy['/']
+export function getAppMetadata(locale: ServerLocale = 'en'): Metadata {
+    const copy = publicCopyByLocale[locale]['/']
     return {
         metadataBase: new URL(siteUrl),
         title: { default: copy.title, template: '%s | AutoCare Hub' },
         description: copy.description,
         applicationName: 'AutoCare Hub',
-        keywords: locale === 'ru'
-            ? ['автосервис', 'ремонт автомобиля', 'замена масла', 'шиномонтаж', 'обслуживание автомобиля']
-            : ['auto service', 'car repair', 'oil change', 'tire service', 'detailing', 'vehicle maintenance'],
+        keywords: keywords[locale],
         creator: 'AutoCare Hub',
         publisher: 'AutoCare Hub',
         alternates: { canonical: siteUrl },
@@ -129,7 +169,7 @@ export function getAppMetadata(locale: 'en' | 'ru' = 'en'): Metadata {
             title: copy.title,
             description: copy.description,
             url: siteUrl,
-            images: [{ url: '/images/autocare/hero-map-generated.webp', alt: locale === 'ru' ? 'Карта автосервисов AutoCare Hub' : 'AutoCare Hub automotive service map' }],
+            images: [{ url: '/images/autocare/hero-map-generated.webp', alt: imageAlt[locale] }],
         },
         twitter: {
             card: 'summary_large_image',
@@ -141,9 +181,15 @@ export function getAppMetadata(locale: 'en' | 'ru' = 'en'): Metadata {
     }
 }
 
-export async function getRequestLocale(): Promise<'en' | 'ru'> {
-    const requestHeaders = await headers()
+export function resolveRequestLocale(requestHeaders: Pick<Headers, 'get'>): ServerLocale {
+    const urlLocale = normalizeServerLocale(requestHeaders.get(REQUEST_LOCALE_HEADER))
+    if (urlLocale) return urlLocale
     const savedLanguage = /(?:^|;\s*)autocare-hub-locale=(en|ru)(?:;|$)/i.exec(requestHeaders.get('cookie') ?? '')?.[1]?.toLowerCase()
-    if (savedLanguage === 'ru' || savedLanguage === 'en') return savedLanguage
+    const savedLocale = normalizePublicLocale(savedLanguage)
+    if (savedLocale) return savedLocale
     return /(?:^|[,;\s])ru(?:[-,;\s]|$)/i.test(requestHeaders.get('accept-language') ?? '') ? 'ru' : 'en'
+}
+
+export async function getRequestLocale(): Promise<ServerLocale> {
+    return resolveRequestLocale(await headers())
 }

@@ -25,7 +25,7 @@ export function getCommandTimeoutMs(environment = process.env) {
 export const LOCAL_MVP_CHECKS = [
     { id: 'frontend-lint', label: 'Frontend lint', executable: npmCommand, args: ['run', 'lint', '--', '--max-warnings=0'] },
     { id: 'frontend-tests', label: 'Frontend tests', executable: npmCommand, args: ['test', '--', '--run'] },
-    { id: 'next-build', label: 'Next production build', executable: npmCommand, args: ['run', 'build'] },
+    { id: 'next-build', label: 'Next build with local browser fixtures', executable: npmCommand, args: ['run', 'build:next:mock'] },
     { id: 'backend-build', label: 'Backend TypeScript build', executable: npmCommand, args: ['--prefix', 'server', 'run', 'build'] },
     { id: 'api-parity', label: 'Mock/API parity', executable: npmCommand, args: ['run', 'check:api-parity'] },
     { id: 'staging-api-contract', label: 'Staging API compatibility contract', executable: npmCommand, args: ['run', 'check:staging-api'] },

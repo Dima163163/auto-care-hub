@@ -1,3 +1,5 @@
+import { readBrowserPreference } from '../lib/browser-preferences-storage'
+
 export const SUPPORTED_LOCALES = [
     'en',
     'ru',
@@ -31,8 +33,11 @@ export const DEFAULT_LOCALE: SupportedLocale = 'en'
  * SEO and existing data compatibility, but are intentionally not selectable.
  */
 export const VISIBLE_LOCALES = ['en', 'ru'] as const satisfies ReadonlyArray<SupportedLocale>
+const SERVER_LOCALES = [...VISIBLE_LOCALES, 'es', 'ro'] as const
+export type ServerLocale = typeof SERVER_LOCALES[number]
 
 export const LOCALE_STORAGE_KEY = 'autocare-hub-locale'
+export const REQUEST_LOCALE_HEADER = 'x-autocare-request-locale'
 const LEGACY_LOCALE_STORAGE_KEY = 'autocare-hub-locale-v1'
 
 export const LOCALE_OPTIONS = [
@@ -86,14 +91,24 @@ export function normalizeLocale(value: string | undefined): SupportedLocale | un
         : undefined
 }
 
+export function normalizePublicLocale(value: string | null | undefined): 'en' | 'ru' | undefined {
+    const locale = normalizeLocale(value ?? undefined)
+    return locale === 'en' || locale === 'ru' ? locale : undefined
+}
+
+export function normalizeServerLocale(value: string | null | undefined): ServerLocale | undefined {
+    const locale = normalizeLocale(value ?? undefined)
+    return SERVER_LOCALES.find((candidate) => candidate === locale)
+}
+
 export function getStoredLocale(): SupportedLocale {
     if (typeof window === 'undefined') {
         return DEFAULT_LOCALE
     }
 
     const savedLocale = normalizeLocale(
-        window.localStorage.getItem(LOCALE_STORAGE_KEY) ??
-        window.localStorage.getItem(LEGACY_LOCALE_STORAGE_KEY) ??
+        readBrowserPreference(LOCALE_STORAGE_KEY) ??
+        readBrowserPreference(LEGACY_LOCALE_STORAGE_KEY) ??
         undefined,
     )
 
@@ -104,14 +119,11 @@ export function getStoredLocale(): SupportedLocale {
     return browserLocale && isVisibleLocale(browserLocale) ? browserLocale : DEFAULT_LOCALE
 }
 
-export function getInitialLocale(): SupportedLocale {
-    if (typeof window !== 'undefined') {
-        const urlLocale = normalizeLocale(new URLSearchParams(window.location.search).get('lang') ?? undefined)
-        // Keep every registered locale addressable through an explicit URL.
-        // The launch menu remains limited to VISIBLE_LOCALES, while direct
-        // locale URLs continue to work for translated pages and SEO links.
-        if (urlLocale) return urlLocale
-    }
+export function getUrlLocale(): SupportedLocale | undefined {
+    if (typeof window === 'undefined') return undefined
+    return normalizeLocale(new URLSearchParams(window.location.search).get('lang') ?? undefined)
+}
 
-    return getStoredLocale()
+export function getInitialLocale(): SupportedLocale {
+    return getUrlLocale() ?? getStoredLocale()
 }

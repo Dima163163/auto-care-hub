@@ -30,7 +30,7 @@ const sourceMap = {
     nextClientApp: [
         'Promise.all([',
         'enableMocking(),',
-        'loadTranslations(initialPublicProviderProfile ? initialProviderLocale : getInitialLocale()),',
+        'loadTranslations(getInitialLocale()),',
         'if (!ready) {',
         '<BootShell home={initialPathname === ROUTES.home}',
     ].join('\n'),

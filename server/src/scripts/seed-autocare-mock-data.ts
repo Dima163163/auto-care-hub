@@ -30,11 +30,10 @@ import {
     resolveMockAssetUrl,
 } from '../modules/autocare/autocare-mock-catalog.js'
 import { DEMO_USERS } from './demo-fixtures.js'
+import { withDemoSeedTarget } from './demo-seed-target.js'
 
 async function seedAutoCareMockData() {
-    await AppDataSource.initialize()
-
-    try {
+    await withDemoSeedTarget(async () => {
         await AppDataSource.transaction(async (manager) => {
             const countryRepository = manager.getRepository(AutomotiveMarketCountryEntity)
             const marketRepository = manager.getRepository(AutomotiveMarketEntity)
@@ -317,9 +316,7 @@ async function seedAutoCareMockData() {
             }
         })
         console.info('AutoCare mock catalog seeded with generated provider images and safe fallbacks.')
-    } finally {
-        await AppDataSource.destroy()
-    }
+    })
 }
 
 seedAutoCareMockData().catch((error: unknown) => {

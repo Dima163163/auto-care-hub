@@ -51,6 +51,10 @@ Admin --> ORM
 Legacy --> ORM
 Outbox --> ORM
 ORM --> PG
+note right of Legacy
+  Доступность кабинетов фильтруется в PostgreSQL до пагинации.
+  Старый плоский каталог ограничен 50 записями.
+end note
 note bottom of Routes
   autocare.service / request / chat facades сохраняют exports.
   Бизнес-логику искать в concrete use-case модулях,

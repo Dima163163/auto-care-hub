@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
 import {
     DEFAULT_LOCALE,
@@ -6,6 +6,7 @@ import {
     SUPPORTED_LOCALES,
     VISIBLE_LOCALE_OPTIONS,
     VISIBLE_LOCALES,
+    getInitialLocale,
     normalizeLocale,
 } from './i18n'
 
@@ -21,5 +22,18 @@ describe('frontend locale registry', () => {
         expect(normalizeLocale('ZH-cn')).toBe('zh')
         expect(normalizeLocale('xx-YY')).toBeUndefined()
         expect(DEFAULT_LOCALE).toBe('en')
+    })
+
+    it('uses the browser locale when access to local storage is denied', () => {
+        vi.stubGlobal('window', {
+            location: { search: '' },
+            navigator: { language: 'ru-RU' },
+            get localStorage() { throw new DOMException('Storage denied', 'SecurityError') },
+        })
+        try {
+            expect(getInitialLocale()).toBe('ru')
+        } finally {
+            vi.unstubAllGlobals()
+        }
     })
 })

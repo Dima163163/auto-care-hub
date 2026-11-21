@@ -10,6 +10,8 @@ import { OUTBOX_MAX_ATTEMPTS } from '../outbox/outbox.service.js'
 import { canDeadLetterOutboxEvent, canRetryOutboxEvent } from './outbox-state.js'
 import { normalizeOutboxEventUuid } from './outbox-event-policy.js'
 
+const oneTimeEmailTemplates = new Set(['password_reset', 'email_verification', 'password_setup', 'provider_invitation'])
+
 function assertAdmin(user: UserEntity) {
     if (!isAdminRole(user.role)) {
         throw new AppError({
@@ -88,6 +90,16 @@ export async function retryOutboxEvent(user: UserEntity, eventId: unknown) {
             statusCode: 409,
             code: ERROR_CODES.Conflict,
             message: 'Outbox event cannot be retried in its current state.',
+        })
+    }
+
+    const { template, encryptedToken } = event.payload
+    if (event.type === 'email.send' && typeof template === 'string' && oneTimeEmailTemplates.has(template)
+        && (typeof encryptedToken !== 'string' || encryptedToken.length < 32)) {
+        throw new AppError({
+            statusCode: 409,
+            code: ERROR_CODES.Conflict,
+            message: 'This email requires a new one-time link. Use the original action to send it again.',
         })
     }
 

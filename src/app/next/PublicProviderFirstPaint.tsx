@@ -1,19 +1,24 @@
 import { automotiveAmenities, automotiveServices, getAutomotiveAmenityLabel, getServiceLabel } from '@/entities/automotive-service'
 import type { AutoCareApiOffer, AutoCareApiProviderProfile } from '@/entities/automotive-service'
+import type { ServerLocale } from '@/shared/config/i18n'
 import { formatCurrency } from '@/shared/lib/locale-format'
 
 type PublicProviderFirstPaintProps = {
     profile: AutoCareApiProviderProfile
-    locale: 'en' | 'ru'
+    locale: ServerLocale
     selectedServiceId?: string
+}
+
+const providerLabels = {
+    ru: { back: 'К сравнению сервисов', services: 'Услуги и цены', about: 'О сервисе', location: 'Адрес и часы', reviews: 'Отзывы клиентов', availability: 'Запись по запросу', book: 'Выбрать и записаться', priceFrom: 'от', quote: 'Цена по запросу', verified: 'Проверенный сервис', noReviews: 'Пока нет отзывов', publishedOffers: 'Опубликованные услуги сервиса', trust: 'Профиль сервиса', publicPhone: 'Телефон' },
+    en: { back: 'Back to comparison', services: 'Services and prices', about: 'About', location: 'Location and hours', reviews: 'Customer reviews', availability: 'Available on request', book: 'Choose and book', priceFrom: 'from', quote: 'Price on request', verified: 'Verified service', noReviews: 'No reviews yet', publishedOffers: 'Published service offers', trust: 'Service profile', publicPhone: 'Phone' },
+    es: { back: 'Volver a la comparación', services: 'Servicios y precios', about: 'Sobre el taller', location: 'Dirección y horario', reviews: 'Opiniones de clientes', availability: 'Cita bajo solicitud', book: 'Elegir y reservar', priceFrom: 'desde', quote: 'Precio a consultar', verified: 'Taller verificado', noReviews: 'Todavía no hay opiniones', publishedOffers: 'Servicios publicados por el taller', trust: 'Perfil del taller', publicPhone: 'Teléfono' },
+    ro: { back: 'Înapoi la comparație', services: 'Servicii și prețuri', about: 'Despre service', location: 'Adresă și program', reviews: 'Recenziile clienților', availability: 'Programare la cerere', book: 'Alege și programează', priceFrom: 'de la', quote: 'Preț la cerere', verified: 'Service verificat', noReviews: 'Nu există încă recenzii', publishedOffers: 'Serviciile publicate de atelier', trust: 'Profilul service-ului', publicPhone: 'Telefon' },
 }
 
 export function PublicProviderFirstPaint({ profile, locale, selectedServiceId }: PublicProviderFirstPaintProps) {
     const selectedOffer = profile.offers.find((offer) => getOfferServiceId(offer) === selectedServiceId) ?? profile.offers[0]
-    const labels = locale === 'ru'
-        ? { back: 'К сравнению сервисов', services: 'Услуги и цены', about: 'О сервисе', location: 'Адрес и часы', reviews: 'Отзывы клиентов', availability: 'Запись по запросу', book: 'Выбрать и записаться', priceFrom: 'от', quote: 'Цена по запросу', verified: 'Проверенный сервис', noReviews: 'Пока нет отзывов', publishedOffers: 'Опубликованные услуги сервиса', trust: 'Профиль сервиса', publicPhone: 'Телефон' }
-        : { back: 'Back to comparison', services: 'Services and prices', about: 'About', location: 'Location and hours', reviews: 'Customer reviews', availability: 'Available on request', book: 'Choose and book', priceFrom: 'from', quote: 'Price on request', verified: 'Verified service', noReviews: 'No reviews yet', publishedOffers: 'Published service offers', trust: 'Service profile', publicPhone: 'Phone' }
-
+    const labels = providerLabels[locale]
     return <>
         <section className="relative isolate overflow-hidden bg-hero-overlay text-primary-foreground">
             {profile.coverImageUrl && <img src={profile.coverImageUrl} alt="" aria-hidden="true" fetchPriority="high" className="absolute inset-0 h-full w-full object-cover opacity-45" />}
@@ -39,7 +44,7 @@ export function PublicProviderFirstPaint({ profile, locale, selectedServiceId }:
                 {[labels.services, labels.about, labels.location, labels.reviews].map((label, index) => <a key={label} href={['#services', '#about', '#location', '#reviews'][index]} className="inline-flex shrink-0 items-center rounded-[var(--radius-control)] px-3 py-2 text-xs font-black text-muted-foreground hover:bg-secondary hover:text-primary">{label}</a>)}
             </div>
         </nav>
-        <main className="mx-auto grid max-w-[var(--layout-public-wide-max)] gap-6 px-[var(--layout-public-gutter)] py-7 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.42fr)]">
+        <div className="mx-auto grid max-w-[var(--layout-public-wide-max)] gap-6 px-[var(--layout-public-gutter)] py-7 sm:py-10 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.42fr)]">
             <div className="grid content-start gap-6">
                 <section id="services" className="overflow-hidden rounded-[var(--radius-panel)] border border-border bg-card shadow-sm">
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4 sm:px-6"><h2 className="text-xl font-black tracking-tight text-foreground">{labels.services}</h2><span className="rounded-[var(--radius-control)] bg-secondary px-3 py-1.5 text-xs font-bold text-muted-foreground">{profile.offers.length}</span></div>
@@ -62,7 +67,7 @@ export function PublicProviderFirstPaint({ profile, locale, selectedServiceId }:
                 {selectedOffer && <p className="mt-2 text-xl font-black text-foreground">{formatOfferPrice(selectedOffer, locale, labels.priceFrom, labels.quote)}</p>}
                 <a href={`/services/${encodeURIComponent(profile.id)}/request?service=${encodeURIComponent(selectedOffer ? getOfferServiceId(selectedOffer) : '')}&market=${encodeURIComponent(profile.location.marketId)}`} className="mt-4 inline-flex min-h-10 items-center justify-center rounded-[var(--radius-control)] bg-primary px-4 text-sm font-black text-primary-foreground">{labels.book}</a>
             </aside>
-        </main>
+        </div>
     </>
 }
 
@@ -70,14 +75,14 @@ function getOfferServiceId(offer: AutoCareApiOffer) {
     return offer.serviceSlug ?? offer.serviceDefinitionId
 }
 
-function getOfferLabel(offer: AutoCareApiOffer, locale: 'en' | 'ru') {
+function getOfferLabel(offer: AutoCareApiOffer, locale: ServerLocale) {
     const localized = offer.serviceLabels?.[locale]?.trim()
     if (localized) return localized
     const service = automotiveServices.find((item) => item.id === getOfferServiceId(offer))
     return service ? getServiceLabel(service, locale) : getOfferServiceId(offer)
 }
 
-function formatOfferPrice(offer: AutoCareApiOffer, locale: 'en' | 'ru', fromLabel: string, quoteLabel: string) {
+function formatOfferPrice(offer: AutoCareApiOffer, locale: ServerLocale, fromLabel: string, quoteLabel: string) {
     if (offer.priceType === 'quote_required') return quoteLabel
     const from = formatCurrency(offer.priceFromMinor / 100, offer.currencyCode, locale)
     if (offer.priceType === 'fixed') return from
